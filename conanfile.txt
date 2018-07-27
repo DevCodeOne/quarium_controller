@@ -2,6 +2,7 @@
 spdlog/0.17.0@bincrafters/stable
 fmt/4.1.0@bincrafters/stable
 jsonformoderncpp/3.1.2@vthiery/stable
-pistache/1.0@user/pistache
+pistache/1.0@user/stable
+wpa_ctrlpp/1.0@user/stable
 [generators]
 cmake
