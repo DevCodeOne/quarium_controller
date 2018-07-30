@@ -7,6 +7,14 @@
 
 class logger {
     public:
+        enum struct log_level {
+            debug = spdlog::level::debug,
+            info = spdlog::level::info,
+            warn = spdlog::level::warn,
+            critical = spdlog::level::critical,
+            off = spdlog::level::off,
+        };
+
         static std::shared_ptr<spdlog::logger> instance();
 
     private:
