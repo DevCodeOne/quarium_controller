@@ -1,17 +1,22 @@
 #pragma once
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wreorder"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-
 #include <cstdint>
 
 #include <memory>
 #include <optional>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wreorder"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+
 #include "pistache/endpoint.h"
+#include "pistache/http.h"
+#include "pistache/router.h"
+
+#pragma GCC diagnostic pop
 
 enum port : uint16_t {};
 
@@ -34,20 +39,12 @@ class network_interface final {
    private:
     network_interface(port p);
 
+    void setup_routes();
+
     std::unique_ptr<Pistache::Http::Endpoint> m_server = nullptr;
+    Pistache::Rest::Router m_router;
     bool m_stopped = false;
     bool m_is_initialized = false;
 };
 
 void swap(network_interface &lhs, network_interface &rhs);
-
-namespace detail {
-class network_interface_handler final : public Pistache::Http::Handler {
-   public:
-    HTTP_PROTOTYPE(network_interface_handler)
-    void onRequest(const Pistache::Http::Request &request,
-                   Pistache::Http::ResponseWriter response);
-};
-}  // namespace detail
-
-#pragma GCC diagnostic pop

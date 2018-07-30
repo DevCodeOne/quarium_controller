@@ -2,9 +2,8 @@
 
 #include <cstring>
 
-int signal_handler::install_signal_handler(
-    signal_handler::signal sig, void (*handler)(int),
-    std::initializer_list<signal> ignored_signals) {
+int signal_handler::install_signal_handler(signal_handler::signal sig, void (*handler)(int),
+                                           std::initializer_list<signal> ignored_signals) {
     struct sigaction action;
     std::memset(&action, 0, sizeof(struct sigaction));
     sigemptyset(&action.sa_mask);

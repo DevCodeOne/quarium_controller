@@ -36,9 +36,7 @@ class signal_handler final {
     ~signal_handler() = default;
 
     bool disable_for_current_thread();
-    static int install_signal_handler(
-        signal sig, void (*handler)(int),
-        std::initializer_list<signal> ignored_signals);
+    static int install_signal_handler(signal sig, void (*handler)(int), std::initializer_list<signal> ignored_signals);
 
    private:
 };

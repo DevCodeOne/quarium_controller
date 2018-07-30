@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "config.h"
 #include "logger.h"
 
@@ -15,21 +17,38 @@ config::config(const std::filesystem::path &config) {
     std::ifstream config_file_stream(config);
 
     if (!config_file_stream) {
-        logger::instance()->warn("Config {} not found or couldn't be opened",
-                                 config.c_str());
+        logger::instance()->warn("Couldn't open config file {}", config.c_str());
         return;
     }
 
     m_is_valid = true;
     try {
-        config_file_stream >> m_config;
-    } catch (nlohmann::detail::parse_error &error) {
+        m_config = nlohmann::json::parse(config_file_stream);
+    } catch (...) {
         m_is_valid = false;
-        logger::instance()->warn("Config {} contains errors",
-                                 std::filesystem::canonical(config).c_str());
+        logger::instance()->warn("Config {} contains errors", std::filesystem::canonical(config).c_str());
     }
 }
 
-config::config(config &&other) {}
+config::config(config &&other) : m_is_valid(other.m_is_valid), m_config(std::move(other.m_config)) {
+    other.m_is_valid = false;
+}
 
-config &config::operator=(config &&other) { return *this; }
+config &config::operator=(config &&other) {
+    config tmp(std::move(other));
+
+    swap(tmp);
+
+    return *this;
+}
+
+void config::swap(config &other) {
+    using std::swap;
+
+    swap(m_config, other.m_config);
+    swap(m_is_valid, other.m_is_valid);
+}
+
+nlohmann::json config::find(const std::string &value) const { return m_config[value]; }
+
+void swap(config &lhs, config &rhs) { lhs.swap(rhs); }

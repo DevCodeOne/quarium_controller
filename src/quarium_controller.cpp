@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "network.h"
 #include "network_interface.h"
+#include "schedule.h"
 #include "signal_handler.h"
 
 std::atomic_bool _should_exit = false;
@@ -17,8 +18,7 @@ void sigterm(int) { _should_exit = true; }
 int main(int argc, char *argv[]) {
     signal_handler handler;
     handler.install_signal_handler(signal_handler::signal::sigint, sigint, {});
-    handler.install_signal_handler(signal_handler::signal::sigterm, sigterm,
-                                   {});
+    handler.install_signal_handler(signal_handler::signal::sigterm, sigterm, {});
 
     std::string config_path = "";
     uint16_t server_port;
@@ -39,26 +39,28 @@ int main(int argc, char *argv[]) {
     auto result = cli.parse(clara::Args(argc, argv));
 
     if (!result) {
-        logger::instance()->critical("Error in command line : {}",
-                                     result.errorMessage());
+        logger::instance()->critical("Error in command line : {}", result.errorMessage());
 
         for (auto current_line : cli.getHelpColumns()) {
-            logger::instance()->info("{}, ", current_line.left,
-                                     current_line.right);
+            logger::instance()->info("{}, ", current_line.left, current_line.right);
         }
 
         return EXIT_FAILURE;
     }
 
-    auto network_iface = network_interface::create_on_port(port(9980));
+    auto conf = config::instance();
+    auto schedule_file_paths = conf->find("schedule_list");
+    load_schedules(schedule_file_paths.at(0).get<std::string>());
 
-    if (!network_iface) {
-        logger::instance()->critical("Couldn't start network interface");
+    // auto network_iface = network_interface::create_on_port(port(9980));
 
-        return EXIT_FAILURE;
-    }
+    // if (!network_iface) {
+    //     logger::instance()->critical("Couldn't start network interface");
 
-    network_iface->start();
+    //     return EXIT_FAILURE;
+    // }
+
+    // network_iface->start();
 
     while (true) {
         if (_should_exit) {
@@ -75,6 +77,6 @@ int main(int argc, char *argv[]) {
     }
 
     logger::instance()->info("Shutting down server");
-    network_iface->stop();
+    // network_iface->stop();
     return EXIT_SUCCESS;
 }

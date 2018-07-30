@@ -17,6 +17,9 @@ class config {
 
     config &operator=(const config &other) = delete;
     config &operator=(config &&other);
+    void swap(config &other);
+
+    nlohmann::json find(const std::string &value) const;
 
    private:
     config(const std::filesystem::path &config_path);
@@ -28,3 +31,5 @@ class config {
     static inline std::mutex _instance_mutex;
     static constexpr inline char _default_config_path [] = DEFAULT_CONFIG_PATH;
 };
+
+void swap(config &lhs, config &rhs);

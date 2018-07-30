@@ -1,0 +1,31 @@
+{
+"actions": [
+        {
+            "id" : "light_on",
+            "gpios" : [22, 24, 21],
+            "gpio_actions" : [0, 1, 0]
+        },
+        {
+            "id" : "light_off",
+            "gpios" : [22, 24, 21],
+            "gpio_actions" : [1, 0, 1]
+        }
+    ],
+    "schedule" : {
+        "events" : [
+            {
+                "day" : 0,
+                "trigger_at" : "10:00",
+                "actions" : ["light_on"]
+            },
+            {
+                "day" : 0,
+                "trigger_at" : "14:00",
+                "actions" : ["lights_off"]
+            }
+        ],
+        "repeating" : true,
+        "period_days" : 1,
+        "start" : "10.10.2018"
+    }
+}
