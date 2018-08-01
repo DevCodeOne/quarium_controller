@@ -8,9 +8,12 @@
 
 class gpio_pin {
    public:
-    enum struct action { ON, OFF };
+    enum struct action { OFF, ON };
+
+    gpio_pin(unsigned int id);
 
    private:
+    unsigned int m_id;
 };
 
 class gpio_chip {

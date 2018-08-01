@@ -1,5 +1,7 @@
 #include "gpio_handler.h"
 
+gpio_pin::gpio_pin(unsigned int id) : m_id(id) {}
+
 std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_path) {
     if (!reserve_gpiochip(gpio_chip_path)) {
         return {};

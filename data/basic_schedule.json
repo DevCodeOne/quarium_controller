@@ -1,5 +1,5 @@
 {
-"actions": [
+    "actions": [
         {
             "id" : "light_on",
             "gpios" : [22, 24, 21],
@@ -24,10 +24,24 @@
                 "day" : 0,
                 "trigger_at" : "14:00",
                 "actions" : ["lights_off"]
+            },
+            {
+                "id" : "Turn lights on",
+                "day" : 1,
+                "trigger_at" : "10:00",
+                "actions" : ["light_on"]
+            },
+            {
+                "id" : "Turn lights off",
+                "day" : 1,
+                "trigger_at" : "14:00",
+                "actions" : ["lights_off"]
             }
+
         ],
         "repeating" : true,
-        "duration_in_days" : 1,
-        "start" : "10.10.2018"
+        "period_in_days" : 2,
+        "start_at" : "10.10.2018",
+        "title" : "aquarium#1"
     }
 }

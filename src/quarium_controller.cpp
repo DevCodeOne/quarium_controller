@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     auto conf = config::instance();
     auto schedule_file_paths = conf->find("schedule_list");
-    load_schedules(schedule_file_paths.at(0).get<std::string>());
+    auto schedule = schedule::create_from_file(schedule_file_paths.at(0).get<std::string>());
 
     // auto network_iface = network_interface::create_on_port(port(9980));
 

@@ -1,0 +1,23 @@
+{
+    "actions" : [
+        {
+            "id" : "light_on",
+            "gpios" : [22],
+            "gpio_actions" : [true]
+        }
+    ],
+    "schedule" : {
+        "events" : [
+            {
+                "id" : "light_on",
+                "day" : 0,
+                "trigger_at" : "10:00",
+                "actions" : ["light_on"]
+            }
+        ],
+        "repeating" :  true,
+        "period_in_days" : 2,
+        "start_at" : "01.01.1970",
+        "title" : "aquarium#1"
+    }
+}

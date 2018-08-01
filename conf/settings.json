@@ -1,4 +1,5 @@
 {
     "gpiochip" : "0",
+    "date_format" : "%d.%m.%Y",
     "schedule_list" : ["../data/basic_schedule.json"]
 }
