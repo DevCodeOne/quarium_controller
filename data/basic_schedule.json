@@ -14,18 +14,20 @@
     "schedule" : {
         "events" : [
             {
+                "id" : "Turn lights on",
                 "day" : 0,
                 "trigger_at" : "10:00",
                 "actions" : ["light_on"]
             },
             {
+                "id" : "Turn lights off",
                 "day" : 0,
                 "trigger_at" : "14:00",
                 "actions" : ["lights_off"]
             }
         ],
         "repeating" : true,
-        "period_days" : 1,
+        "duration_in_days" : 1,
         "start" : "10.10.2018"
     }
 }

@@ -35,6 +35,8 @@ std::optional<std::vector<schedule>> load_schedules(const std::filesystem::path 
 
     auto actions = schedule_file["actions"];
 
+    auto schedule = schedule_file["schedule"];
+
     for (auto current_action : actions) {
         std::cout << current_action << std::endl;
     }
