@@ -17,7 +17,7 @@
         ],
         "repeating" :  true,
         "period_in_days" : 2,
-        "start_at" : "01.01.1970",
+        "start_at" : "09.01.1970",
         "title" : "aquarium#1"
     }
 }

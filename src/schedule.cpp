@@ -9,6 +9,8 @@
 #include "schedule.h"
 
 bool schedule_action::add_action(json &schedule_action_description) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
     json id_entry = schedule_action_description["id"];
     json gpios_entry = schedule_action_description["gpios"];
     json gpio_actions_entry = schedule_action_description["gpio_actions"];
@@ -30,8 +32,9 @@ bool schedule_action::add_action(json &schedule_action_description) {
     }
 
     const std::string id = id_entry.get<std::string>();
+
     if (is_valid_id(id)) {
-        logger::instance()->critical("The id for an action {} is already in use");
+        logger::instance()->critical("The id for an action {} is already in use", id);
         return false;
     }
 
@@ -85,21 +88,40 @@ bool schedule_action::add_action(json &schedule_action_description) {
         created_action.add_pin(std::make_pair(created_gpios[i], created_gpio_actions[i]));
     }
 
-    std::lock_guard<std::mutex> list_guard{_list_mutex};
-
-    _actions[id] = created_action;
+    _actions.emplace_back(std::make_unique<schedule_action>(std::move(created_action)));
 
     return true;
 }
 
-bool schedule_action::is_valid_id(const schedule_action_id &id) { return _actions.find(id) != _actions.cend(); }
+bool schedule_action::is_valid_id(const schedule_action_id &id) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    return std::find_if(_actions.cbegin(), _actions.cend(),
+                        [&id](const auto &current_action) { return current_action->id() == id; }) != _actions.cend();
+}
 
 bool schedule_action::execute_action(const schedule_action_id &id) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
     if (!is_valid_id(id)) {
         return false;
     }
 
-    return _actions[id]();
+    auto action = std::find_if(_actions.begin(), _actions.end(),
+                               [&id](const auto &current_action) { return current_action->id() == id; });
+
+    return (**action)();
+}
+
+schedule_action::schedule_action(schedule_action &&other)
+    : m_id(std::move(other.m_id)), m_pins(std::move(other.m_pins)) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
+    if (is_valid_id(m_id)) {
+        std::string id = m_id;
+        auto action = std::find_if(_actions.begin(), _actions.end(),
+                                   [&id](const auto &current_action) { return current_action->id() == id; });
+
+        *action = std::unique_ptr<schedule_action>(this);
+    }
 }
 
 schedule_action &schedule_action::id(const schedule_action_id &new_id) {
@@ -128,7 +150,7 @@ std::optional<schedule_event> schedule_event::create_from_description(json &sche
 
     if (id_entry.is_null() || day_entry.is_null() || trigger_at_entry.is_null() || actions_entry.is_null()) {
         logger::instance()->critical("A needed entry in a event was missing : {} {} {} {}",
-                                     id_entry.is_null() ? "id" : "", day_entry.is_null() ? "day_entry" : "",
+                                     id_entry.is_null() ? "id" : "", day_entry.is_null() ? "day" : "",
                                      trigger_at_entry.is_null() ? "trigger_at" : "",
                                      actions_entry.is_null() ? "actions_entry" : "");
         if (!id_entry.is_null() && id_entry.is_string()) {
@@ -322,9 +344,6 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
         logger::instance()->warn(
             "No date information for schedule is defined, all settings will be set to their default values");
     } else {
-        days start_at{0};
-        days end_at{0};
-
         // TODO remove code duplication
         if (!start_date_entry.is_null()) {
             if (!start_date_entry.is_string()) {
@@ -351,6 +370,7 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
                 logger::instance()->critical("end_at is not a string");
                 return {};
             }
+
             auto end_at = convert_date_to_duration_since_epoch<days>(end_date_entry.get<std::string>(), date_format);
 
             if (!end_at) {
@@ -360,7 +380,7 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
                 return {};
             }
 
-            created_schedule.start_at(*end_at);
+            created_schedule.end_at(*end_at);
         }
     }
 
@@ -386,8 +406,13 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
 
     created_schedule.period(period).schedule_mode(schedule_mode);
 
-    for (auto &current_event : created_events) {
-        created_schedule.add_event(current_event);
+    bool successfully_added_all_events =
+        std::all_of(created_events.cbegin(), created_events.cend(),
+                    [&created_schedule](auto &current_event) { return created_schedule.add_event(current_event); });
+
+    if (!successfully_added_all_events) {
+        logger::instance()->critical("Couldn't add all events to schedule");
+        return {};
     }
 
     if (!created_schedule) {
@@ -423,9 +448,14 @@ schedule &schedule::schedule_mode(const mode &new_mode) {
     return *this;
 }
 
-schedule &schedule::add_event(const schedule_event &event) {
+bool schedule::add_event(const schedule_event &event) {
+    if (std::any_of(m_events.cbegin(), m_events.cend(),
+                    [event](auto &current_event) { return event.id() == current_event.id(); })) {
+        logger::instance()->critical("Duplicate event id {}", event.id());
+        return false;
+    }
     m_events.emplace_back(event);
-    return *this;
+    return true;
 }
 
 std::optional<days> schedule::start_at() const { return m_start_at; }
@@ -440,5 +470,15 @@ schedule::mode schedule::schedule_mode() const { return m_mode; }
 
 const std::vector<schedule_event> &schedule::events() const { return m_events; }
 
-// TODO implement
-schedule::operator bool() const { return true; }
+schedule::operator bool() const {
+    if (m_start_at.has_value() && m_end_at.has_value()) {
+        auto start_at_val = m_start_at.value();
+        auto end_at_val = m_end_at.value();
+
+        if (end_at_val <= start_at_val) {
+            return false;
+        }
+    }
+
+    return true;
+}

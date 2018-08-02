@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <iomanip>
 #include <optional>
 #include <sstream>
@@ -19,6 +20,7 @@ std::optional<T> convert_date_to_duration_since_epoch(const std::string &date, c
     std::istringstream date_stream{date};
 
     std::tm date_tm;
+    std::memset(&date_tm, 0, sizeof(std::tm));
     date_stream >> std::get_time(&date_tm, date_format.c_str());
 
     if (date_stream.fail()) {

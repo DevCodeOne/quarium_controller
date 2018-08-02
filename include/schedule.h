@@ -21,6 +21,10 @@ class schedule_action {
     static bool is_valid_id(const schedule_action_id &id);
     static bool execute_action(const schedule_action_id &id);
 
+    schedule_action() = default;
+    schedule_action(const schedule_action &) = delete;
+    schedule_action(schedule_action &&);
+
     schedule_action &id(const schedule_action_id &new_id);
     schedule_action &add_pin(const std::pair<gpio_pin, gpio_pin::action> &new_pin);
 
@@ -33,8 +37,8 @@ class schedule_action {
     std::string m_id;
     std::vector<std::pair<gpio_pin, gpio_pin::action>> m_pins;
 
-    static inline std::map<schedule_action_id, schedule_action> _actions;
-    static inline std::mutex _list_mutex;
+    static inline std::vector<std::unique_ptr<schedule_action>> _actions;
+    static inline std::recursive_mutex _list_mutex;
 };
 
 class schedule_event {
@@ -70,7 +74,7 @@ class schedule {
     schedule &period(const days &period);
     schedule &title(const std::string &new_title);
     schedule &schedule_mode(const mode &new_mode);
-    schedule &add_event(const schedule_event &event);
+    bool add_event(const schedule_event &event);
 
     std::optional<days> start_at() const;
     std::optional<days> end_at() const;

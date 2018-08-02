@@ -6,10 +6,10 @@
 
 using json = nlohmann::json;
 
-TEST_CASE("Schedule testing", "[schedule]") {
-    const std::filesystem::path path_to_testfile = "../tests/test_schedules/basic_test_schedule.json";
-    auto sched = schedule::create_from_file(path_to_testfile);
-    json schedule_description = json::parse(std::ifstream(path_to_testfile));
+TEST_CASE("Correct schedule testing", "[schedule]") {
+    const std::filesystem::path testfiles[] = {"../tests/test_schedules/basic_test_schedule.json"};
+    auto sched = schedule::create_from_file(testfiles[0]);
+    json schedule_description = json::parse(std::ifstream(testfiles[0]));
 
     REQUIRE(sched.has_value());
 
@@ -25,8 +25,29 @@ TEST_CASE("Schedule testing", "[schedule]") {
 
     auto events = sched_inst.events();
 
+    auto sched_inst2(sched_inst);
+
+    REQUIRE(events.size() > 0);
     REQUIRE(events[0].id() == schedule_description["schedule"]["events"][0]["id"].get<std::string>());
     REQUIRE(events[0].day() == days(schedule_description["schedule"]["events"][0]["day"].get<unsigned int>()));
     REQUIRE(events[0].assigned_actions()[0] ==
             schedule_description["schedule"]["events"][0]["actions"][0].get<std::string>());
+
+    schedule_description["schedule"]["end_at"] = "10.01.1970";
+
+    auto sched_with_end = schedule::create_from_description(schedule_description["schedule"]);
+
+    REQUIRE(sched_with_end.has_value());
+
+    auto sched_with_end_inst = *sched_with_end;
+
+    REQUIRE(sched_with_end_inst.title() == schedule_description["schedule"]["title"].get<std::string>());
+    REQUIRE(sched_with_end_inst.end_at().has_value());
+    REQUIRE(sched_with_end_inst.end_at()->count() == 8);
+
+    schedule_description["schedule"]["end_at"] = "01.01.1970";
+
+    auto sched_with_start_eq_end = schedule::create_from_description(schedule_description["schedule"]);
+
+    REQUIRE(sched_with_start_eq_end.has_value() == false);
 }

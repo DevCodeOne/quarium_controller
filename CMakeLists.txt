@@ -6,9 +6,9 @@ add_definitions(-DDEFAULT_CONFIG_PATH="../conf/settings.json")
 option(QUARIUM_CONTROLLER_BUILD_TESTS "Build tests for quarium_controller" ON)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+conan_basic_setup(NO_OUTPUT_DIRS)
 
-add_executable(quarium_controller 
+add_executable(quarium_controller
     src/quarium_controller.cpp
     src/config.cpp
     src/logger.cpp

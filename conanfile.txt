@@ -6,6 +6,6 @@ jsonformoderncpp/3.1.2@vthiery/stable
 clara@1.1.4@bincrafters/stable
 pistache/1.0@user/stable
 wpa_ctrlpp/1.0@user/stable
-gpiod/1.1.1@user/stable
+libgpiod/1.1.1-1@user/stable
 [generators]
 cmake
