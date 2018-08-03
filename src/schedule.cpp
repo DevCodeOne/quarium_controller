@@ -242,7 +242,13 @@ std::chrono::minutes schedule_event::trigger_time() const { return m_trigger_tim
 
 days schedule_event::day() const { return m_day; }
 
-const std::vector<schedule_action_id> &schedule_event::assigned_actions() const { return m_actions; }
+const std::vector<schedule_action_id> &schedule_event::actions() const { return m_actions; }
+
+bool schedule_event::is_marked() const { return m_marker; }
+
+void schedule_event::unmark() const { m_marker = false; }
+
+void schedule_event::mark() const { m_marker = true; }
 
 std::optional<schedule> schedule::create_from_file(const std::filesystem::path &schedule_file_path) {
     using namespace nlohmann;
@@ -397,7 +403,7 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
 
     if (!period_entry.is_null()) {
         if (!period_entry.is_number_unsigned()) {
-            logger::instance()->critical("period_in_days is not a number");
+            logger::instance()->critical("period_in_days is not an unsigned number");
             return {};
         }
 
@@ -425,16 +431,22 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
 
 schedule &schedule::start_at(const days &new_start) {
     m_start_at = new_start;
+    recalculate_period();
+
     return *this;
 }
 
 schedule &schedule::end_at(const days &new_end) {
     m_end_at = new_end;
+    recalculate_period();
+
     return *this;
 }
 
 schedule &schedule::period(const days &new_period) {
-    m_period = new_period;
+    recalculate_period();
+
+    m_period = std::max(new_period, m_period);
     return *this;
 }
 
@@ -455,7 +467,26 @@ bool schedule::add_event(const schedule_event &event) {
         return false;
     }
     m_events.emplace_back(event);
+    recalculate_period();
     return true;
+}
+
+void schedule::recalculate_period() {
+    if (m_start_at.has_value() && m_end_at.has_value()) {
+        auto calculated_period = days(m_end_at->count() - m_start_at->count());
+
+        m_period = std::max(calculated_period, m_period);
+    }
+
+    auto max_day = std::max_element(m_events.cbegin(), m_events.cend(), [](const auto &lhs, const auto &rhs) {
+        return lhs.day().count() < rhs.day().count();
+    });
+
+    if (max_day == m_events.cend()) {
+        return;
+    }
+
+    m_period = std::max(days(max_day->day().count() + 1), m_period);
 }
 
 std::optional<days> schedule::start_at() const { return m_start_at; }
@@ -470,15 +501,164 @@ schedule::mode schedule::schedule_mode() const { return m_mode; }
 
 const std::vector<schedule_event> &schedule::events() const { return m_events; }
 
+// TODO log issues with schedule
 schedule::operator bool() const {
-    if (m_start_at.has_value() && m_end_at.has_value()) {
-        auto start_at_val = m_start_at.value();
-        auto end_at_val = m_end_at.value();
+    if (m_start_at.has_value() && !m_end_at.has_value()) {
+        return true;
+    }
 
-        if (end_at_val <= start_at_val) {
-            return false;
-        }
+    if (!m_start_at.has_value() && !m_end_at.has_value()) {
+        return true;
+    }
+
+    if (m_period.count() == 0) {
+        return false;
+    }
+
+    if (m_end_at.value() <= m_start_at.value()) {
+        return false;
+    }
+
+    if (m_end_at.value() - m_start_at.value() < m_period) {
+        return false;
+    }
+
+    if (m_events.size() == 0) {
+        return false;
     }
 
     return true;
+}
+
+std::shared_ptr<schedule_handler> schedule_handler::instance() {
+    std::lock_guard<std::mutex> instance_guard{_instance_mutex};
+
+    if (!_instance) {
+        _instance = std::shared_ptr<schedule_handler>(new schedule_handler);
+    }
+
+    return _instance;
+}
+
+void schedule_handler::start_event_handler() {
+    if (m_is_started) {
+        return;
+    }
+
+    m_is_started = true;
+    m_event_thread = std::thread(schedule_handler::event_handler);
+}
+
+void schedule_handler::stop_event_handler() {
+    if (!m_is_started) {
+        return;
+    }
+
+    m_should_exit = true;
+    m_event_thread.join();
+    m_is_started = false;
+}
+
+bool schedule_handler::add_schedule(schedule sched) {
+    if (!sched) {
+        logger::instance()->critical("Schedule is not valid");
+        return false;
+    }
+
+    if (is_conflicting_with_other_schedules(sched)) {
+        logger::instance()->critical("Schedule {} is conflicting with other schedules", sched.title());
+        return false;
+    }
+
+    auto current_day = days_since_epoch();
+
+    if (!sched.end_at().has_value() && !sched.start_at().has_value()) {
+        sched.start_at(current_day);
+        sched.end_at(sched.start_at().value() + sched.period());
+    } else if (!sched.end_at().has_value()) {
+        sched.end_at(sched.start_at().value() + sched.period());
+    }
+
+    if (!sched.start_at().has_value() || !sched.end_at().has_value()) {
+        logger::instance()->critical("Schedule {} is still invalid", sched.title());
+        return false;
+    }
+
+    if (sched.start_at().value() <= current_day && sched.end_at().value() >= current_day) {
+        std::lock_guard<std::recursive_mutex> instance_guard(m_schedules_list_mutex);
+        m_active_schedules.emplace_back(std::move(sched));
+    } else {
+        std::lock_guard<std::recursive_mutex> instance_guard(m_schedules_list_mutex);
+        m_inactive_schedules.emplace_back(std::move(sched));
+    }
+
+    return true;
+}
+
+void schedule_handler::event_handler() {
+    auto handler_instance = instance();
+
+    while (!handler_instance->m_should_exit) {
+        {
+            std::lock_guard<std::recursive_mutex> instance_guard(handler_instance->m_schedules_list_mutex);
+            auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+            auto *tm = std::localtime(&time);
+            auto minutes_since_today =
+                std::chrono::duration_cast<std::chrono::minutes>(std::chrono::hours(tm->tm_hour)) +
+                std::chrono::minutes(tm->tm_min);
+
+            for (auto &current_schedule : handler_instance->m_active_schedules) {
+                logger::instance()->info("Checking events of schedule {}", current_schedule.title());
+                for (auto &current_event : current_schedule.events()) {
+                    if (current_event.trigger_time() != minutes_since_today) {
+                        current_event.unmark();
+                        continue;
+                    }
+
+                    if (current_event.is_marked()) {
+                        continue;
+                    }
+
+                    for (auto &current_action_id : current_event.actions()) {
+                        logger::instance()->info("Executing action {} of event {}", current_action_id,
+                                                 current_event.id());
+                        bool result = schedule_action::execute_action(current_action_id);
+
+                        if (!result) {
+                            logger::instance()->warn("Something went wrong when executing action {} in event {}",
+                                                     current_action_id, current_event.id());
+                        }
+                    }
+
+                    current_event.mark();
+                }
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+days schedule_handler::days_since_epoch() {
+    auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    auto *tm = std::localtime(&time);
+    return std::chrono::duration_cast<days>(std::chrono::seconds(std::mktime(tm)));
+}
+
+// TODO implement remove code duplication
+bool schedule_handler::is_conflicting_with_other_schedules(const schedule &sched) {
+    auto is_conflicting = [&sched](const auto &current_sched) { return sched.title() == current_sched.title(); };
+
+    auto result = std::find_if(m_active_schedules.cbegin(), m_active_schedules.cend(), is_conflicting);
+
+    if (result != m_active_schedules.cend()) {
+        return true;
+    }
+
+    result = std::find_if(m_inactive_schedules.cbegin(), m_inactive_schedules.cend(), is_conflicting);
+
+    if (result != m_inactive_schedules.cend()) {
+        return true;
+    }
+
+    return false;
 }

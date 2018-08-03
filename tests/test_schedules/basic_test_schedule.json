@@ -4,7 +4,13 @@
             "id" : "light_on",
             "gpios" : [22],
             "gpio_actions" : [true]
+        },
+        {
+            "id" : "light_off",
+            "gpios" : [22],
+            "gpio_actions" : [false]
         }
+
     ],
     "schedule" : {
         "events" : [

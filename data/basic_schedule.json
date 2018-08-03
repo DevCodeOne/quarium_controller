@@ -3,12 +3,12 @@
         {
             "id" : "light_on",
             "gpios" : [22, 24, 21],
-            "gpio_actions" : [0, 1, 0]
+            "gpio_actions" : [true, false, true]
         },
         {
             "id" : "light_off",
             "gpios" : [22, 24, 21],
-            "gpio_actions" : [1, 0, 1]
+            "gpio_actions" : [false, true, false]
         }
     ],
     "schedule" : {
@@ -16,32 +16,32 @@
             {
                 "id" : "Turn lights on",
                 "day" : 0,
-                "trigger_at" : "10:00",
+                "trigger_at" : "23:49",
                 "actions" : ["light_on"]
             },
             {
                 "id" : "Turn lights off",
                 "day" : 0,
-                "trigger_at" : "14:00",
-                "actions" : ["lights_off"]
+                "trigger_at" : "23:49",
+                "actions" : ["light_off"]
             },
             {
-                "id" : "Turn lights on",
+                "id" : "Turn lights on#2",
                 "day" : 1,
-                "trigger_at" : "10:00",
+                "trigger_at" : "00:29",
                 "actions" : ["light_on"]
             },
             {
-                "id" : "Turn lights off",
+                "id" : "Turn lights off#2",
                 "day" : 1,
-                "trigger_at" : "14:00",
-                "actions" : ["lights_off"]
+                "trigger_at" : "00:29",
+                "actions" : ["light_off"]
             }
 
         ],
         "repeating" : true,
         "period_in_days" : 2,
-        "start_at" : "10.10.2018",
+        "start_at" : "03.08.2018",
         "title" : "aquarium#1"
     }
 }

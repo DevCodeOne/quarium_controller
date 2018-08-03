@@ -51,6 +51,12 @@ int main(int argc, char *argv[]) {
     auto conf = config::instance();
     auto schedule_file_paths = conf->find("schedule_list");
     auto schedule = schedule::create_from_file(schedule_file_paths.at(0).get<std::string>());
+    if (schedule.has_value()) {
+        schedule_handler::instance()->start_event_handler();
+        schedule_handler::instance()->add_schedule(schedule.value());
+    } else {
+        logger::instance()->critical("Schedule is not valid");
+    }
 
     // auto network_iface = network_interface::create_on_port(port(9980));
 
@@ -64,6 +70,7 @@ int main(int argc, char *argv[]) {
 
     while (true) {
         if (_should_exit) {
+            schedule_handler::instance()->stop_event_handler();
             break;
         }
 

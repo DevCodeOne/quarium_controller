@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdint>
 #include <filesystem>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -53,13 +54,17 @@ class schedule_event {
     const std::string &id() const;
     std::chrono::minutes trigger_time() const;
     days day() const;
-    const std::vector<schedule_action_id> &assigned_actions() const;
+    const std::vector<schedule_action_id> &actions() const;
+    bool is_marked() const;
+    void unmark() const;
+    void mark() const;
 
    private:
     std::string m_id;
     std::chrono::minutes m_trigger_time;
     days m_day;
     std::vector<schedule_action_id> m_actions;
+    mutable bool m_marker;
 };
 
 class schedule {
@@ -88,11 +93,13 @@ class schedule {
    private:
     static bool events_conflict(const std::vector<schedule_event> &events);
 
-    std::optional<days> m_start_at;
-    std::optional<days> m_end_at;
-    days m_period;
-    std::string m_title;
-    mode m_mode = mode::repeating;
+    void recalculate_period();
+
+    std::optional<days> m_start_at{};
+    std::optional<days> m_end_at{};
+    days m_period{0};
+    std::string m_title{""};
+    mode m_mode{mode::repeating};
     std::vector<schedule_event> m_events;
 
     static inline std::atomic_int _instance_count = 0;
@@ -103,13 +110,21 @@ class schedule_handler {
     static std::shared_ptr<schedule_handler> instance();
 
     bool add_schedule(schedule sched);
+    void start_event_handler();
+    void stop_event_handler();
 
    private:
-    schedule_handler();
+    schedule_handler() = default;
+    static void event_handler();
+    days days_since_epoch();
+    bool is_conflicting_with_other_schedules(const schedule &sched);
 
-    bool is_conflicting_with_other_schedules();
     std::vector<schedule> m_active_schedules;
     std::vector<schedule> m_inactive_schedules;
+    std::recursive_mutex m_schedules_list_mutex;
+    std::thread m_event_thread;
+    bool m_is_started = false;
+    std::atomic_bool m_should_exit = false;
 
     static inline std::mutex _instance_mutex;
     static inline std::shared_ptr<schedule_handler> _instance;
