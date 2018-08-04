@@ -473,9 +473,11 @@ bool schedule::add_event(const schedule_event &event) {
 
 void schedule::recalculate_period() {
     if (m_start_at.has_value() && m_end_at.has_value()) {
-        auto calculated_period = days(m_end_at->count() - m_start_at->count());
+        if (m_end_at.value() > m_start_at.value()) {
+            auto calculated_period = days(m_end_at->count() - m_start_at->count());
 
-        m_period = std::max(calculated_period, m_period);
+            m_period = std::max(calculated_period, m_period);
+        }
     }
 
     auto max_day = std::max_element(m_events.cbegin(), m_events.cend(), [](const auto &lhs, const auto &rhs) {
@@ -606,9 +608,18 @@ void schedule_handler::event_handler() {
             auto minutes_since_today =
                 std::chrono::duration_cast<std::chrono::minutes>(std::chrono::hours(tm->tm_hour)) +
                 std::chrono::minutes(tm->tm_min);
+            days current_day = days_since_epoch();
+            bool check_for_old_schedules = false;
 
+            // TODO move old schedules to inactive restart periodical schedules
             for (auto &current_schedule : handler_instance->m_active_schedules) {
                 logger::instance()->info("Checking events of schedule {}", current_schedule.title());
+
+                if (current_schedule.end_at() < current_day) {
+                    check_for_old_schedules = true;
+                    continue;
+                }
+
                 for (auto &current_event : current_schedule.events()) {
                     if (current_event.trigger_time() != minutes_since_today) {
                         current_event.unmark();
@@ -631,6 +642,39 @@ void schedule_handler::event_handler() {
                     }
 
                     current_event.mark();
+                }
+            }
+
+            auto to_be_removed = std::remove_if(
+                handler_instance->m_active_schedules.begin(), handler_instance->m_active_schedules.end(),
+                [current_day](const auto &current_schedule) { return current_schedule.end_at() < current_day; });
+
+            if (to_be_removed != handler_instance->m_active_schedules.cend()) {
+                std::vector<schedule> to_be_added_back;
+                for (auto current_schedule = to_be_removed;
+                     current_schedule != handler_instance->m_active_schedules.cend(); ++current_schedule) {
+                    if (current_schedule->schedule_mode() == schedule::mode::repeating) {
+                        schedule created_schedule(*current_schedule);
+
+                        created_schedule.start_at(current_day);
+                        created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period());
+                        to_be_added_back.emplace_back(std::move(created_schedule));
+                    } else {
+                        handler_instance->m_inactive_schedules.emplace_back(std::move(*current_schedule));
+                    }
+                }
+                handler_instance->m_active_schedules.erase(to_be_removed);
+
+                for (auto current_schedule : to_be_added_back) {
+                    bool result = handler_instance->add_schedule(current_schedule);
+
+                    if (result) {
+                        logger::instance()->info("Added schedule {} back to active schedules",
+                                                 current_schedule.title());
+                    } else {
+                        logger::instance()->info("Couldn't add schedule {} back to active schedules",
+                                                 current_schedule.title());
+                    }
                 }
             }
         }

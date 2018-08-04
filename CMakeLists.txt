@@ -17,7 +17,13 @@ add_executable(quarium_controller
     src/gpio_handler.cpp
     src/schedule.cpp)
 set_property(TARGET quarium_controller PROPERTY CXX_STANDARD 17)
-target_compile_options(quarium_controller PUBLIC -Wall -Wextra -Wpedantic)
+IF (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+target_compile_options(quarium_controller PUBLIC -Wall -Wextra -Wpedantic -fsanitize=address)
+ENDIF()
+
+IF (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+target_link_libraries(quarium_controller PUBLIC asan)
+ENDIF()
 
 target_link_libraries(quarium_controller PUBLIC ${CONAN_LIBS})
 target_link_libraries(quarium_controller PUBLIC stdc++fs)

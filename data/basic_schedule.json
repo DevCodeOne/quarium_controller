@@ -28,13 +28,19 @@
             {
                 "id" : "Turn lights on#2",
                 "day" : 1,
-                "trigger_at" : "00:29",
+                "trigger_at" : "13:10",
                 "actions" : ["light_on"]
             },
             {
                 "id" : "Turn lights off#2",
                 "day" : 1,
-                "trigger_at" : "00:29",
+                "trigger_at" : "14:00",
+                "actions" : ["light_off"]
+            },
+            {
+                "id" : "Turn lights off#3",
+                "day" : 1,
+                "trigger_at" : "18:00",
                 "actions" : ["light_off"]
             }
 

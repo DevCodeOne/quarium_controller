@@ -64,7 +64,7 @@ class schedule_event {
     std::chrono::minutes m_trigger_time;
     days m_day;
     std::vector<schedule_action_id> m_actions;
-    mutable bool m_marker;
+    mutable bool m_marker = false;
 };
 
 class schedule {
@@ -116,7 +116,7 @@ class schedule_handler {
    private:
     schedule_handler() = default;
     static void event_handler();
-    days days_since_epoch();
+    static days days_since_epoch();
     bool is_conflicting_with_other_schedules(const schedule &sched);
 
     std::vector<schedule> m_active_schedules;

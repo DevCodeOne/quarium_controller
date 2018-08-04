@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
 
     while (true) {
         if (_should_exit) {
-            schedule_handler::instance()->stop_event_handler();
             break;
         }
 
@@ -83,7 +82,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    logger::instance()->info("Shutting down server");
+    logger::instance()->info("Shutting down server and schedule handler");
+    schedule_handler::instance()->stop_event_handler();
     // network_iface->stop();
     return EXIT_SUCCESS;
 }
