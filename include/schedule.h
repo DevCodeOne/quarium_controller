@@ -27,16 +27,16 @@ class schedule_action {
     schedule_action(schedule_action &&);
 
     schedule_action &id(const schedule_action_id &new_id);
-    schedule_action &add_pin(const std::pair<gpio_pin, gpio_pin::action> &new_pin);
+    schedule_action &add_pin(const std::pair<gpio_pin_id, gpio_pin::action> &new_pin);
 
     const schedule_action_id &id() const;
-    const std::vector<std::pair<gpio_pin, gpio_pin::action>> &pins() const;
+    const std::vector<std::pair<gpio_pin_id, gpio_pin::action>> &pins() const;
 
     bool operator()();
 
    private:
     std::string m_id;
-    std::vector<std::pair<gpio_pin, gpio_pin::action>> m_pins;
+    std::vector<std::pair<gpio_pin_id, gpio_pin::action>> m_pins;
 
     static inline std::vector<std::unique_ptr<schedule_action>> _actions;
     static inline std::recursive_mutex _list_mutex;

@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     uint16_t server_port;
 
     // clang-format off
-    auto cli = 
+    auto cli =
         clara::Opt(config_path, "config_path")
             ["-c"]["--config"]
             ("Location of the configuration file to use")

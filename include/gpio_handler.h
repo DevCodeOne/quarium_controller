@@ -1,24 +1,55 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
+
+#include "gpiod.h"
+
+class gpio_pin_id {
+   public:
+    gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path);
+
+    unsigned int id() const;
+    const std::filesystem::path &gpio_chip_path() const;
+
+   private:
+    const std::filesystem::path m_gpio_chip_path;
+    const unsigned int m_id;
+};
 
 class gpio_pin {
    public:
-    enum struct action { OFF, ON };
+    enum struct action { off, on, toggle };
 
-    gpio_pin(unsigned int id);
+    gpio_pin(gpio_pin &other) = delete;
+    gpio_pin(gpio_pin &&other);
+    ~gpio_pin() = default;
+
+    gpio_pin &operator=(gpio_pin &other) = delete;
+    gpio_pin &operator=(gpio_pin &&other);
+
+    unsigned int id() const;
 
    private:
-    unsigned int m_id;
+    static std::optional<gpio_pin> open(gpio_pin_id id);
+
+    gpio_pin(gpio_pin_id id);
+
+    // TODO add destructor
+    std::unique_ptr<gpiod_line, std::function<void(gpiod_line *)>> m_line{nullptr, [](gpiod_line *line) {}};
+    const gpio_pin_id m_id;
 };
 
 class gpio_chip {
    public:
-    static std::optional<gpio_chip> open(const std::filesystem::path &gpiochip_path = default_gpio_dev_path);
+    static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
+
+    static std::optional<std::shared_ptr<gpio_chip>> instance(const std::filesystem::path &gpio_chip_path = default_gpio_dev_path);
 
     gpio_chip(const gpio_chip &other) = delete;
     gpio_chip(gpio_chip &&other);
@@ -27,17 +58,22 @@ class gpio_chip {
     gpio_chip &operator=(const gpio_chip &other) = delete;
     gpio_chip &operator=(gpio_chip &&other);
 
-    static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
+    bool control_pin(const gpio_pin_id &id, const gpio_pin::action &action);
 
    private:
-    gpio_chip(const std::filesystem::path &gpio_dev);
+    static std::optional<gpio_chip> open(const std::filesystem::path &gpio_chip_path);
+
+    gpio_chip(const std::filesystem::path &gpio_dev, gpiod_chip *chip);
 
     std::filesystem::path m_gpiochip_path;
     std::vector<gpio_pin> m_reserved_pins;
+    gpiod_chip *m_chip;
 
     static bool reserve_gpiochip(const std::filesystem::path &gpiochip_path);
     static bool free_gpiochip(const std::filesystem::path &gpiochip_path);
 
-    static inline std::mutex _instance_mutex;
-    static inline std::map<std::filesystem::path, bool> _gpiochip_access_map;
+    static inline std::recursive_mutex _instance_mutex;
+    static inline std::map<std::filesystem::path, std::shared_ptr<gpio_chip>> _gpiochip_access_map;
+
+    friend class gpio_handler;
 };
