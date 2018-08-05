@@ -136,10 +136,9 @@ schedule_action &schedule_action::add_pin(const std::pair<gpio_pin_id, gpio_pin:
 }
 
 bool schedule_action::operator()() {
-    for (auto current_pin_action_pair : m_pins) {
-        auto current_pin = current_pin_action_pair.first;
-        auto current_action = current_pin_action_pair.second;
+    bool result = true;
 
+    for (auto [current_pin, current_action] : m_pins) {
         // TODO implement configurable gpiochip path
         auto chip = gpio_chip::instance();
 
@@ -149,9 +148,9 @@ bool schedule_action::operator()() {
         }
 
         auto chip_instance = chip.value();
-        return chip_instance->control_pin(current_pin, current_action);
+        result &= chip_instance->control_pin(current_pin, current_action);
     }
-    return false;
+    return result;
 }
 
 const schedule_action_id &schedule_action::id() const { return m_id; }

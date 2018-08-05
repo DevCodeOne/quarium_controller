@@ -134,6 +134,8 @@ gpio_chip::~gpio_chip() {
 }
 
 bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &action) {
+    std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
+
     if (id.gpio_chip_path() != m_gpiochip_path) {
         logger::instance()->warn("Wrong gpio_chip path");
         return false;
