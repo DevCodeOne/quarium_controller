@@ -141,13 +141,15 @@ bool schedule_action::operator()() {
         auto current_action = current_pin_action_pair.second;
 
         // TODO implement configurable gpiochip path
-        auto chip_instance = gpio_chip::instance();
+        auto chip = gpio_chip::instance();
 
-        if (chip_instance) {
-            auto chip = chip_instance.value();
-
-            chip->control_pin(current_pin, current_action);
+        if (!chip) {
+            logger::instance()->critical("Couldn't get gpiochip");
+            continue;
         }
+
+        auto chip_instance = chip.value();
+        return chip_instance->control_pin(current_pin, current_action);
     }
     return false;
 }
@@ -496,9 +498,8 @@ void schedule::recalculate_period() {
         }
     }
 
-    auto max_day = std::max_element(m_events.cbegin(), m_events.cend(), [](const auto &lhs, const auto &rhs) {
-        return lhs.day() < rhs.day();
-    });
+    auto max_day = std::max_element(m_events.cbegin(), m_events.cend(),
+                                    [](const auto &lhs, const auto &rhs) { return lhs.day() < rhs.day(); });
 
     if (max_day == m_events.cend()) {
         return;
@@ -592,7 +593,7 @@ bool schedule_handler::add_schedule(schedule sched) {
 
     if (!sched.end_at().has_value() && !sched.start_at().has_value()) {
         sched.start_at(current_day);
-        sched.end_at(days(sched.start_at().value()+ sched.period() - days(1)));
+        sched.end_at(days(sched.start_at().value() + sched.period() - days(1)));
     } else if (!sched.end_at().has_value()) {
         sched.end_at(days(sched.start_at().value() + sched.period() - days(1)));
     }

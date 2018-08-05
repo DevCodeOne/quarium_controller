@@ -146,6 +146,7 @@ bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &actio
     auto created_pin = gpio_pin::open(id);
 
     if (!created_pin) {
+        logger::instance()->warn("Couldn't open pin with id {}", id.id());
         return false;
     }
 
@@ -154,6 +155,8 @@ bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &actio
         result.second) {
         logger::instance()->warn("Reserved new pin {}", id.id());
         return result.first->second->control(action);
+    } else {
+        logger::instance()->warn("Couldn't create pin with id {}", id.id());
     }
 
     return false;
