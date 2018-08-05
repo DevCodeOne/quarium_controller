@@ -120,15 +120,17 @@ gpio_chip::gpio_chip(const std::filesystem::path &gpio_dev, gpiod_chip *chip)
     : m_gpiochip_path(gpio_dev), m_chip(chip) {}
 
 gpio_chip::gpio_chip(gpio_chip &&other)
-    : m_gpiochip_path(std::move(other.m_gpiochip_path)), m_chip(other.m_chip), m_reserved_pins(other.m_reserved_pins) {
+    : m_gpiochip_path(std::move(other.m_gpiochip_path)),
+      m_chip(other.m_chip),
+      m_reserved_pins(std::move(other.m_reserved_pins)) {
     other.m_gpiochip_path = "";
     other.m_chip = nullptr;
-    other.m_reserved_pins = decltype(m_reserved_pins)();
 }
 
 gpio_chip::~gpio_chip() {
-    gpiod_chip_close(m_chip);
-    free_gpiochip(m_gpiochip_path);
+    if (m_chip) {
+        gpiod_chip_close(m_chip);
+    }
 }
 
 bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &action) {
