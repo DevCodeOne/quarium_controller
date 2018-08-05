@@ -39,6 +39,7 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
     return gpio_pin(std::move(id), line);
 }
 
+// TODO implement actually turning gpio on and off
 bool gpio_pin::control(const action &act) {
     if (m_line == nullptr) {
         return false;
@@ -49,10 +50,10 @@ bool gpio_pin::control(const action &act) {
             logger::instance()->info("Turning gpio {} of chip {} on", m_id.id(), m_id.gpio_chip_path().c_str());
             break;
         case action::on:
-            logger::instance()->info("Turning gpio {} of chip {} on", m_id.id(), m_id.gpio_chip_path().c_str());
+            logger::instance()->info("Turning gpio {} of chip {} off", m_id.id(), m_id.gpio_chip_path().c_str());
             break;
         case action::toggle:
-            logger::instance()->info("Turning gpio {} of chip {} on", m_id.id(), m_id.gpio_chip_path().c_str());
+            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.gpio_chip_path().c_str());
             break;
     }
 
@@ -132,6 +133,8 @@ gpio_chip::gpio_chip(gpio_chip &&other)
 
 gpio_chip::~gpio_chip() {
     if (m_chip) {
+        // Possible problem in libgpiod where the chip might include the pins as resources, so the pins have to be destroyed before the chip
+        m_reserved_pins.clear();
         gpiod_chip_close(m_chip);
     }
 }
