@@ -29,9 +29,9 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
         return {};
     }
 
-    bool result = gpiod_line_request_output(line, "quarium_controller", 0);
+    int result = gpiod_line_request_output(line, "quarium_controller", 0);
 
-    if (!result) {
+    if (result == -1) {
         logger::instance()->critical("Couldn't request line with id {}", id.id());
         return {};
     }
