@@ -22,6 +22,8 @@ class gpio_pin_id {
     const unsigned int m_id;
 };
 
+bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
+
 class gpio_pin {
    public:
     enum struct action { off, on, toggle };
@@ -33,16 +35,19 @@ class gpio_pin {
     gpio_pin &operator=(gpio_pin &other) = delete;
     gpio_pin &operator=(gpio_pin &&other);
 
+    bool control(const action &act);
+
     unsigned int id() const;
 
    private:
     static std::optional<gpio_pin> open(gpio_pin_id id);
 
-    gpio_pin(gpio_pin_id id);
+    gpio_pin(gpio_pin_id id, gpiod_line *line);
 
-    // TODO add destructor
-    std::unique_ptr<gpiod_line, std::function<void(gpiod_line *)>> m_line{nullptr, [](gpiod_line *line) {}};
+    std::shared_ptr<gpiod_line> m_line;
     const gpio_pin_id m_id;
+
+    friend class gpio_chip;
 };
 
 class gpio_chip {
@@ -66,7 +71,7 @@ class gpio_chip {
     gpio_chip(const std::filesystem::path &gpio_dev, gpiod_chip *chip);
 
     std::filesystem::path m_gpiochip_path;
-    std::vector<gpio_pin> m_reserved_pins;
+    std::map<gpio_pin_id, std::shared_ptr<gpio_pin>> m_reserved_pins;
     gpiod_chip *m_chip;
 
     static bool reserve_gpiochip(const std::filesystem::path &gpiochip_path);
@@ -76,4 +81,5 @@ class gpio_chip {
     static inline std::map<std::filesystem::path, std::shared_ptr<gpio_chip>> _gpiochip_access_map;
 
     friend class gpio_handler;
+    friend class gpio_pin;
 };

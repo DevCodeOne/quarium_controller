@@ -16,7 +16,7 @@
             {
                 "id" : "Turn lights on",
                 "day" : 0,
-                "trigger_at" : "02:03",
+                "trigger_at" : "21:17",
                 "actions" : ["light_on"]
             },
             {

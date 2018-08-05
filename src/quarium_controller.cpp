@@ -4,6 +4,7 @@
 #include "clara.hpp"
 
 #include "config.h"
+#include "gpio_handler.h"
 #include "logger.h"
 #include "network.h"
 #include "network_interface.h"
@@ -56,6 +57,12 @@ int main(int argc, char *argv[]) {
         schedule_handler::instance()->add_schedule(schedule.value());
     } else {
         logger::instance()->critical("Schedule is not valid");
+    }
+
+    auto gpiochip = gpio_chip::instance(gpio_chip::default_gpio_dev_path);
+
+    if (!gpiochip) {
+        logger::instance()->critical("Couldn't open gpiochip");
     }
 
     // auto network_iface = network_interface::create_on_port(port(9980));
