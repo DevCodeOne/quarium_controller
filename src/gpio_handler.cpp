@@ -18,18 +18,21 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
     auto chip = gpio_chip::instance(id.gpio_chip_path());
 
     if (chip.has_value() == false || chip.value() == nullptr) {
+        logger::instance()->critical("Couldn't get an instance of gpiochip", id.gpio_chip_path().c_str());
         return {};
     }
 
     gpiod_line *line = gpiod_chip_get_line(chip.value()->m_chip, id.id());
 
     if (line == nullptr) {
+        logger::instance()->critical("Couldn't get line with id {}", id.id());
         return {};
     }
 
     bool result = gpiod_line_request_output(line, "quarium_controller", 0);
 
     if (!result) {
+        logger::instance()->critical("Couldn't request line with id {}", id.id());
         return {};
     }
 
