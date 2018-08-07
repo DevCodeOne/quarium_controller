@@ -15,7 +15,8 @@ add_executable(quarium_controller
     src/network_interface.cpp
     src/signal_handler.cpp
     src/gpio_handler.cpp
-    src/schedule.cpp)
+    src/schedule.cpp
+    src/gui.cpp)
 set_property(TARGET quarium_controller PROPERTY CXX_STANDARD 17)
 IF (CMAKE_BUILD_TYPE EQUAL "DEBUG")
 target_compile_options(quarium_controller PUBLIC -Wall -Wextra -Wpedantic -fsanitize=address)

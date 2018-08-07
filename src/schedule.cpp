@@ -5,6 +5,7 @@
 
 #include "chrono_time.h"
 #include "config.h"
+#include "signal_handler.h"
 #include "logger.h"
 #include "schedule.h"
 
@@ -616,6 +617,8 @@ bool schedule_handler::add_schedule(schedule sched) {
 }
 
 void schedule_handler::event_handler() {
+    signal_handler::disable_for_current_thread();
+
     auto handler_instance = instance();
 
     while (!handler_instance->m_should_exit) {

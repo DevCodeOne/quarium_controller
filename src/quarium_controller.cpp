@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "gpio_handler.h"
+#include "gui.h"
 #include "logger.h"
 #include "network.h"
 #include "network_interface.h"
@@ -65,6 +66,14 @@ int main(int argc, char *argv[]) {
         logger::instance()->critical("Couldn't open gpiochip");
     }
 
+    auto inst = gui::instance();
+
+    if (inst) {
+        inst.value()->open_gui();
+    } else {
+        logger::instance()->warn("Couldn't open inst");
+    }
+
     // auto network_iface = network_interface::create_on_port(port(9980));
 
     // if (!network_iface) {
@@ -89,8 +98,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    logger::instance()->info("Shutting down server and schedule handler");
+    logger::instance()->info("Shutting down server, schedule handler and gui");
     schedule_handler::instance()->stop_event_handler();
+
+    if (inst) {
+        inst.value()->close_gui();
+    }
     // network_iface->stop();
     return EXIT_SUCCESS;
 }

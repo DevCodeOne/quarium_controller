@@ -16,3 +16,9 @@ int signal_handler::install_signal_handler(signal_handler::signal sig, void (*ha
 
     return sigaction((int)sig, &action, nullptr);
 }
+
+bool signal_handler::disable_for_current_thread() {
+    sigset_t mask;
+    sigfillset(&mask);
+    return pthread_sigmask(SIG_BLOCK, &mask, nullptr) >= 0;
+}
