@@ -1,10 +1,12 @@
+#include <chrono>
+
 #include "GUIslice.h"
 
 #include "gui.h"
 #include "logger.h"
 #include "signal_handler.h"
 
-bool gui::quit(void*, void*, gslc_teTouch, short int, short int) {
+bool gui::quit(void *, void *, gslc_teTouch, short int, short int) {
     logger::instance()->warn("Quiting");
     return true;
 }
@@ -33,7 +35,6 @@ std::optional<std::shared_ptr<gui>> gui::instance() {
 }
 
 void gui::open_gui() {
-    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
     if (m_is_started) {
         return;
     }
@@ -42,13 +43,14 @@ void gui::open_gui() {
 }
 
 void gui::close_gui() {
-    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
     if (!m_is_started) {
         return;
     }
 
     m_should_exit = true;
-    m_gui_thread.join();
+    if (m_gui_thread.joinable()) {
+        m_gui_thread.join();
+    }
     m_is_started = false;
 }
 
@@ -83,17 +85,17 @@ void gui::gui_loop() {
 
     gslc_tsElemRef *elem_ref = nullptr;
 
-    while (!inst->m_should_exit) {
-        gslc_Update(&inst->m_gui);
-    }
-
     elem_ref = gslc_ElemCreateBox(&inst->m_gui, 0, 0, (gslc_tsRect){10, 50, 300, 150});
     gslc_ElemSetCol(&inst->m_gui, elem_ref, GSLC_COL_WHITE, GSLC_COL_BLACK, GSLC_COL_BLACK);
 
     char text[] = "Quit";
 
-    elem_ref = gslc_ElemCreateBtnTxt(&inst->m_gui, 1, 0, (gslc_tsRect){120, 100, 80, 40}, text, 0,
-                                     0, &gui::quit);
+    elem_ref = gslc_ElemCreateBtnTxt(&inst->m_gui, 1, 0, (gslc_tsRect){120, 100, 80, 40}, text, 0, 0, &gui::quit);
+
+    while (!inst->m_should_exit) {
+        gslc_Update(&inst->m_gui);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 }
 
 gui::~gui() {
