@@ -39,7 +39,6 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
     return gpio_pin(std::move(id), line);
 }
 
-// TODO implement actually turning gpio on and off
 bool gpio_pin::control(const action &act) {
     if (m_line == nullptr) {
         return false;
@@ -73,6 +72,7 @@ bool gpio_pin::restore_control() {
     return update_gpio();
 }
 
+// TODO implement actually turning gpio on and off
 bool gpio_pin::update_gpio() {
     if (m_overriden_action) {
         logger::instance()->info("Action is overriden");
