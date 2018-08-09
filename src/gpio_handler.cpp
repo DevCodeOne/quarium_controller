@@ -57,6 +57,29 @@ bool gpio_pin::control(const action &act) {
             break;
     }
 
+    m_controlled_action = act;
+    return update_gpio();
+}
+
+bool gpio_pin::override_control(const action &act) {
+    m_overriden_action = act;
+    logger::instance()->info("Override gpio {} control to be {}", m_id.id(), act == action::on ? "off" : "on");
+    m_overriden_action = act;
+    return update_gpio();
+}
+
+bool gpio_pin::restore_control() {
+    m_overriden_action = {};
+    return update_gpio();
+}
+
+bool gpio_pin::update_gpio() {
+    if (m_overriden_action) {
+        logger::instance()->info("Action is overriden");
+    } else {
+        logger::instance()->info("Action is controlled normally");
+    }
+
     return true;
 }
 
@@ -133,7 +156,8 @@ gpio_chip::gpio_chip(gpio_chip &&other)
 
 gpio_chip::~gpio_chip() {
     if (m_chip) {
-        // Possible problem in libgpiod where the chip might include the pins as resources, so the pins have to be destroyed before the chip
+        // Possible problem in libgpiod where the chip might include the pins as resources, so the pins have to be
+        // destroyed before the chip
         m_reserved_pins.clear();
         gpiod_chip_close(m_chip);
     }

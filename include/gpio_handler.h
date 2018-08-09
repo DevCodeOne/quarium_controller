@@ -36,15 +36,21 @@ class gpio_pin {
     gpio_pin &operator=(gpio_pin &&other);
 
     bool control(const action &act);
+    bool override_control(const action &act);
+    bool restore_control();
 
     unsigned int id() const;
 
    private:
     static std::optional<gpio_pin> open(gpio_pin_id id);
 
+    bool update_gpio();
+
     gpio_pin(gpio_pin_id id, gpiod_line *line);
 
     std::shared_ptr<gpiod_line> m_line;
+    gpio_pin::action m_controlled_action;
+    std::optional<gpio_pin::action> m_overriden_action;
     const gpio_pin_id m_id;
 
     friend class gpio_chip;
