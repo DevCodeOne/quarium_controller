@@ -1,22 +1,11 @@
 #include <chrono>
 
-#include "GUIslice.h"
-
 #include "gui.h"
 #include "logger.h"
 #include "signal_handler.h"
 
-bool gui::quit(void *, void *, gslc_teTouch, short int, short int) {
-    logger::instance()->warn("Quiting");
-    return true;
-}
-
 // TODO use settings to configure those variables and use these values as default
 void gui::init_environment_variables() {
-    setenv("FRAMEBUFFER", framebuffer, 1);
-    setenv("SDL_FBDEV", framebuffer, 1);
-    setenv("SDL_VIDEODRIVER", sdl_videodriver, 1);
-
     setenv("TSLIB_FBDEVICE", framebuffer, 1);
     setenv("TSLIB_TSDEVICE", tslib_device, 1);
     setenv("TSLIB_CALIBFILE", tslib_calibration_file, 1);
@@ -68,32 +57,9 @@ void gui::gui_loop() {
 
     init_environment_variables();
 
-    if (!gslc_Init(&inst->m_gui, &inst->m_driver, inst->m_pages, number_of_pages, inst->m_fonts, number_of_fonts)) {
-        logger::instance()->critical("Couldn't init gui");
-        return;
-    }
-
     inst->m_init = true;
 
-    if (bool result = gslc_FontAdd(&inst->m_gui, 0, GSLC_FONTREF_FNAME, "/usr/share/fonts/TTF/DejaVuSans.ttf", 10);
-        !result) {
-        logger::instance()->critical("Couldn't add font");
-    }
-
-    gslc_PageAdd(&inst->m_gui, 0, inst->m_page_elements, number_of_pages, inst->m_page_element_refs, number_of_pages);
-    gslc_SetBkgndColor(&inst->m_gui, GSLC_COL_GRAY_DK2);
-
-    gslc_tsElemRef *elem_ref = nullptr;
-
-    elem_ref = gslc_ElemCreateBox(&inst->m_gui, 0, 0, (gslc_tsRect){10, 50, 300, 150});
-    gslc_ElemSetCol(&inst->m_gui, elem_ref, GSLC_COL_WHITE, GSLC_COL_BLACK, GSLC_COL_BLACK);
-
-    char text[] = "Quit";
-
-    elem_ref = gslc_ElemCreateBtnTxt(&inst->m_gui, 1, 0, (gslc_tsRect){120, 100, 80, 40}, text, 0, 0, &gui::quit);
-
     while (!inst->m_should_exit) {
-        gslc_Update(&inst->m_gui);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
@@ -102,5 +68,4 @@ gui::~gui() {
     if (!m_init) {
         return;
     }
-    gslc_Quit(&m_gui);
 }
