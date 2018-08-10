@@ -29,6 +29,7 @@ ENDIF()
 
 target_link_libraries(quarium_controller PUBLIC ${CONAN_LIBS})
 target_link_libraries(quarium_controller PUBLIC stdc++fs)
+target_link_libraries(quarium_controller PUBLIC ts)
 target_include_directories(quarium_controller PRIVATE include)
 
 if (QUARIUM_CONTROLLER_BUILD_TESTS)
@@ -46,6 +47,7 @@ if (QUARIUM_CONTROLLER_BUILD_TESTS)
 
     target_link_libraries(schedule_test  PUBLIC ${CONAN_LIBS})
     target_link_libraries(schedule_test PUBLIC stdc++fs)
+    target_link_libraries(schedule_test PUBLIC ts)
     target_include_directories(schedule_test PRIVATE include)
     add_test(CatchTests schedule_test)
 ENDIF()

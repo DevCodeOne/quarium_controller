@@ -16,6 +16,7 @@
 #include <chrono>
 #include <algorithm>
 
+#include "tslib.h"
 #include "lvgl.h"
 
 class lvgl_driver {
@@ -30,14 +31,16 @@ class lvgl_driver {
     template<typename T>
     static void do_copy(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_pointer);
     static void flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_pointer);
+    static bool handle_input(lv_indev_data_t *data);
 
     lvgl_driver();
 
     fb_var_screeninfo m_variable_info;
     fb_fix_screeninfo m_fixed_info;
-    uint64_t m_framebuffer_memory_length = 0;
     int m_framebuffer_descriptor = 0;
+    uint64_t m_framebuffer_memory_length = 0;
     char *m_framebuffer_memory = nullptr;
+    tsdev *m_touch_device = nullptr;
     bool m_is_valid = true;
 
     static inline std::shared_ptr<lvgl_driver> _instance;
