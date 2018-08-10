@@ -22,6 +22,8 @@
 class lvgl_driver {
    public:
     static std::shared_ptr<lvgl_driver> instance();
+    static void flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_pointer);
+    static bool handle_input(lv_indev_data_t *data);
 
     ~lvgl_driver();
 
@@ -30,8 +32,6 @@ class lvgl_driver {
    private:
     template<typename T>
     static void do_copy(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_pointer);
-    static void flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_pointer);
-    static bool handle_input(lv_indev_data_t *data);
 
     lvgl_driver();
 

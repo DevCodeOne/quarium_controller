@@ -2,15 +2,8 @@
 
 #include "gui.h"
 #include "logger.h"
+#include "lvgl_driver.h"
 #include "signal_handler.h"
-
-// TODO use settings to configure those variables and use these values as default
-void gui::init_environment_variables() {
-    setenv("TSLIB_FBDEVICE", framebuffer, 1);
-    setenv("TSLIB_TSDEVICE", tslib_device, 1);
-    setenv("TSLIB_CALIBFILE", tslib_calibration_file, 1);
-    setenv("TSLIB_CONFFILE", tslib_configuration_file, 1);
-}
 
 std::optional<std::shared_ptr<gui>> gui::instance() {
     std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
@@ -55,17 +48,44 @@ void gui::gui_loop() {
 
     auto inst = instance_opt.value();
 
-    init_environment_variables();
+    inst->m_is_initialized = true;
 
-    inst->m_init = true;
+    lv_init();
+
+    lv_disp_drv_init(&inst->m_display_driver);
+    lv_indev_drv_init(&inst->m_input_driver);
+
+    inst->m_display_driver.disp_flush = lvgl_driver::flush_buffer;
+    inst->m_input_driver.type = LV_INDEV_TYPE_POINTER;
+    inst->m_input_driver.read = lvgl_driver::handle_input;
+
+    lv_disp_drv_register(&inst->m_display_driver);
+    lv_indev_drv_register(&inst->m_input_driver);
+
+    inst->m_theme = lv_theme_night_init(20, nullptr);
+    lv_theme_set_current(inst->m_theme);
+
+    inst->m_screen = lv_obj_create(nullptr, nullptr);
+    lv_scr_load(inst->m_screen);
+    // TODO Also make configurable
+    lv_obj_set_width(inst->m_screen, 320);
+    lv_obj_set_height(inst->m_screen, 480);
+
+    lv_obj_t *btn = lv_btn_create(inst->m_screen, nullptr);
+    lv_btn_set_fit(btn, true, true);
+    lv_obj_set_pos(btn, 20, 20);
+    lv_obj_t *btn_label = lv_label_create(btn, nullptr);
+    lv_label_set_text(btn_label, "Button 1");
 
     while (!inst->m_should_exit) {
+        lv_task_handler();
+        lv_tick_inc(10);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
 gui::~gui() {
-    if (!m_init) {
+    if (!m_is_initialized) {
         return;
     }
 }

@@ -16,7 +16,8 @@ add_executable(quarium_controller
     src/signal_handler.cpp
     src/gpio_handler.cpp
     src/schedule.cpp
-    src/gui.cpp)
+    src/gui.cpp
+    src/lvgl_driver.cpp)
 
 set_property(TARGET quarium_controller PROPERTY CXX_STANDARD 17)
 IF (CMAKE_BUILD_TYPE EQUAL "DEBUG")
