@@ -19,13 +19,12 @@ class gui {
 
    private:
     enum struct page_index : uint8_t {
-        front = 0,
-        schedule_list = 1,
-        manual_control = 2,
-        stats = 3,
-        logs = 4,
-        configuration = 5,
-        log = 6
+        schedule_list = 0,
+        manual_control = 1,
+        stats = 2,
+        logs = 3,
+        configuration = 4,
+        front = 5,
     };
 
     static void gui_loop();
