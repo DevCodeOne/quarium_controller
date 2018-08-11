@@ -12,7 +12,7 @@ std::shared_ptr<gui> gui::instance() {
         return _instance;
     }
 
-    _instance = std::shared_ptr<gui>(new gui);
+    _instance = std::shared_ptr<gui>(new gui());
     return _instance;
 }
 
@@ -81,6 +81,8 @@ void gui::gui_loop() {
         lv_tick_inc(10);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    lv_obj_del(inst->m_screen);
 }
 
 gui::~gui() {
