@@ -30,6 +30,7 @@ class gui {
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
 
-    static inline std::shared_ptr<gui> _instance;
+    // TODO Fix : Valgrind is complaining about use after free here
+    static inline std::shared_ptr<gui> _instance = nullptr;
     static inline std::recursive_mutex _instance_mutex;
 };
