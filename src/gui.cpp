@@ -91,14 +91,24 @@ void gui::gui_loop() {
     lv_obj_del(inst->m_screen);
 }
 
-lv_res_t gui::button_event(lv_obj_t *obj) {
+lv_res_t gui::front_button_event(lv_obj_t *obj) {
     auto inst = instance();
 
     if (!inst) {
         return LV_RES_OK;
     }
 
-    inst->switch_page(page_index::manual_control);
+    lv_obj_t *label = lv_obj_get_child(obj, nullptr);
+
+    std::string_view text = lv_label_get_text(label);
+
+    for (uint8_t i = 0; i <= (uint8_t)page_index::logs; ++i) {
+        if (text == front_button_titles[i]) {
+            inst->switch_page(page_index(i));
+            break;
+        }
+    }
+
     return LV_RES_OK;
 }
 
@@ -148,7 +158,7 @@ void gui::create_pages() {
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
-    lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::button_event);
+    lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::front_button_event);
 }
 
 void gui::switch_page(const page_index &new_index) {
