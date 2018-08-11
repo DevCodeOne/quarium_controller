@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     auto inst = gui::instance();
 
     if (inst) {
-        inst.value()->open_gui();
+        inst->open_gui();
     } else {
         logger::instance()->warn("Couldn't open inst");
     }
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     schedule_handler::instance()->stop_event_handler();
 
     if (inst) {
-        inst.value()->close_gui();
+        inst->close_gui();
     }
     // network_iface->stop();
     return EXIT_SUCCESS;

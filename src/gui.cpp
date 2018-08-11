@@ -5,7 +5,7 @@
 #include "lvgl_driver.h"
 #include "signal_handler.h"
 
-std::optional<std::shared_ptr<gui>> gui::instance() {
+std::shared_ptr<gui> gui::instance() {
     std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
 
     if (_instance) {
@@ -17,14 +17,19 @@ std::optional<std::shared_ptr<gui>> gui::instance() {
 }
 
 void gui::open_gui() {
+    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
+
     if (m_is_started) {
         return;
     }
 
     m_gui_thread = std::thread(gui_loop);
+    m_is_started = true;
 }
 
 void gui::close_gui() {
+    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
+
     if (!m_is_started) {
         return;
     }
@@ -39,14 +44,11 @@ void gui::close_gui() {
 void gui::gui_loop() {
     signal_handler::disable_for_current_thread();
 
-    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
-    auto instance_opt = instance();
+    auto inst = instance();
 
-    if (!instance_opt) {
+    if (inst == nullptr) {
         return;
     }
-
-    auto inst = instance_opt.value();
 
     inst->m_is_initialized = true;
 

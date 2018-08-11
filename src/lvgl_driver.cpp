@@ -106,7 +106,7 @@ void lvgl_driver::flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, c
     auto inst = instance();
 
     if (inst == nullptr || inst->operator bool() == false) {
-        logger::instance()->warn("lv driver is not valid");
+        lv_flush_ready();
         return;
     }
 
@@ -136,6 +136,10 @@ void lvgl_driver::flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, c
 
 bool lvgl_driver::handle_input(lv_indev_data_t *data) {
     auto inst = instance();
+
+    if (inst == nullptr || inst->operator bool() == false) {
+        return false;
+    }
 
     ts_sample sample;
 

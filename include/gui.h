@@ -9,7 +9,7 @@
 
 class gui {
    public:
-    static std::optional<std::shared_ptr<gui>> instance();
+    static std::shared_ptr<gui> instance();
     void open_gui();
     void close_gui();
 
