@@ -123,7 +123,7 @@ lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
 }
 
 void gui::create_pages() {
-    for (uint8_t i = 0; i < (int)page_index::front; ++i) {
+    for (uint8_t i = 0; i <= (uint8_t) page_index::front; ++i) {
         m_container[i] = lv_cont_create(m_content_container, nullptr);
         lv_obj_set_hidden(m_container[i], true);
         lv_obj_set_size(m_container[i], lv_obj_get_width(m_content_container), lv_obj_get_height(m_content_container));
