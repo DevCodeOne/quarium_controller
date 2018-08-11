@@ -100,6 +100,10 @@ lv_res_t gui::front_button_event(lv_obj_t *obj) {
 
     lv_obj_t *label = lv_obj_get_child(obj, nullptr);
 
+    if (!label) {
+        return LV_RES_OK;
+    }
+
     std::string_view text = lv_label_get_text(label);
 
     for (uint8_t i = 0; i <= (uint8_t)page_index::logs; ++i) {
