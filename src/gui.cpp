@@ -1,4 +1,6 @@
+#include <array>
 #include <chrono>
+#include <string>
 
 #include "gui.h"
 #include "logger.h"
@@ -72,10 +74,26 @@ void gui::gui_loop() {
 
     lv_obj_t *navigation_buttons = lv_btnm_create(inst->m_screen, nullptr);
 
-    const char *buttons[] = {"Back", "Home", "Config"};
+    const char *buttons[] = {"Back", "Home", "Config", ""};
     lv_btnm_set_map(navigation_buttons, buttons);
-    lv_obj_set_size(navigation_buttons, 320, 20);
+    lv_obj_set_size(navigation_buttons, 320, 40);
     lv_obj_align(navigation_buttons, inst->m_screen, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+
+    std::array<lv_obj_t *, 4> front_buttons{nullptr, nullptr, nullptr, nullptr};
+    std::array<std::string, 4> front_buttons_titles{"Schedules", "Manual Control", "Stats", "Logs"};
+
+    for (int i = 0; i < front_buttons.size(); ++i) {
+	    front_buttons[i] = lv_btn_create(inst->m_screen, nullptr);
+	    int size = (320 / 2) - 15;
+	    lv_obj_set_size(front_buttons[i], size, size);
+	    lv_obj_t *button_label = lv_label_create(front_buttons[i], nullptr);
+	    lv_label_set_text(button_label, front_buttons_titles[i].c_str());
+    }
+
+    lv_obj_align(front_buttons[0], inst->m_screen, LV_ALIGN_IN_TOP_LEFT, 10, 10);
+    lv_obj_align(front_buttons[1], front_buttons[0], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
+    lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+    lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
     while (!inst->m_should_exit) {
         lv_task_handler();
