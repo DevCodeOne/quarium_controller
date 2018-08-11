@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <mutex>
 #include <optional>
@@ -20,17 +21,34 @@ class gui {
 
     gui() = default;
 
+    void create_pages();
+
     std::thread m_gui_thread;
     std::atomic_bool m_should_exit{false};
     std::atomic_bool m_is_started{false};
     bool m_is_initialized = false;
 
+    enum struct page_index : uint8_t {
+        front = 0,
+        schedule_list = 1,
+        individual_schedule = 2,
+        manual_control = 3,
+        log = 4
+    };
+
     lv_obj_t *m_screen = nullptr;
+    lv_obj_t *m_content_container = nullptr;
     lv_theme_t *m_theme = nullptr;
+    std::array<lv_obj_t *, 6> m_pages;
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
 
-    // TODO Fix : Valgrind is complaining about use after free here
     static inline std::shared_ptr<gui> _instance{nullptr};
     static inline std::recursive_mutex _instance_mutex{};
+
+    static inline constexpr unsigned int screen_width = 320;
+    static inline constexpr unsigned int screen_height = 480;
+    static inline constexpr unsigned int navigation_buttons_height = 40;
+
+    static inline constexpr char front_button_titles[5][15] = {"Schedules", "Manual Control", "Stats", "Logs", ""};
 };
