@@ -123,7 +123,7 @@ lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
 }
 
 void gui::create_pages() {
-    for (uint8_t i = 0; i <= (uint8_t) page_index::front; ++i) {
+    for (uint8_t i = 0; i <= (uint8_t)page_index::front; ++i) {
         m_container[i] = lv_cont_create(m_content_container, nullptr);
         lv_obj_set_hidden(m_container[i], true);
         lv_obj_set_size(m_container[i], lv_obj_get_width(m_content_container), lv_obj_get_height(m_content_container));
@@ -131,7 +131,7 @@ void gui::create_pages() {
         lv_cont_set_layout(m_container[i], LV_LAYOUT_OFF);
         lv_cont_set_fit(m_container[i], false, false);
     }
-    lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
+    switch_page(page_index::front);
 
     std::array<lv_obj_t *, 4> front_buttons{nullptr, nullptr, nullptr, nullptr};
 
