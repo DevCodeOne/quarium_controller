@@ -164,8 +164,7 @@ void gui::switch_to_last_page() {
     }
 
     m_visited_pages.erase(m_visited_pages.cend() - 1);
-    current_page = m_visited_pages.back();
-    lv_obj_set_hidden(m_container[(uint8_t)current_page], true);
+    switch_page(m_visited_pages.back());
 }
 
 gui::~gui() {
