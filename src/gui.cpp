@@ -70,11 +70,12 @@ void gui::gui_loop() {
     inst->m_screen = lv_obj_create(nullptr, nullptr);
     lv_scr_load(inst->m_screen);
 
-    lv_obj_t *btn = lv_btn_create(inst->m_screen, nullptr);
-    lv_btn_set_fit(btn, true, true);
-    lv_obj_set_pos(btn, 20, 20);
-    lv_obj_t *btn_label = lv_label_create(btn, nullptr);
-    lv_label_set_text(btn_label, "Button 1");
+    lv_obj_t *navigation_buttons = lv_btnm_create(inst->m_screen, nullptr);
+
+    const char *buttons[] = {"Back", "Home", "Config"};
+    lv_btnm_set_map(navigation_buttons, buttons);
+    lv_obj_set_size(navigation_buttons, 320, 20);
+    lv_obj_align(navigation_buttons, inst->m_screen, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
     while (!inst->m_should_exit) {
         lv_task_handler();
