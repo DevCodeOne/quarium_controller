@@ -1,9 +1,7 @@
 #pragma once
 
 // clang-format off
-#include <unistd.h>
-#include <limits.h>
-#include <errno.h>
+#include "posix_includes.h"
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <sys/kd.h>
