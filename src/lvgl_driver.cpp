@@ -18,18 +18,16 @@ lvgl_driver::lvgl_driver() {
     if (tty_fd < 0) {
         logger::instance()->warn("An error occured when trying to open /dev/tty0 {}", strerror(errno));
     } else {
-	if (ioctl(tty_fd, KDSETMODE, KD_GRAPHICS) < 0) {
-        	logger::instance()->warn("An error occured when trying to set the mode of /dev/tty0 {}", strerror(errno));
-    	}
+        if (ioctl(tty_fd, KDSETMODE, KD_GRAPHICS) < 0) {
+            logger::instance()->warn("An error occured when trying to set the mode of /dev/tty0 {}", strerror(errno));
+        }
 
-	close(tty_fd);
+        close(tty_fd);
     }
 
     // if (ioctl(tty_fd, KDSETMODE, KD_TEXT) < 0) {
     //     logger::instance()->warn("An error occured when trying to set the mode of /dev/tty0 {}", strerror(errno));
     // }
-
-    
 
     // TODO Make configurable via settings.json
     m_framebuffer_descriptor = open("/dev/fb0", O_RDWR);
@@ -99,10 +97,10 @@ lvgl_driver::~lvgl_driver() {
     if (tty_fd < 0) {
         logger::instance()->warn("An error occured when trying to open /dev/tty0 {}", strerror(errno));
     } else {
-	if (ioctl(tty_fd, KDSETMODE, KD_TEXT) < 0) {
-		logger::instance()->warn("An error occured when trying to set the mode of /dev/tty0 {}", strerror(errno));
-	}
-    	close(tty_fd);
+        if (ioctl(tty_fd, KDSETMODE, KD_TEXT) < 0) {
+            logger::instance()->warn("An error occured when trying to set the mode of /dev/tty0 {}", strerror(errno));
+        }
+        close(tty_fd);
     }
 
     ts_close(m_touch_device);
