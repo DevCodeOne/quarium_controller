@@ -74,6 +74,7 @@ void gui::gui_loop() {
     lv_btnm_set_map(navigation_buttons, buttons);
     lv_obj_set_size(navigation_buttons, screen_width, navigation_buttons_height);
     lv_obj_align(navigation_buttons, inst->m_screen, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+    lv_btnm_set_action(navigation_buttons, gui::navigation_event);
 
     inst->m_content_container = lv_cont_create(inst->m_screen, nullptr);
     lv_obj_set_size(inst->m_content_container, screen_width, screen_height - navigation_buttons_height);
@@ -90,8 +91,43 @@ void gui::gui_loop() {
     lv_obj_del(inst->m_screen);
 }
 
+lv_res_t gui::button_event(lv_obj_t *obj) {
+    auto inst = instance();
+
+    if (!inst) {
+        return LV_RES_OK;
+    }
+
+    inst->switch_page(page_index::manual_control);
+    return LV_RES_OK;
+}
+
+lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
+    auto inst = instance();
+
+    if (!inst) {
+        return LV_RES_OK;
+    }
+
+    std::string_view button_text_string = button_text;
+
+    if (button_text_string == "Back") {
+        inst->switch_to_last_page();
+    } else if (button_text_string == "Home") {
+        inst->switch_page(page_index::front);
+    } else if (button_text_string == "Config") {
+        inst->switch_page(page_index::configuration);
+    }
+
+    return LV_RES_OK;
+}
+
 void gui::create_pages() {
-    m_pages[(uint8_t)page_index::front] = lv_page_create(m_content_container, nullptr);
+    for (uint8_t i = 0; i < (int)page_index::log; ++i) {
+        m_pages[i] = lv_page_create(m_content_container, nullptr);
+        lv_obj_set_hidden(m_pages[i], true);
+    }
+    lv_obj_set_hidden(m_pages[(uint8_t)current_page], false);
 
     std::array<lv_obj_t *, 4> front_buttons{nullptr, nullptr, nullptr, nullptr};
 
@@ -107,6 +143,25 @@ void gui::create_pages() {
     lv_obj_align(front_buttons[1], front_buttons[0], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
+
+    lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::button_event);
+}
+
+void gui::switch_page(const page_index &new_index) {
+    lv_obj_set_hidden(m_pages[(uint8_t)current_page], true);
+    current_page = new_index;
+    lv_obj_set_hidden(m_pages[(uint8_t)current_page], false);
+    m_visited_pages.emplace_back(current_page);
+}
+
+void gui::switch_to_last_page() {
+    if (m_visited_pages.size() <= 1) {
+        return;
+    }
+
+    m_visited_pages.erase(m_visited_pages.cend() - 1);
+    current_page = m_visited_pages.back();
+    lv_obj_set_hidden(m_pages[(uint8_t)current_page], true);
 }
 
 gui::~gui() {

@@ -5,6 +5,7 @@
 #include <mutex>
 #include <optional>
 #include <thread>
+#include <vector>
 
 #include "lvgl.h"
 
@@ -17,29 +18,38 @@ class gui {
     ~gui();
 
    private:
+    enum struct page_index : uint8_t {
+        front = 0,
+        schedule_list = 1,
+        manual_control = 2,
+        stats = 3,
+        logs = 4,
+        configuration = 5,
+        log = 6
+    };
+
     static void gui_loop();
+    static lv_res_t button_event(lv_obj_t *button);
+    static lv_res_t navigation_event(lv_obj_t *button, const char *button_text);
 
     gui() = default;
 
     void create_pages();
+    void switch_page(const page_index &new_index);
+    void switch_to_last_page();
 
     std::thread m_gui_thread;
     std::atomic_bool m_should_exit{false};
     std::atomic_bool m_is_started{false};
     bool m_is_initialized = false;
 
-    enum struct page_index : uint8_t {
-        front = 0,
-        schedule_list = 1,
-        individual_schedule = 2,
-        manual_control = 3,
-        log = 4
-    };
-
     lv_obj_t *m_screen = nullptr;
     lv_obj_t *m_content_container = nullptr;
     lv_theme_t *m_theme = nullptr;
     std::array<lv_obj_t *, 6> m_pages;
+    // Replace with ring buffer
+    std::vector<page_index> m_visited_pages;
+    page_index current_page = page_index::front;
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
 
