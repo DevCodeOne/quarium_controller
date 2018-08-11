@@ -67,9 +67,6 @@ void gui::gui_loop() {
 
     inst->m_screen = lv_obj_create(nullptr, nullptr);
     lv_scr_load(inst->m_screen);
-    // TODO Also make configurable
-    lv_obj_set_width(inst->m_screen, 320);
-    lv_obj_set_height(inst->m_screen, 480);
 
     lv_obj_t *btn = lv_btn_create(inst->m_screen, nullptr);
     lv_btn_set_fit(btn, true, true);

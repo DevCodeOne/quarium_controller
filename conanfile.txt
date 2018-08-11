@@ -7,6 +7,6 @@ clara@1.1.4@bincrafters/stable
 pistache/1.0@user/stable
 wpa_ctrlpp/1.0@user/stable
 libgpiod/1.1.1-2@user/stable
-lvgl_cmake/5.1.1-1@user/stable
+lvgl_cmake/5.1.1-2@user/stable
 [generators]
 cmake
