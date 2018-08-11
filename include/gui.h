@@ -46,7 +46,7 @@ class gui {
     lv_obj_t *m_screen = nullptr;
     lv_obj_t *m_content_container = nullptr;
     lv_theme_t *m_theme = nullptr;
-    std::array<lv_obj_t *, 6> m_pages;
+    std::array<lv_obj_t *, 6> m_container;
     // Replace with ring buffer
     std::vector<page_index> m_visited_pages;
     page_index current_page = page_index::front;

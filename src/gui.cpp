@@ -124,15 +124,19 @@ lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
 
 void gui::create_pages() {
     for (uint8_t i = 0; i < (int)page_index::log; ++i) {
-        m_pages[i] = lv_page_create(m_content_container, nullptr);
-        lv_obj_set_hidden(m_pages[i], true);
+        m_container[i] = lv_cont_create(m_content_container, nullptr);
+        lv_obj_set_hidden(m_container[i], true);
+        lv_obj_set_size(m_container[i], lv_obj_get_width(m_content_container), lv_obj_get_height(m_content_container));
+        lv_obj_align(m_container[i], m_content_container, LV_ALIGN_IN_TOP_MID, 0, 0);
+        lv_cont_set_layout(m_container[i], LV_LAYOUT_OFF);
+        lv_cont_set_fit(m_container[i], false, false);
     }
-    lv_obj_set_hidden(m_pages[(uint8_t)current_page], false);
+    lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
 
     std::array<lv_obj_t *, 4> front_buttons{nullptr, nullptr, nullptr, nullptr};
 
     for (int i = 0; i < front_buttons.size(); ++i) {
-        front_buttons[i] = lv_btn_create(m_pages[(uint8_t)page_index::front], nullptr);
+        front_buttons[i] = lv_btn_create(m_container[(uint8_t)page_index::front], nullptr);
         int size = (screen_width / 2) - 15;
         lv_obj_set_size(front_buttons[i], size, size);
         lv_obj_t *button_label = lv_label_create(front_buttons[i], nullptr);
@@ -148,9 +152,9 @@ void gui::create_pages() {
 }
 
 void gui::switch_page(const page_index &new_index) {
-    lv_obj_set_hidden(m_pages[(uint8_t)current_page], true);
+    lv_obj_set_hidden(m_container[(uint8_t)current_page], true);
     current_page = new_index;
-    lv_obj_set_hidden(m_pages[(uint8_t)current_page], false);
+    lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
     m_visited_pages.emplace_back(current_page);
 }
 
@@ -161,7 +165,7 @@ void gui::switch_to_last_page() {
 
     m_visited_pages.erase(m_visited_pages.cend() - 1);
     current_page = m_visited_pages.back();
-    lv_obj_set_hidden(m_pages[(uint8_t)current_page], true);
+    lv_obj_set_hidden(m_container[(uint8_t)current_page], true);
 }
 
 gui::~gui() {
