@@ -1,14 +1,20 @@
 {
+    "gpios" : [
+        {
+            "id" : "light",
+            "pin" : 21
+        }
+    ],
     "actions" : [
         {
             "id" : "light_on",
-            "gpios" : [22],
-            "gpio_actions" : [true]
+            "gpios" : ["light"],
+            "gpio_actions" : ["on"]
         },
         {
             "id" : "light_off",
-            "gpios" : [22],
-            "gpio_actions" : [false]
+            "gpios" : ["light"],
+            "gpio_actions" : ["on"]
         }
 
     ],

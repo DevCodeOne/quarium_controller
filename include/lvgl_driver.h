@@ -9,6 +9,7 @@
 #include <linux/fb.h>
 // clang-format on
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <chrono>
@@ -39,7 +40,7 @@ class lvgl_driver {
     uint64_t m_framebuffer_memory_length = 0;
     char *m_framebuffer_memory = nullptr;
     tsdev *m_touch_device = nullptr;
-    bool m_is_valid = true;
+    std::atomic_bool m_is_valid = true;
 
     static inline std::shared_ptr<lvgl_driver> _instance;
     static inline std::mutex _instance_mutex;

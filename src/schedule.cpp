@@ -5,9 +5,81 @@
 
 #include "chrono_time.h"
 #include "config.h"
-#include "signal_handler.h"
 #include "logger.h"
 #include "schedule.h"
+#include "signal_handler.h"
+
+bool schedule_gpio::add_gpio(json &gpio_description) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
+    json id_entry = gpio_description["id"];
+    json pin_entry = gpio_description["pin"];
+
+    if (id_entry.is_null() || pin_entry.is_null()) {
+        logger::instance()->critical("A needed entry in a gpio entry was missing {} {} {}",
+                                     id_entry.is_null() ? "id" : "", pin_entry.is_null() ? "pin" : "");
+        if (!id_entry.is_null() && id_entry.is_string()) {
+            logger::instance()->critical("The issue was in the gpio entry with the id {}", id_entry.get<std::string>());
+        }
+        return false;
+    }
+
+    if (!id_entry.is_string()) {
+        logger::instance()->critical("The id for a gpio entry is not a string");
+        return false;
+    }
+
+    std::string id = id_entry.get<std::string>();
+
+    if (is_valid_id(id)) {
+        logger::instance()->critical("The id {} for a gpio entry is already in use", id);
+        return false;
+    }
+
+    if (!pin_entry.is_number_unsigned()) {
+        logger::instance()->critical("The pin entry of the gpio entry {} is not an unsigned number", id);
+        return false;
+    }
+
+    unsigned int pin = pin_entry.get<unsigned int>();
+
+    _gpios.emplace_back(std::make_unique<schedule_gpio>(id, gpio_pin_id(pin, gpio_chip::default_gpio_dev_path)));
+    return true;
+}
+
+bool schedule_gpio::is_valid_id(const schedule_gpio_id &id) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    return std::find_if(_gpios.cbegin(), _gpios.cend(),
+                        [&id](const auto &current_action) { return current_action->id() == id; }) != _gpios.cend();
+}
+
+bool schedule_gpio::control_pin(const schedule_gpio_id &id, gpio_pin::action &action) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
+    if (!is_valid_id(id)) {
+        return false;
+    }
+
+    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
+                             [&id](const auto &current_action) { return current_action->id() == id; });
+
+    auto chip = gpio_chip::instance();
+
+    if (!chip) {
+        return false;
+    }
+
+    return chip.value()->control_pin((*gpio)->m_pin_id, action);
+}
+
+schedule_gpio::schedule_gpio(schedule_gpio &&other)
+    : m_id(std::move(other.m_id)), m_pin_id(std::move(other.m_pin_id)) {}
+
+schedule_gpio::schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id) : m_id(id), m_pin_id(pin_id) {}
+
+const schedule_gpio_id &schedule_gpio::id() const { return m_id; }
+
+const gpio_pin_id &schedule_gpio::pin() const { return m_pin_id; }
 
 bool schedule_action::add_action(json &schedule_action_description) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
@@ -17,7 +89,7 @@ bool schedule_action::add_action(json &schedule_action_description) {
     json gpio_actions_entry = schedule_action_description["gpio_actions"];
 
     if (id_entry.is_null() || gpios_entry.is_null() || gpio_actions_entry.is_null()) {
-        logger::instance()->critical("A needed entry in a action was missing : {} {} {}",
+        logger::instance()->critical("A needed entry in an action was missing : {} {} {}",
                                      id_entry.is_null() ? "id" : "", gpios_entry.is_null() ? "gpios" : "",
                                      gpio_actions_entry.is_null() ? "gpio_actions" : "");
         if (!id_entry.is_null() && id_entry.is_string()) {
@@ -44,14 +116,20 @@ bool schedule_action::add_action(json &schedule_action_description) {
         return false;
     }
 
-    std::vector<gpio_pin_id> created_gpios;
+    std::vector<schedule_gpio_id> created_gpios;
     bool created_all_gpios_successfully =
         std::all_of(gpios_entry.begin(), gpios_entry.end(), [&created_gpios](auto &current_gpio_entry) {
-            if (!current_gpio_entry.is_number_unsigned()) {
+            if (!current_gpio_entry.is_string()) {
                 return false;
             }
-            created_gpios.emplace_back(
-                gpio_pin_id(current_gpio_entry.template get<unsigned int>(), gpio_chip::default_gpio_dev_path));
+
+            std::string id = current_gpio_entry.template get<std::string>();
+            if (!schedule_gpio::is_valid_id(id)) {
+                logger::instance()->critical("A gpio with the id {} doesn't exist", id);
+                return false;
+            }
+
+            created_gpios.emplace_back(schedule_gpio_id(id));
             return true;
         });
 
@@ -68,10 +146,25 @@ bool schedule_action::add_action(json &schedule_action_description) {
     std::vector<gpio_pin::action> created_gpio_actions;
     bool created_all_gpio_actions_successfully = std::all_of(
         gpio_actions_entry.begin(), gpio_actions_entry.end(), [&created_gpio_actions](auto &current_gpio_entry) {
-            if (!current_gpio_entry.is_boolean()) {
+            if (!current_gpio_entry.is_string()) {
                 return false;
             }
-            created_gpio_actions.emplace_back(gpio_pin::action{current_gpio_entry.template get<bool>()});
+
+            std::string value = current_gpio_entry.template get<std::string>();
+
+            gpio_pin::action act;
+
+            if (value == "on") {
+                act = gpio_pin::action::on;
+            } else if (value == "off") {
+                act = gpio_pin::action::off;
+            } else if (value == "toggle") {
+                act = gpio_pin::action::toggle;
+            } else {
+                logger::instance()->critical("One entry in gpio_actions is not on, off or toggle");
+            }
+
+            created_gpio_actions.emplace_back(act);
             return true;
         });
 
@@ -131,7 +224,7 @@ schedule_action &schedule_action::id(const schedule_action_id &new_id) {
     return *this;
 }
 
-schedule_action &schedule_action::add_pin(const std::pair<gpio_pin_id, gpio_pin::action> &new_pin) {
+schedule_action &schedule_action::add_pin(const std::pair<schedule_gpio_id, gpio_pin::action> &new_pin) {
     m_pins.emplace_back(new_pin);
     return *this;
 }
@@ -140,23 +233,14 @@ bool schedule_action::operator()() {
     bool result = true;
 
     for (auto [current_pin, current_action] : m_pins) {
-        // TODO implement configurable gpiochip path
-        auto chip = gpio_chip::instance();
-
-        if (!chip) {
-            logger::instance()->critical("Couldn't get gpiochip");
-            continue;
-        }
-
-        auto chip_instance = chip.value();
-        result &= chip_instance->control_pin(current_pin, current_action);
+        result &= schedule_gpio::control_pin(current_pin, current_action);
     }
     return result;
 }
 
 const schedule_action_id &schedule_action::id() const { return m_id; }
 
-const std::vector<std::pair<gpio_pin_id, gpio_pin::action>> &schedule_action::pins() const { return m_pins; }
+const std::vector<std::pair<schedule_gpio_id, gpio_pin::action>> &schedule_action::pins() const { return m_pins; }
 
 std::optional<schedule_event> schedule_event::create_from_description(json &schedule_event_description) {
     json id_entry = schedule_event_description["id"];
@@ -294,7 +378,29 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
+    auto gpios = schedule_file["gpios"];
+
+    if (gpios.is_null()) {
+        logger::instance()->warn("No gpios are defined in the file {}", schedule_file_path.c_str());
+    }
+
+    bool successfully_parsed_all_gpios = std::all_of(gpios.begin(), gpios.end(), [](auto &current_action_description) {
+        return schedule_gpio::add_gpio(current_action_description);
+    });
+
+    if (!successfully_parsed_all_gpios) {
+        logger::instance()->critical("Description of one or more gpios contain errors");
+        return {};
+    }
+
+    // Check gpios by turning off all pins
+
     auto actions = schedule_file["actions"];
+
+    if (actions.is_null()) {
+        logger::instance()->warn("No actions are defined in the file {}", schedule_file_path.c_str());
+    }
+
     bool successfully_parsed_all_actions = std::all_of(
         actions.begin(), actions.end(),
         [](auto &current_action_description) { return schedule_action::add_action(current_action_description); });

@@ -18,8 +18,8 @@ class gpio_pin_id {
     const std::filesystem::path &gpio_chip_path() const;
 
    private:
-    const std::filesystem::path m_gpio_chip_path;
-    const unsigned int m_id;
+    std::filesystem::path m_gpio_chip_path;
+    unsigned int m_id;
 };
 
 bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs);

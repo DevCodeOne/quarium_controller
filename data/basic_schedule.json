@@ -1,49 +1,56 @@
 {
-    "actions": [
+    "gpios": [
         {
-            "id" : "light_on",
-            "gpios" : [22, 24, 21],
-            "gpio_actions" : [true, false, true]
+            "id" : "light#1",
+            "pin" : 23
         },
         {
-            "id" : "light_off",
-            "gpios" : [22, 24, 21],
-            "gpio_actions" : [false, true, false]
+            "id" : "light#2",
+            "pin" : 21
+        },
+        {
+            "id" : "co2",
+            "pin" : 20
+        }
+    ],
+    "actions": [
+        {
+            "id" : "lights_on",
+            "gpios" : ["light#1", "light#2", "co2"],
+            "gpio_actions" : ["on", "off", "on"]
+        },
+        {
+            "id" : "lights_off",
+            "gpios" : ["light#1", "light#2", "co2"],
+            "gpio_actions" : ["on", "off", "off"]
         }
     ],
     "schedule" : {
         "events" : [
             {
-                "id" : "Turn lights on",
+                "id" : "day start",
                 "day" : 0,
-                "trigger_at" : "21:17",
-                "actions" : ["light_on"]
+                "trigger_at" : "10:00",
+                "actions" : ["lights_on"]
             },
             {
-                "id" : "Turn lights off",
+                "id" : "midday break start",
                 "day" : 0,
-                "trigger_at" : "23:49",
-                "actions" : ["light_off"]
-            },
-            {
-                "id" : "Turn lights on#2",
-                "day" : 1,
-                "trigger_at" : "13:10",
-                "actions" : ["light_on"]
-            },
-            {
-                "id" : "Turn lights off#2",
-                "day" : 1,
                 "trigger_at" : "14:00",
-                "actions" : ["light_off"]
+                "actions" : ["lights_off"]
             },
             {
-                "id" : "Turn lights off#3",
+                "id" : "midday break end",
                 "day" : 1,
                 "trigger_at" : "18:00",
-                "actions" : ["light_off"]
+                "actions" : ["lights_on"]
+            },
+            {
+                "id" : "day end",
+                "day" : 1,
+                "trigger_at" : "22:00",
+                "actions" : ["lights_off"]
             }
-
         ],
         "repeating" : true,
         "period_in_days" : 2,

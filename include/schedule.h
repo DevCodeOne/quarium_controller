@@ -15,31 +15,59 @@
 using json = nlohmann::json;
 
 using schedule_action_id = std::string;
+using schedule_gpio_id = std::string;
+
+class schedule_gpio {
+   public:
+    static bool is_valid_id(const schedule_gpio_id &id);
+    static bool control_pin(const schedule_gpio_id &id, gpio_pin::action &action);
+
+    schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id);
+    schedule_gpio(const schedule_gpio &other) = delete;
+    schedule_gpio(schedule_gpio &&other);
+
+    const schedule_gpio_id &id() const;
+    const gpio_pin_id &pin() const;
+
+   private:
+    static bool add_gpio(json &gpio_description);
+
+    schedule_gpio_id m_id;
+    gpio_pin_id m_pin_id;
+
+    static inline std::vector<std::unique_ptr<schedule_gpio>> _gpios;
+    static inline std::recursive_mutex _list_mutex;
+
+    friend class schedule;
+};
 
 class schedule_action {
    public:
-    static bool add_action(json &schedule_action_description);
     static bool is_valid_id(const schedule_action_id &id);
     static bool execute_action(const schedule_action_id &id);
 
     schedule_action() = default;
-    schedule_action(const schedule_action &) = delete;
-    schedule_action(schedule_action &&);
+    schedule_action(const schedule_action &other) = delete;
+    schedule_action(schedule_action &&other);
 
     schedule_action &id(const schedule_action_id &new_id);
-    schedule_action &add_pin(const std::pair<gpio_pin_id, gpio_pin::action> &new_pin);
+    schedule_action &add_pin(const std::pair<schedule_gpio_id, gpio_pin::action> &new_pin);
 
     const schedule_action_id &id() const;
-    const std::vector<std::pair<gpio_pin_id, gpio_pin::action>> &pins() const;
+    const std::vector<std::pair<schedule_gpio_id, gpio_pin::action>> &pins() const;
 
     bool operator()();
 
    private:
-    std::string m_id;
-    std::vector<std::pair<gpio_pin_id, gpio_pin::action>> m_pins;
+    static bool add_action(json &schedule_action_description);
+
+    schedule_action_id m_id;
+    std::vector<std::pair<schedule_gpio_id, gpio_pin::action>> m_pins;
 
     static inline std::vector<std::unique_ptr<schedule_action>> _actions;
     static inline std::recursive_mutex _list_mutex;
+
+    friend class schedule;
 };
 
 class schedule_event {

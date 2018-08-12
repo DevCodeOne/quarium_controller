@@ -103,7 +103,10 @@ lvgl_driver::~lvgl_driver() {
         close(tty_fd);
     }
 
-    ts_close(m_touch_device);
+    if (m_touch_device != nullptr) {
+        ts_close(m_touch_device);
+    }
+
     munmap(m_framebuffer_memory, m_framebuffer_memory_length);
     close(m_framebuffer_descriptor);
 }
@@ -151,7 +154,8 @@ bool lvgl_driver::handle_input(lv_indev_data_t *data) {
 
     ts_sample sample;
 
-    ts_read(inst->m_touch_device, &sample, 1);
+    int result = ts_read(inst->m_touch_device, &sample, 1);
+
     data->point.x = sample.x;
     data->point.y = sample.y;
     data->state = sample.pressure > 10 ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
