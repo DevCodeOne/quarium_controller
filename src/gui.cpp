@@ -1,8 +1,11 @@
 #include <chrono>
+#include <sstream>
+#include <cstring>
 
 #include "gui.h"
 #include "logger.h"
 #include "lvgl_driver.h"
+#include "schedule.h"
 #include "signal_handler.h"
 
 std::shared_ptr<gui> gui::instance() {
@@ -162,14 +165,42 @@ void gui::create_pages() {
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
+    m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t) page_index::manual_control], nullptr);
+    lv_obj_align(m_gpio_chooser, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 0);
+
     lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::front_button_event);
 }
 
 void gui::switch_page(const page_index &new_index) {
     lv_obj_set_hidden(m_container[(uint8_t)current_page], true);
     current_page = new_index;
+    update_contents(current_page);
+
     lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
     m_visited_pages.emplace_back(current_page);
+}
+
+void gui::update_contents(const page_index &index) {
+    if (index == page_index::manual_control) {
+        std::ostringstream gpio_list_output;
+
+        auto gpio_id_list = schedule_gpio::get_ids();
+
+        if (gpio_id_list.size() == 0) {
+            return;
+        }
+
+        for (auto current_gpio_id = gpio_id_list.cbegin(); current_gpio_id != gpio_id_list.cend() - 1; ++current_gpio_id) {
+            gpio_list_output << *current_gpio_id << "\n";
+        }
+        gpio_list_output << gpio_id_list.back();
+
+        size_t len = gpio_list_output.str().size();
+        m_gpio_list = std::make_unique<char []>(len + 1);
+        std::strncpy(m_gpio_list.get(), gpio_list_output.str().c_str(), len + 1);
+
+        lv_ddlist_set_options(m_gpio_chooser, m_gpio_list.get());
+    }
 }
 
 void gui::switch_to_last_page() {

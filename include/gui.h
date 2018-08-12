@@ -35,6 +35,7 @@ class gui {
 
     void create_pages();
     void switch_page(const page_index &new_index);
+    void update_contents(const page_index &index);
     void switch_to_last_page();
 
     std::thread m_gui_thread;
@@ -51,6 +52,9 @@ class gui {
     page_index current_page = page_index::front;
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
+
+    lv_obj_t *m_gpio_chooser = nullptr;
+    std::unique_ptr<char []> m_gpio_list = nullptr;
 
     static inline std::shared_ptr<gui> _instance{nullptr};
     static inline std::recursive_mutex _instance_mutex{};
