@@ -9,7 +9,7 @@
 #include "logger.h"
 #include "network.h"
 #include "network_interface.h"
-#include "schedule.h"
+#include "schedule/schedule_handler.h"
 #include "signal_handler.h"
 
 std::atomic_bool _should_exit = false;

@@ -1,6 +1,6 @@
 #include <chrono>
-#include <sstream>
 #include <cstring>
+#include <sstream>
 
 #include "gui.h"
 #include "logger.h"
@@ -165,11 +165,11 @@ void gui::create_pages() {
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
-    m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t) page_index::manual_control], nullptr);
+    m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_ddlist_set_hor_fit(m_gpio_chooser, false);
     lv_ddlist_set_anim_time(m_gpio_chooser, LV_DDLIST_ANIM_TIME / 2);
     lv_obj_set_width(m_gpio_chooser, screen_width - 20);
-    lv_obj_align(m_gpio_chooser, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 10);
+    lv_obj_align(m_gpio_chooser, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 10);
 
     lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::front_button_event);
 }
@@ -193,17 +193,18 @@ void gui::update_contents(const page_index &index) {
             return;
         }
 
-        for (auto current_gpio_id = gpio_id_list.cbegin(); current_gpio_id != gpio_id_list.cend() - 1; ++current_gpio_id) {
+        for (auto current_gpio_id = gpio_id_list.cbegin(); current_gpio_id != gpio_id_list.cend() - 1;
+             ++current_gpio_id) {
             gpio_list_output << *current_gpio_id << "\n";
         }
         gpio_list_output << gpio_id_list.back();
 
         size_t len = gpio_list_output.str().size();
-        m_gpio_list = std::make_unique<char []>(len + 1);
+        m_gpio_list = std::make_unique<char[]>(len + 1);
         std::strncpy(m_gpio_list.get(), gpio_list_output.str().c_str(), len + 1);
 
         lv_ddlist_set_options(m_gpio_chooser, m_gpio_list.get());
-	lv_ddlist_set_selected(m_gpio_chooser, 0);
+        lv_ddlist_set_selected(m_gpio_chooser, 0);
     }
 }
 

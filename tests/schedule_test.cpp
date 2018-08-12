@@ -2,7 +2,7 @@
 #include "catch.hpp"
 #include "nlohmann/json.hpp"
 
-#include "schedule.h"
+#include "schedule/schedule_handler.h"
 
 using json = nlohmann::json;
 

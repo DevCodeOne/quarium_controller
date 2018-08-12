@@ -15,7 +15,11 @@ add_executable(quarium_controller
     src/network_interface.cpp
     src/signal_handler.cpp
     src/gpio_handler.cpp
-    src/schedule.cpp
+    src/schedule/schedule.cpp
+    src/schedule/schedule_action.cpp
+    src/schedule/schedule_event.cpp
+    src/schedule/schedule_gpio.cpp
+    src/schedule/schedule_handler.cpp
     src/gui.cpp
     src/lvgl_driver.cpp)
 
@@ -32,6 +36,7 @@ target_link_libraries(quarium_controller PUBLIC ${CONAN_LIBS})
 target_link_libraries(quarium_controller PUBLIC stdc++fs)
 target_link_libraries(quarium_controller PUBLIC ts)
 target_include_directories(quarium_controller PRIVATE include)
+target_include_directories(quarium_controller PRIVATE include/schedule)
 
 if (QUARIUM_CONTROLLER_BUILD_TESTS)
     enable_testing()
@@ -41,7 +46,10 @@ if (QUARIUM_CONTROLLER_BUILD_TESTS)
         src/network_interface.cpp
         src/signal_handler.cpp
         src/gpio_handler.cpp
-        src/schedule.cpp
+        src/schedule/schedule.cpp
+        src/schedule/schedule_action.cpp
+        src/schedule/schedule_event.cpp
+        src/schedule/schedule_gpio.cpp
         src/lvgl_driver.cpp)
 
     set_property(TARGET schedule_test PROPERTY CXX_STANDARD 17)
