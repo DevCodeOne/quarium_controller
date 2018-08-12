@@ -75,7 +75,8 @@ bool schedule_gpio::control_pin(const schedule_gpio_id &id, gpio_pin::action &ac
 std::vector<schedule_gpio_id> schedule_gpio::get_ids() {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    std::vector<schedule_gpio_id> ids(_gpios.size());
+    std::vector<schedule_gpio_id> ids;
+    ids.reserve(_gpios.size());
 
     for (auto &current_gpio : _gpios) {
         ids.emplace_back(current_gpio->id());
