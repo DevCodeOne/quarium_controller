@@ -15,7 +15,7 @@ using json = nlohmann::json;
 class schedule_gpio {
    public:
     static bool is_valid_id(const schedule_gpio_id &id);
-    static bool control_pin(const schedule_gpio_id &id, gpio_pin::action &action);
+    static bool control_pin(const schedule_gpio_id &id, const gpio_pin::action &action);
     static std::vector<schedule_gpio_id> get_ids();
 
     schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id);

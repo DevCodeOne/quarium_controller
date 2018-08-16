@@ -45,7 +45,7 @@ bool schedule_gpio::is_valid_id(const schedule_gpio_id &id) {
                         [&id](const auto &current_action) { return current_action->id() == id; }) != _gpios.cend();
 }
 
-bool schedule_gpio::control_pin(const schedule_gpio_id &id, gpio_pin::action &action) {
+bool schedule_gpio::control_pin(const schedule_gpio_id &id, const gpio_pin::action &action) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     if (!is_valid_id(id)) {
