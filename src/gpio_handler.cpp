@@ -103,7 +103,7 @@ std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_
     gpiod_chip *opened_chip = gpiod_chip_open(gpio_chip_path.c_str());
 
     if (!opened_chip) {
-        logger::instance()->info("Couldn't open gpiochip");
+        logger::instance()->critical("Couldn't open gpiochip {}", gpio_chip_path.c_str());
         return {};
     }
 
@@ -178,7 +178,7 @@ bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &actio
     auto created_pin = gpio_pin::open(id);
 
     if (!created_pin) {
-        logger::instance()->warn("Couldn't open pin with id {}", id.id());
+        logger::instance()->critical("Couldn't open pin with id {}", id.id());
         return false;
     }
 

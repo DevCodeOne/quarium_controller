@@ -44,7 +44,7 @@ TEST_CASE("Correct schedule testing") {
 
     REQUIRE(sched_with_end_inst.title() == schedule_description["schedule"]["title"].get<std::string>());
     REQUIRE(sched_with_end_inst.end_at().has_value());
-    REQUIRE(sched_with_end_inst.end_at()->count() == 8);
+    REQUIRE(sched_with_end_inst.end_at()->count() == 9);
 
     schedule_description["schedule"]["end_at"] = "01.01.1970";
 

@@ -49,7 +49,7 @@ bool schedule_handler::add_schedule(schedule sched) {
         return false;
     }
 
-    auto current_day = days_since_epoch();
+    auto current_day = duration_since_epoch<days>();
 
     if (!sched.end_at().has_value() && !sched.start_at().has_value()) {
         sched.start_at(current_day);
@@ -85,14 +85,12 @@ void schedule_handler::event_handler() {
         {
             std::lock_guard<std::recursive_mutex> instance_guard(handler_instance->m_schedules_list_mutex);
 
-            auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-            auto *tm = std::localtime(&time);
-            auto minutes_since_today =
-                std::chrono::duration_cast<std::chrono::minutes>(std::chrono::hours(tm->tm_hour)) +
-                std::chrono::minutes(tm->tm_min);
-            days current_day = days_since_epoch();
+            std::chrono::minutes minutes_since_today =
+                duration_since_epoch<std::chrono::minutes>() - duration_since_epoch<days>();
 
-            // TODO move old schedules to inactive restart periodical schedules
+            days current_day = duration_since_epoch<days>();
+
+            // TODO move old schedules to inactive
             for (auto &current_schedule : handler_instance->m_active_schedules) {
                 logger::instance()->info("Checking events of schedule {}", current_schedule.title());
 
@@ -175,12 +173,6 @@ void schedule_handler::event_handler() {
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-}
-
-days schedule_handler::days_since_epoch() {
-    auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    auto *tm = std::localtime(&time);
-    return std::chrono::duration_cast<days>(std::chrono::seconds(std::mktime(tm)));
 }
 
 // TODO implement remove code duplication
