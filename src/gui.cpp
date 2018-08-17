@@ -143,8 +143,6 @@ lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
 lv_res_t gui::select_gpio_event(lv_obj_t *ddlist) {
     uint16_t index = lv_ddlist_get_selected(ddlist);
 
-    logger::instance()->warn("Selected item {}");
-
     return LV_RES_OK;
 }
 
@@ -174,12 +172,19 @@ void gui::create_pages() {
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
+    lv_obj_t *checkbox = lv_cb_create(m_container[(uint8_t)page_index::manual_control], nullptr);
+    lv_cb_set_text(checkbox, "Override schedule");
+    lv_obj_set_size(checkbox, screen_width - 60, 20);
+    lv_obj_align(checkbox, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 40);
+
     m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_ddlist_set_hor_fit(m_gpio_chooser, false);
     lv_ddlist_set_anim_time(m_gpio_chooser, LV_DDLIST_ANIM_TIME / 2);
     lv_ddlist_set_action(m_gpio_chooser, gui::select_gpio_event);
     lv_obj_set_width(m_gpio_chooser, screen_width - 20);
     lv_obj_align(m_gpio_chooser, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 10);
+
+    lv_ddlist_set_selected(m_gpio_chooser, 0);
 
     lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::front_button_event);
 }
