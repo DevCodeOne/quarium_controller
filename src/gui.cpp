@@ -182,7 +182,7 @@ void gui::switch_page(const page_index &new_index) {
 
     lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
     if (auto last_page = m_visited_pages.retrieve_last_element();
-        last_page.has_value() == false || last_page.value() == current_page) {
+        last_page.has_value() && last_page.value() == current_page) {
         return;
     }
 
