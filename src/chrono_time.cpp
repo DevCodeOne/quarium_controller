@@ -1,11 +1,11 @@
 #include "chrono_time.h"
 
-std::time_t convert_to_time_t_localtime(const std::tm *date) {
+std::time_t convert_to_time_t_localtime(const std::tm &date) {
     std::tm date_cpy;
-    std::memcpy(&date_cpy, date, sizeof(std::tm));
+    std::memcpy(&date_cpy, &date, sizeof(std::tm));
 
     int32_t time_offset = timezone;
-    if (date->tm_isdst > 0) {
+    if (date.tm_isdst > 0) {
         time_offset -= 60*60;
     }
 

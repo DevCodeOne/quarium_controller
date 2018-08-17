@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
@@ -17,13 +18,21 @@ enum struct weekday : uint8_t { monday, tuesday, wednesday, thursday, friday, sa
 weekday get_weekday(const days &days_since_epoch);
 std::string to_string(const weekday &day);
 
-std::time_t convert_to_time_t_localtime(const std::tm *date);
+std::time_t convert_to_time_t_localtime(const std::tm &date);
 
 // TODO update when C++20 comes around
 template<typename T>
 T duration_since_epoch() {
+    static std::atomic_bool initialized_timezone{false};
+
+    if (!initialized_timezone) {
+        initialized_timezone = true;
+        tzset();
+    }
+
     std::time_t current_time_utc = std::time(nullptr);
-    std::tm *current_date = localtime(&current_time_utc);
+    std::tm current_date;
+    localtime_r(&current_time_utc, &current_date);
 
     return std::chrono::duration_cast<T>(std::chrono::seconds(convert_to_time_t_localtime(current_date)));
 }
@@ -40,5 +49,5 @@ std::optional<T> convert_date_to_duration_since_epoch(const std::string &date, c
         return {};
     }
 
-    return std::chrono::duration_cast<T>(std::chrono::seconds(convert_to_time_t_localtime(&date_tm)));
+    return std::chrono::duration_cast<T>(std::chrono::seconds(convert_to_time_t_localtime(date_tm)));
 }
