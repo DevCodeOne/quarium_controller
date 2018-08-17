@@ -180,7 +180,7 @@ void gui::switch_page(const page_index &new_index) {
     update_contents(current_page);
 
     lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
-    if (current_page == m_visited_pages.back()) {
+    if (m_visited_pages.size() > 0 && current_page == m_visited_pages.back()) {
         return;
     }
 
