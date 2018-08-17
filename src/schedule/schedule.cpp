@@ -43,13 +43,6 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
-    // Check gpios by turning off all pins
-    auto gpio_ids = schedule_gpio::get_ids();
-
-    for (const auto &current_gpio_id : gpio_ids) {
-        schedule_gpio::control_pin(current_gpio_id, gpio_pin::action::off);
-    }
-
     auto actions = schedule_file["actions"];
 
     if (actions.is_null()) {

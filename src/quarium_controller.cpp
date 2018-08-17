@@ -60,12 +60,6 @@ int main(int argc, char *argv[]) {
         logger::instance()->critical("Schedule is not valid");
     }
 
-    auto gpiochip = gpio_chip::instance(gpio_chip::default_gpio_dev_path);
-
-    if (!gpiochip) {
-        logger::instance()->critical("Couldn't open gpiochip");
-    }
-
     auto inst = gui::instance();
 
     if (inst) {

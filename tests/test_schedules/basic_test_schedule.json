@@ -2,7 +2,8 @@
     "gpios" : [
         {
             "id" : "light",
-            "pin" : 21
+            "pin" : 21,
+            "default" : "off"
         }
     ],
     "actions" : [

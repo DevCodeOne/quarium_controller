@@ -2,15 +2,18 @@
     "gpios": [
         {
             "id" : "light#1",
-            "pin" : 23
+            "pin" : 23,
+            "default" : "off"
         },
         {
             "id" : "light#2",
-            "pin" : 21
+            "pin" : 21,
+            "default" : "off"
         },
         {
             "id" : "co2",
-            "pin" : 20
+            "pin" : 20,
+            "default" : "off"
         }
     ],
     "actions": [

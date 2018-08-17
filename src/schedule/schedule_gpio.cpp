@@ -6,10 +6,12 @@ bool schedule_gpio::add_gpio(json &gpio_description) {
 
     json id_entry = gpio_description["id"];
     json pin_entry = gpio_description["pin"];
+    json default_entry = gpio_description["default"];
 
-    if (id_entry.is_null() || pin_entry.is_null()) {
+    if (id_entry.is_null() || pin_entry.is_null() || default_entry.is_null()) {
         logger::instance()->critical("A needed entry in a gpio entry was missing {} {} {}",
-                                     id_entry.is_null() ? "id" : "", pin_entry.is_null() ? "pin" : "");
+                                     id_entry.is_null() ? "id" : "", pin_entry.is_null() ? "pin" : "",
+                                     default_entry.is_null() ? "default_entry" : "");
         if (!id_entry.is_null() && id_entry.is_string()) {
             logger::instance()->critical("The issue was in the gpio entry with the id {}", id_entry.get<std::string>());
         }
@@ -35,7 +37,41 @@ bool schedule_gpio::add_gpio(json &gpio_description) {
 
     unsigned int pin = pin_entry.get<unsigned int>();
 
-    _gpios.emplace_back(std::make_unique<schedule_gpio>(id, gpio_pin_id(pin, gpio_chip::default_gpio_dev_path)));
+    if (!default_entry.is_string()) {
+        logger::instance()->critical("The default value for the gpio entry with the id {} is not a string", id);
+        return false;
+    }
+
+    std::string default_value = default_entry.get<std::string>();
+    gpio_pin::action default_state = gpio_pin::action::off;
+
+    if (default_value == "on") {
+        default_state = gpio_pin::action::on;
+    } else if (default_value == "off") {
+        default_state = gpio_pin::action::off;
+    } else {
+        logger::instance()->critical(
+            "The default value for the gpio entry with the id {} is not valid it has to be \"on\" or \"off\"", id);
+        return false;
+    }
+
+    auto pin_id = gpio_pin_id(pin, gpio_chip::default_gpio_dev_path);
+
+    auto chip = gpio_chip::instance();
+
+    // TODO add back later so the user knows that this won't work
+    if (!chip) {
+        logger::instance()->critical("The gpiochip of the gpio with the id {} is not accessable", id);
+        // return false;
+    }
+
+    if (chip && chip.value()->control_pin(pin_id, default_state) == false) {
+        logger::instance()->critical("The gpio {} on gpiochip {} is not accessable", id,
+                                     pin_id.gpio_chip_path().c_str());
+        // return false;
+    }
+
+    _gpios.emplace_back(std::make_unique<schedule_gpio>(id, pin_id, default_state));
     return true;
 }
 
@@ -78,12 +114,21 @@ std::vector<schedule_gpio_id> schedule_gpio::get_ids() {
 }
 
 schedule_gpio::schedule_gpio(schedule_gpio &&other)
-    : m_id(std::move(other.m_id)), m_pin_id(std::move(other.m_pin_id)) {}
+    : m_id(std::move(other.m_id)),
+      m_pin_id(std::move(other.m_pin_id)),
+      m_default_state(std::move(other.m_default_state)) {}
 
-schedule_gpio::schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id) : m_id(id), m_pin_id(pin_id) {}
+schedule_gpio::schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id,
+                             const gpio_pin::action &default_state)
+    : m_id(id), m_pin_id(pin_id), m_default_state(default_state) {}
+
+schedule_gpio &schedule_gpio::default_state(gpio_pin::action &new_default_state) {
+    m_default_state = new_default_state;
+    return *this;
+}
 
 const schedule_gpio_id &schedule_gpio::id() const { return m_id; }
 
 const gpio_pin_id &schedule_gpio::pin() const { return m_pin_id; }
 
-
+const gpio_pin::action &schedule_gpio::default_state() const { return m_default_state; }

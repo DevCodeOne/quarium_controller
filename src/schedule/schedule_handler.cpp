@@ -90,7 +90,6 @@ void schedule_handler::event_handler() {
 
             days current_day = duration_since_epoch<days>();
 
-            // TODO move old schedules to inactive
             for (auto &current_schedule : handler_instance->m_active_schedules) {
                 logger::instance()->info("Checking events of schedule {}", current_schedule.title());
 
@@ -152,6 +151,7 @@ void schedule_handler::event_handler() {
 
                         created_schedule.start_at(current_day);
                         created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period());
+
                         to_be_added_back.emplace_back(std::move(created_schedule));
                     } else {
                         handler_instance->m_inactive_schedules.emplace_back(std::move(*current_schedule));
