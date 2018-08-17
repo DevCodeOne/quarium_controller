@@ -173,9 +173,14 @@ void gui::create_pages() {
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
     lv_obj_t *checkbox = lv_cb_create(m_container[(uint8_t)page_index::manual_control], nullptr);
-    lv_cb_set_text(checkbox, "Override schedule");
+    lv_cb_set_text(checkbox, "Manual control");
     lv_obj_set_size(checkbox, screen_width - 60, 20);
-    lv_obj_align(checkbox, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 40);
+    lv_obj_align(checkbox, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_LEFT, 10, 60);
+
+    lv_obj_t *sw = lv_sw_create(m_container[(uint8_t) page_index::manual_control], nullptr);
+    lv_obj_set_size(sw, (screen_width - lv_obj_get_width(checkbox) - 30) / 2, lv_obj_get_height(checkbox));
+    lv_obj_align(sw, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_RIGHT, -10, 60);
+    lv_obj_set_hidden(sw, true);
 
     m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_ddlist_set_hor_fit(m_gpio_chooser, false);
