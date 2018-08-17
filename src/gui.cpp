@@ -140,6 +140,14 @@ lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
     return LV_RES_OK;
 }
 
+lv_res_t gui::select_gpio_event(lv_obj_t *ddlist) {
+    uint16_t index = lv_ddlist_get_selected(ddlist);
+
+    logger::instance()->warn("Selected item {}");
+
+    return LV_RES_OK;
+}
+
 void gui::create_pages() {
     for (uint8_t i = 0; i <= (uint8_t)page_index::front; ++i) {
         m_container[i] = lv_cont_create(m_content_container, nullptr);
@@ -169,6 +177,7 @@ void gui::create_pages() {
     m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_ddlist_set_hor_fit(m_gpio_chooser, false);
     lv_ddlist_set_anim_time(m_gpio_chooser, LV_DDLIST_ANIM_TIME / 2);
+    lv_ddlist_set_action(m_gpio_chooser, gui::select_gpio_event);
     lv_obj_set_width(m_gpio_chooser, screen_width - 20);
     lv_obj_align(m_gpio_chooser, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 10);
 
