@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "logger.h"
 #include "lvgl_driver.h"
+#include "ring_buffer.h"
 #include "schedule.h"
 #include "signal_handler.h"
 
@@ -180,11 +181,12 @@ void gui::switch_page(const page_index &new_index) {
     update_contents(current_page);
 
     lv_obj_set_hidden(m_container[(uint8_t)current_page], false);
-    if (m_visited_pages.size() > 0 && current_page == m_visited_pages.back()) {
+    if (auto last_page = m_visited_pages.retrieve_last_element();
+        last_page.has_value() == false || last_page.value() == current_page) {
         return;
     }
 
-    m_visited_pages.emplace_back(current_page);
+    m_visited_pages.put(current_page);
 }
 
 void gui::update_contents(const page_index &index) {
@@ -217,8 +219,10 @@ void gui::switch_to_last_page() {
         return;
     }
 
-    m_visited_pages.erase(m_visited_pages.cend() - 1);
-    switch_page(m_visited_pages.back());
+    m_visited_pages.remove_last_element();
+    if (auto last_page = m_visited_pages.retrieve_last_element(); last_page) {
+        switch_page(last_page.value());
+    }
 }
 
 gui::~gui() {

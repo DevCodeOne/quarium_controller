@@ -44,42 +44,35 @@ if (QUARIUM_CONTROLLER_BUILD_TESTS)
     add_executable(schedule_test tests/schedule_test.cpp
         src/config.cpp
         src/logger.cpp
-        src/network_interface.cpp
         src/signal_handler.cpp
         src/gpio_handler.cpp
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
         src/schedule/schedule_gpio.cpp
-        src/chrono_time.cpp
-        src/lvgl_driver.cpp)
+        src/chrono_time.cpp)
 
     add_executable(chrono_time_test tests/chrono_time_test.cpp
-        src/config.cpp
-        src/logger.cpp
-        src/network_interface.cpp
-        src/signal_handler.cpp
-        src/gpio_handler.cpp
-        src/schedule/schedule.cpp
-        src/schedule/schedule_action.cpp
-        src/schedule/schedule_event.cpp
-        src/schedule/schedule_gpio.cpp
-        src/chrono_time.cpp
-        src/lvgl_driver.cpp)
+        src/chrono_time.cpp)
+
+    add_executable(ring_buffer_test tests/ring_buffer_test.cpp)
 
 
     set_property(TARGET schedule_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET chrono_time_test PROPERTY CXX_STANDARD 17)
+    set_property(TARGET ring_buffer_test PROPERTY CXX_STANDARD 17)
 
     target_link_libraries(schedule_test  PUBLIC ${CONAN_LIBS})
     target_link_libraries(schedule_test PUBLIC stdc++fs)
-    target_link_libraries(schedule_test PUBLIC ts)
     target_include_directories(schedule_test PRIVATE include)
     add_test(CatchTests schedule_test)
 
     target_link_libraries(chrono_time_test  PUBLIC ${CONAN_LIBS})
     target_link_libraries(chrono_time_test PUBLIC stdc++fs)
-    target_link_libraries(chrono_time_test PUBLIC ts)
     target_include_directories(chrono_time_test PRIVATE include)
     add_test(CatchTests chrono_time_test)
+
+    target_include_directories(ring_buffer_test PRIVATE include)
+    add_test(CatchTests ring_buffer_test)
+
 ENDIF()

@@ -9,6 +9,8 @@
 
 #include "lvgl.h"
 
+#include "ring_buffer.h"
+
 class gui {
    public:
     static std::shared_ptr<gui> instance();
@@ -47,8 +49,7 @@ class gui {
     lv_obj_t *m_content_container = nullptr;
     lv_theme_t *m_theme = nullptr;
     std::array<lv_obj_t *, 6> m_container;
-    // Replace with ring buffer
-    std::vector<page_index> m_visited_pages;
+    ring_buffer<page_index, 20> m_visited_pages;
     page_index current_page = page_index::front;
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
