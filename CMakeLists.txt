@@ -20,7 +20,8 @@ add_executable(quarium_controller
     src/schedule/schedule_event.cpp
     src/schedule/schedule_gpio.cpp
     src/schedule/schedule_handler.cpp
-    src/gui.cpp
+    src/gui/view.cpp
+    src/gui/view_controller.cpp
     src/chrono_time.cpp
     src/lvgl_driver.cpp)
 

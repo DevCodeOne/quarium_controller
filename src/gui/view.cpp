@@ -2,36 +2,37 @@
 #include <cstring>
 #include <sstream>
 
-#include "gui.h"
+#include "gui/view.h"
+#include "gui/view_controller.h"
 #include "logger.h"
 #include "lvgl_driver.h"
 #include "ring_buffer.h"
 #include "schedule.h"
 #include "signal_handler.h"
 
-std::shared_ptr<gui> gui::instance() {
+std::shared_ptr<view> view::instance() {
     std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
 
     if (_instance) {
         return _instance;
     }
 
-    _instance = std::shared_ptr<gui>(new gui());
+    _instance = std::shared_ptr<view>(new view());
     return _instance;
 }
 
-void gui::open_gui() {
+void view::open_view() {
     std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
 
     if (m_is_started) {
         return;
     }
 
-    m_gui_thread = std::thread(gui_loop);
+    m_view_thread = std::thread(view_loop);
     m_is_started = true;
 }
 
-void gui::close_gui() {
+void view::close_view() {
     std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
 
     if (!m_is_started) {
@@ -39,13 +40,13 @@ void gui::close_gui() {
     }
 
     m_should_exit = true;
-    if (m_gui_thread.joinable()) {
-        m_gui_thread.join();
+    if (m_view_thread.joinable()) {
+        m_view_thread.join();
     }
     m_is_started = false;
 }
 
-void gui::gui_loop() {
+void view::view_loop() {
     signal_handler::disable_for_current_thread();
 
     auto inst = instance();
@@ -78,7 +79,7 @@ void gui::gui_loop() {
     lv_btnm_set_map(navigation_buttons, buttons);
     lv_obj_set_size(navigation_buttons, screen_width, navigation_buttons_height);
     lv_obj_align(navigation_buttons, inst->m_screen, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
-    lv_btnm_set_action(navigation_buttons, gui::navigation_event);
+    lv_btnm_set_action(navigation_buttons, view_controller::navigation_event);
 
     inst->m_content_container = lv_cont_create(inst->m_screen, nullptr);
     lv_obj_set_size(inst->m_content_container, screen_width, screen_height - navigation_buttons_height);
@@ -95,58 +96,7 @@ void gui::gui_loop() {
     lv_obj_del(inst->m_screen);
 }
 
-lv_res_t gui::front_button_event(lv_obj_t *obj) {
-    auto inst = instance();
-
-    if (!inst) {
-        return LV_RES_OK;
-    }
-
-    lv_obj_t *label = lv_obj_get_child(obj, nullptr);
-
-    if (!label) {
-        return LV_RES_OK;
-    }
-
-    std::string_view text = lv_label_get_text(label);
-
-    for (uint8_t i = 0; i <= (uint8_t)page_index::logs; ++i) {
-        if (text == front_button_titles[i]) {
-            inst->switch_page(page_index(i));
-            break;
-        }
-    }
-
-    return LV_RES_OK;
-}
-
-lv_res_t gui::navigation_event(lv_obj_t *obj, const char *button_text) {
-    auto inst = instance();
-
-    if (!inst) {
-        return LV_RES_OK;
-    }
-
-    std::string_view button_text_string = button_text;
-
-    if (button_text_string == "Back") {
-        inst->switch_to_last_page();
-    } else if (button_text_string == "Home") {
-        inst->switch_page(page_index::front);
-    } else if (button_text_string == "Config") {
-        inst->switch_page(page_index::configuration);
-    }
-
-    return LV_RES_OK;
-}
-
-lv_res_t gui::select_gpio_event(lv_obj_t *ddlist) {
-    uint16_t index = lv_ddlist_get_selected(ddlist);
-
-    return LV_RES_OK;
-}
-
-void gui::create_pages() {
+void view::create_pages() {
     for (uint8_t i = 0; i <= (uint8_t)page_index::front; ++i) {
         m_container[i] = lv_cont_create(m_content_container, nullptr);
         lv_obj_set_hidden(m_container[i], true);
@@ -175,26 +125,27 @@ void gui::create_pages() {
     lv_obj_t *checkbox = lv_cb_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_cb_set_text(checkbox, "Manual control");
     lv_obj_set_size(checkbox, screen_width - 60, 20);
-    lv_obj_align(checkbox, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_LEFT, 10, 60);
+    lv_obj_align(checkbox, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_LEFT, 10, 60);
 
-    lv_obj_t *sw = lv_sw_create(m_container[(uint8_t) page_index::manual_control], nullptr);
+    lv_obj_t *sw = lv_sw_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_obj_set_size(sw, (screen_width - lv_obj_get_width(checkbox) - 30) / 2, lv_obj_get_height(checkbox));
-    lv_obj_align(sw, m_container[(uint8_t) page_index::manual_control], LV_ALIGN_IN_TOP_RIGHT, -10, 60);
+    lv_obj_align(sw, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_RIGHT, -10, 60);
     lv_obj_set_hidden(sw, true);
 
     m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_ddlist_set_hor_fit(m_gpio_chooser, false);
     lv_ddlist_set_anim_time(m_gpio_chooser, LV_DDLIST_ANIM_TIME / 2);
-    lv_ddlist_set_action(m_gpio_chooser, gui::select_gpio_event);
+    lv_ddlist_set_action(m_gpio_chooser, view_controller::select_gpio_event);
     lv_obj_set_width(m_gpio_chooser, screen_width - 20);
     lv_obj_align(m_gpio_chooser, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_MID, 0, 10);
 
     lv_ddlist_set_selected(m_gpio_chooser, 0);
 
-    lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK, gui::front_button_event);
+    lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK,
+                      view_controller::front_button_event);
 }
 
-void gui::switch_page(const page_index &new_index) {
+void view::switch_page(const page_index &new_index) {
     lv_obj_set_hidden(m_container[(uint8_t)current_page], true);
     current_page = new_index;
     update_contents(current_page);
@@ -208,7 +159,7 @@ void gui::switch_page(const page_index &new_index) {
     m_visited_pages.put(current_page);
 }
 
-void gui::update_contents(const page_index &index) {
+void view::update_contents(const page_index &index) {
     if (index == page_index::manual_control) {
         std::ostringstream gpio_list_output("");
 
@@ -233,7 +184,7 @@ void gui::update_contents(const page_index &index) {
     }
 }
 
-void gui::switch_to_last_page() {
+void view::switch_to_last_page() {
     if (m_visited_pages.size() <= 1) {
         return;
     }
@@ -244,7 +195,7 @@ void gui::switch_to_last_page() {
     }
 }
 
-gui::~gui() {
+view::~view() {
     if (!m_is_initialized) {
         return;
     }

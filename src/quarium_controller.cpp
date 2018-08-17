@@ -5,7 +5,7 @@
 
 #include "config.h"
 #include "gpio_handler.h"
-#include "gui.h"
+#include "gui/view.h"
 #include "logger.h"
 #include "network.h"
 #include "network_interface.h"
@@ -60,10 +60,10 @@ int main(int argc, char *argv[]) {
         logger::instance()->critical("Schedule is not valid");
     }
 
-    auto inst = gui::instance();
+    auto inst = view::instance();
 
     if (inst) {
-        inst->open_gui();
+        inst->open_view();
     } else {
         logger::instance()->warn("Couldn't open inst");
     }
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     schedule_handler::instance()->stop_event_handler();
 
     if (inst) {
-        inst->close_gui();
+        inst->close_view();
     }
     // network_iface->stop();
     return EXIT_SUCCESS;

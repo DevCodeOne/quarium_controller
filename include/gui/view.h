@@ -11,13 +11,13 @@
 
 #include "ring_buffer.h"
 
-class gui {
+class view {
    public:
-    static std::shared_ptr<gui> instance();
-    void open_gui();
-    void close_gui();
+    static std::shared_ptr<view> instance();
+    void open_view();
+    void close_view();
 
-    ~gui();
+    ~view();
 
    private:
     enum struct page_index : uint8_t {
@@ -29,19 +29,16 @@ class gui {
         front = 5,
     };
 
-    static void gui_loop();
-    static lv_res_t front_button_event(lv_obj_t *button);
-    static lv_res_t navigation_event(lv_obj_t *button, const char *button_text);
-    static lv_res_t select_gpio_event(lv_obj_t *ddlist);
+    static void view_loop();
 
-    gui() = default;
+    view() = default;
 
     void create_pages();
     void switch_page(const page_index &new_index);
     void update_contents(const page_index &index);
     void switch_to_last_page();
 
-    std::thread m_gui_thread;
+    std::thread m_view_thread;
     std::atomic_bool m_should_exit{false};
     std::atomic_bool m_is_started{false};
     bool m_is_initialized = false;
@@ -56,9 +53,9 @@ class gui {
     lv_indev_drv_t m_input_driver;
 
     lv_obj_t *m_gpio_chooser = nullptr;
-    std::unique_ptr<char []> m_gpio_list = nullptr;
+    std::unique_ptr<char[]> m_gpio_list = nullptr;
 
-    static inline std::shared_ptr<gui> _instance{nullptr};
+    static inline std::shared_ptr<view> _instance{nullptr};
     static inline std::recursive_mutex _instance_mutex{};
 
     static inline constexpr unsigned int screen_width = 320;
@@ -66,4 +63,6 @@ class gui {
     static inline constexpr unsigned int navigation_buttons_height = 40;
 
     static inline constexpr char front_button_titles[5][15] = {"Schedules", "Manual Control", "Stats", "Logs", ""};
+
+    friend class view_controller;
 };
