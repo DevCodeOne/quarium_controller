@@ -19,6 +19,7 @@ class schedule_gpio {
     static bool control_pin(const schedule_gpio_id &id, const gpio_pin::action &action);
     static std::optional<gpio_pin::action> is_overriden(const schedule_gpio_id &id);
     static bool override_with(const schedule_gpio_id &id, const gpio_pin::action &action);
+    static bool restore_control(const schedule_gpio_id &id);
     static std::vector<schedule_gpio_id> get_ids();
 
     schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id, const gpio_pin::action &default_state);

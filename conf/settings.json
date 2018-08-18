@@ -1,5 +1,6 @@
 {
     "gpiochip" : "0",
+    "invert_output" : true,
     "date_format" : "%d.%m.%Y",
     "schedule_list" : ["../data/basic_schedule.json"]
 }

@@ -102,8 +102,21 @@ lv_res_t view_controller::manually_control_gpio(lv_obj_t *sw) {
 
 lv_res_t view_controller::check_override_schedule(lv_obj_t *checkbox) {
     auto inst = view::instance();
+    bool is_checked = lv_cb_is_checked(checkbox);
 
-    lv_obj_set_hidden(inst->m_gpio_control_switch, !lv_cb_is_checked(checkbox));
+    lv_obj_set_hidden(inst->m_gpio_control_switch, !is_checked);
+
+    if (is_checked) {
+        return LV_RES_OK;
+    }
+
+    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(inst->m_gpio_list_len);
+    lv_ddlist_get_selected_str(inst->m_gpio_chooser, buffer.get());
+    std::string gpio_id(buffer.get());
+
+    if (schedule_gpio::is_valid_id(gpio_id)) {
+        schedule_gpio::restore_control(gpio_id);
+    }
 
     return LV_RES_OK;
 }

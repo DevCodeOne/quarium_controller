@@ -1,4 +1,5 @@
 #include "gpio_handler.h"
+#include "config.h"
 #include "logger.h"
 
 gpio_pin_id::gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path)
@@ -31,7 +32,13 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
         return {};
     }
 
-    int result = gpiod_line_request_output(line, "quarium_controller", 0);
+    auto invert_signal_entry = config::instance()->find("invert_output");
+    auto invert_signal = false;
+
+    if (!invert_signal_entry.is_null() && invert_signal_entry.is_boolean()) {
+        invert_signal = invert_signal_entry.get<bool>();
+    }
+    int result = gpiod_line_request_output(line, "quarium_controller", invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0);
 
     if (result == -1) {
         logger::instance()->critical("Couldn't request line with id {}", id.id());
@@ -98,7 +105,7 @@ bool gpio_pin::update_gpio() {
         case action::off:
             return gpiod_line_set_value(m_line.get(), 0) == 0 ? true : false;
         case action::toggle:
-            return gpiod_line_set_value(m_line.get(), value) == 0 ? true : false;
+            return gpiod_line_set_value(m_line.get(), !value) == 0 ? true : false;
         default:
             logger::instance()->critical("Invalid action to write to gpio {}", gpio_id());
             break;
