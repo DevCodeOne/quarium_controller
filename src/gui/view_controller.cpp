@@ -110,15 +110,15 @@ lv_res_t view_controller::check_override_schedule(lv_obj_t *checkbox) {
     lv_ddlist_get_selected_str(inst->m_gpio_chooser, buffer.get());
     std::string gpio_id(buffer.get());
 
-
     if (!schedule_gpio::is_valid_id(gpio_id)) {
-	return LV_RES_OK;
+        return LV_RES_OK;
     }
 
     if (is_checked) {
-	schedule_gpio::override_with(gpio_id, lv_sw_get_state(inst->m_gpio_control_switch) ? gpio_pin::action::on : gpio_pin::action::off);
+        schedule_gpio::override_with(
+            gpio_id, lv_sw_get_state(inst->m_gpio_control_switch) ? gpio_pin::action::on : gpio_pin::action::off);
     } else {
-	schedule_gpio::restore_control(gpio_id);
+        schedule_gpio::restore_control(gpio_id);
     }
 
     return LV_RES_OK;

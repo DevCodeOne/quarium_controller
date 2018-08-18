@@ -37,9 +37,10 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
 
     if (!invert_signal_entry.is_null() && invert_signal_entry.is_boolean()) {
         invert_signal = invert_signal_entry.get<bool>();
-	logger::instance()->info("Inverting output {}", invert_signal);
+        logger::instance()->info("Inverting output {}", invert_signal);
     }
-    int result = gpiod_line_request_output_flags(line, "quarium_controller", invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0, 0);
+    int result = gpiod_line_request_output_flags(line, "quarium_controller",
+                                                 invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0, 0);
 
     if (result == -1) {
         logger::instance()->critical("Couldn't request line with id {}", id.id());
@@ -96,7 +97,7 @@ bool gpio_pin::update_gpio() {
         return false;
     }
 
-    if ((action) value == to_write) {
+    if ((action)value == to_write) {
         return true;
     }
 
