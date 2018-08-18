@@ -2,30 +2,57 @@
     "gpios": [
         {
             "id" : "light#1",
-            "pin" : 23,
+            "pin" : 26,
             "default" : "off"
         },
         {
+            "id" : "filter#1",
+            "pin" : 19,
+            "default" : "on"
+        },
+	{
+            "id" : "heater#1",
+            "pin" : 6,
+            "default" : "on"
+        },
+	{
+            "id" : "skim#1",
+            "pin" : 5,
+            "default" : "on"
+        },
+	{
             "id" : "light#2",
-            "pin" : 21,
+            "pin" : 27,
             "default" : "off"
         },
-        {
+	{
+            "id" : "filter#2",
+            "pin" : 13,
+            "default" : "on"
+        },
+	{
+            "id" : "heater#2",
+            "pin" : 22,
+            "default" : "on"
+        },
+	{
             "id" : "co2",
-            "pin" : 20,
+            "pin" : 17,
             "default" : "off"
         }
+
+
     ],
     "actions": [
         {
             "id" : "lights_on",
             "gpios" : ["light#1", "light#2", "co2"],
-            "gpio_actions" : ["on", "off", "on"]
+            "gpio_actions" : ["on", "on", "on"]
         },
         {
             "id" : "lights_off",
             "gpios" : ["light#1", "light#2", "co2"],
-            "gpio_actions" : ["on", "off", "off"]
+            "gpio_actions" : ["off", "off", "off"]
         }
     ],
     "schedule" : {
@@ -44,19 +71,19 @@
             },
             {
                 "id" : "midday break end",
-                "day" : 1,
+                "day" : 0,
                 "trigger_at" : "18:00",
                 "actions" : ["lights_on"]
             },
             {
                 "id" : "day end",
-                "day" : 1,
+                "day" : 0,
                 "trigger_at" : "22:00",
                 "actions" : ["lights_off"]
             }
         ],
         "repeating" : true,
-        "period_in_days" : 2,
+        "period_in_days" : 1,
         "start_at" : "03.08.2018",
         "title" : "aquarium#1"
     }
