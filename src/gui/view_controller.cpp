@@ -60,15 +60,19 @@ lv_res_t view_controller::select_gpio_event(lv_obj_t *ddlist) {
         return LV_RES_OK;
     }
 
-    if (auto overriden = schedule_gpio::is_overriden(gpio_id); overriden.has_value()) {
+	auto overriden = schedule_gpio::is_overriden(gpio_id);
+    if (overriden.has_value()) {
         if (overriden.value() == gpio_pin::action::on) {
             lv_sw_on(inst->m_gpio_control_switch);
         } else {
             lv_sw_off(inst->m_gpio_control_switch);
         }
 
-        lv_cb_set_checked(inst->m_gpio_override_checkbox, overriden.value() == gpio_pin::action::off ? false : true);
+	manually_control_gpio(inst->m_gpio_control_switch);
     }
+
+    lv_cb_set_checked(inst->m_gpio_override_checkbox, overriden.has_value());
+    check_override_schedule(inst->m_gpio_override_checkbox);
 
     return LV_RES_OK;
 }
