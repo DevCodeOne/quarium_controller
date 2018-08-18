@@ -23,10 +23,16 @@ class gpio_pin_id {
 };
 
 bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
+// TODO implement those functions for completeness
+bool operator>(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
+bool operator>=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
+bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
+bool operator==(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
+bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 
 class gpio_pin {
    public:
-    enum struct action { off, on, toggle };
+    enum struct action { off = 0, on = 1, toggle = 2};
 
     gpio_pin(gpio_pin &other) = delete;
     gpio_pin(gpio_pin &&other);
@@ -39,7 +45,7 @@ class gpio_pin {
     bool override_with(const action &act);
     bool restore_control();
 
-    unsigned int id() const;
+    unsigned int gpio_id() const;
     std::optional<gpio_pin::action> is_overriden() const;
 
    private:

@@ -74,16 +74,40 @@ bool gpio_pin::restore_control() {
     return update_gpio();
 }
 
-// TODO implement actually turning gpio on and off
 bool gpio_pin::update_gpio() {
-    if (m_overriden_action) {
+    action to_write = m_controlled_action;
+
+    if (m_overriden_action.has_value()) {
         logger::instance()->info("Action is overriden");
-    } else {
-        logger::instance()->info("Action is controlled normally");
+        to_write = m_overriden_action.value();
     }
 
-    return true;
+    int value = gpiod_line_get_value(m_line.get());
+
+    if (value == -1) {
+        return false;
+    }
+
+    if ((action) value == to_write) {
+        return true;
+    }
+
+    switch (to_write) {
+        case action::on:
+            return gpiod_line_set_value(m_line.get(), 1) == 0 ? true : false;
+        case action::off:
+            return gpiod_line_set_value(m_line.get(), 0) == 0 ? true : false;
+        case action::toggle:
+            return gpiod_line_set_value(m_line.get(), value) == 0 ? true : false;
+        default:
+            logger::instance()->critical("Invalid action to write to gpio {}", gpio_id());
+            break;
+    }
+
+    return false;
 }
+
+unsigned int gpio_pin::gpio_id() const { return m_id.id(); }
 
 bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return lhs.id() < rhs.id(); }
 
