@@ -14,8 +14,11 @@ using json = nlohmann::json;
 
 class schedule_gpio {
    public:
+    // TODO replace bool with std::optional<bool> to signal non valid ids
     static bool is_valid_id(const schedule_gpio_id &id);
     static bool control_pin(const schedule_gpio_id &id, const gpio_pin::action &action);
+    static std::optional<gpio_pin::action> is_overriden(const schedule_gpio_id &id);
+    static bool override_with(const schedule_gpio_id &id, const gpio_pin::action &action);
     static std::vector<schedule_gpio_id> get_ids();
 
     schedule_gpio(const schedule_gpio_id &id, const gpio_pin_id &pin_id, const gpio_pin::action &default_state);

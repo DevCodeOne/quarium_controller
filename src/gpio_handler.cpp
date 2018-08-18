@@ -6,6 +6,8 @@ gpio_pin_id::gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path)
 
 unsigned int gpio_pin_id::id() const { return m_id; }
 
+std::optional<gpio_pin::action> gpio_pin::is_overriden() const { return m_overriden_action; }
+
 const std::filesystem::path &gpio_pin_id::gpio_chip_path() const { return m_gpio_chip_path; }
 
 gpio_pin::gpio_pin(gpio_pin_id id, gpiod_line *line) : m_id(id) {
@@ -60,7 +62,7 @@ bool gpio_pin::control(const action &act) {
     return update_gpio();
 }
 
-bool gpio_pin::override_control(const action &act) {
+bool gpio_pin::override_with(const action &act) {
     m_overriden_action = act;
     logger::instance()->info("Override gpio {} control to be {}", m_id.id(), act == action::on ? "off" : "on");
     m_overriden_action = act;
@@ -166,30 +168,42 @@ gpio_chip::~gpio_chip() {
 bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &action) {
     std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
 
-    if (id.gpio_chip_path() != m_gpiochip_path) {
-        logger::instance()->warn("Wrong gpio_chip path");
+    auto pin = access_pin(id);
+
+    if (!pin) {
         return false;
     }
 
+    return pin->control(action);
+}
+
+std::shared_ptr<gpio_pin> gpio_chip::access_pin(const gpio_pin_id &id) {
+    std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
+
+    if (id.gpio_chip_path() != m_gpiochip_path) {
+        logger::instance()->warn("Wrong gpio_chip path");
+        return nullptr;
+    }
+
     if (auto result = m_reserved_pins.find(id); result != m_reserved_pins.cend()) {
-        return result->second->control(action);
+        return result->second;
     }
 
     auto created_pin = gpio_pin::open(id);
 
     if (!created_pin) {
         logger::instance()->critical("Couldn't open pin with id {}", id.id());
-        return false;
+        return nullptr;
     }
 
     if (auto result =
             m_reserved_pins.emplace(std::make_pair(id, std::make_shared<gpio_pin>(std::move(created_pin.value()))));
         result.second) {
         logger::instance()->warn("Reserved new pin {}", id.id());
-        return result.first->second->control(action);
+        return result.first->second;
     } else {
         logger::instance()->warn("Couldn't create pin with id {}", id.id());
     }
 
-    return false;
+    return nullptr;
 }

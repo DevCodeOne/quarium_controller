@@ -100,6 +100,56 @@ bool schedule_gpio::control_pin(const schedule_gpio_id &id, const gpio_pin::acti
     return chip.value()->control_pin((*gpio)->m_pin_id, action);
 }
 
+std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_id &id) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
+    if (!is_valid_id(id)) {
+        return {};
+    }
+
+    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
+                             [&id](const auto &current_action) { return current_action->id() == id; });
+
+    auto chip = gpio_chip::instance();
+
+    if (!chip) {
+        return {};
+    }
+
+    auto pin = chip.value()->access_pin((*gpio)->pin());
+
+    if (!pin) {
+        return {};
+    }
+
+    return pin->is_overriden();
+}
+
+bool schedule_gpio::override_with(const schedule_gpio_id &id, const gpio_pin::action &action) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
+    if (!is_valid_id(id)) {
+        return false;
+    }
+
+    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
+                             [&id](const auto &current_action) { return current_action->id() == id; });
+
+    auto chip = gpio_chip::instance();
+
+    if (!chip) {
+        return false;
+    }
+
+    auto pin = chip.value()->access_pin((*gpio)->pin());
+
+    if (!pin) {
+        return false;
+    }
+
+    return pin->override_with(action);
+}
+
 std::vector<schedule_gpio_id> schedule_gpio::get_ids() {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 

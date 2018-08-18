@@ -36,10 +36,11 @@ class gpio_pin {
     gpio_pin &operator=(gpio_pin &&other);
 
     bool control(const action &act);
-    bool override_control(const action &act);
+    bool override_with(const action &act);
     bool restore_control();
 
     unsigned int id() const;
+    std::optional<gpio_pin::action> is_overriden() const;
 
    private:
     static std::optional<gpio_pin> open(gpio_pin_id id);
@@ -70,6 +71,7 @@ class gpio_chip {
     gpio_chip &operator=(gpio_chip &&other);
 
     bool control_pin(const gpio_pin_id &id, const gpio_pin::action &action);
+    std::shared_ptr<gpio_pin> access_pin(const gpio_pin_id &id);
 
    private:
     static std::optional<gpio_chip> open(const std::filesystem::path &gpio_chip_path);

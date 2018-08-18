@@ -53,7 +53,10 @@ class view {
     lv_indev_drv_t m_input_driver;
 
     lv_obj_t *m_gpio_chooser = nullptr;
+    lv_obj_t *m_gpio_control_switch = nullptr;
+    lv_obj_t *m_gpio_override_checkbox = nullptr;
     std::unique_ptr<char[]> m_gpio_list = nullptr;
+    size_t m_gpio_list_len = 0;
 
     static inline std::shared_ptr<view> _instance{nullptr};
     static inline std::recursive_mutex _instance_mutex{};

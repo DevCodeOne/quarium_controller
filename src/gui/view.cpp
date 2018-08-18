@@ -122,15 +122,21 @@ void view::create_pages() {
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
-    lv_obj_t *checkbox = lv_cb_create(m_container[(uint8_t)page_index::manual_control], nullptr);
-    lv_cb_set_text(checkbox, "Manual control");
-    lv_obj_set_size(checkbox, screen_width - 60, 20);
-    lv_obj_align(checkbox, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_LEFT, 10, 60);
+    // Manual Control
+    m_gpio_override_checkbox = lv_cb_create(m_container[(uint8_t)page_index::manual_control], nullptr);
+    lv_cb_set_text(m_gpio_override_checkbox, "Manual control");
+    lv_cb_set_action(m_gpio_override_checkbox, view_controller::check_override_schedule);
+    lv_obj_set_size(m_gpio_override_checkbox, screen_width - 60, 20);
+    lv_obj_align(m_gpio_override_checkbox, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_LEFT, 10,
+                 60);
 
-    lv_obj_t *sw = lv_sw_create(m_container[(uint8_t)page_index::manual_control], nullptr);
-    lv_obj_set_size(sw, (screen_width - lv_obj_get_width(checkbox) - 30) / 2, lv_obj_get_height(checkbox));
-    lv_obj_align(sw, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_RIGHT, -10, 60);
-    lv_obj_set_hidden(sw, true);
+    m_gpio_control_switch = lv_sw_create(m_container[(uint8_t)page_index::manual_control], nullptr);
+    lv_sw_set_action(m_gpio_control_switch, view_controller::manually_control_gpio);
+    lv_obj_set_size(m_gpio_control_switch, (screen_width - lv_obj_get_width(m_gpio_override_checkbox) - 30) / 2,
+                    lv_obj_get_height(m_gpio_override_checkbox));
+    lv_obj_align(m_gpio_control_switch, m_container[(uint8_t)page_index::manual_control], LV_ALIGN_IN_TOP_RIGHT, -10,
+                 60);
+    lv_obj_set_hidden(m_gpio_control_switch, true);
 
     m_gpio_chooser = lv_ddlist_create(m_container[(uint8_t)page_index::manual_control], nullptr);
     lv_ddlist_set_hor_fit(m_gpio_chooser, false);
@@ -176,7 +182,8 @@ void view::update_contents(const page_index &index) {
         gpio_list_output << gpio_id_list.back();
 
         size_t len = gpio_list_output.str().size();
-        m_gpio_list = std::make_unique<char[]>(len + 1);
+        m_gpio_list_len = len + 1;
+        m_gpio_list = std::make_unique<char[]>(m_gpio_list_len);
         std::strncpy(m_gpio_list.get(), gpio_list_output.str().c_str(), len + 1);
 
         lv_ddlist_set_options(m_gpio_chooser, m_gpio_list.get());
