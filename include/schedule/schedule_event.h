@@ -37,4 +37,5 @@ class schedule_event {
     mutable bool m_marker = false;
 };
 
-
+bool is_earlier(const schedule_event &lhs, const schedule_event &rhs);
+bool are_simulateously(const schedule_event &lhs, const schedule_event &rhs);

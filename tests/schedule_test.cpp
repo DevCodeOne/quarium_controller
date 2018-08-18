@@ -1,5 +1,8 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
+
+#include <iostream>
+
 #include "nlohmann/json.hpp"
 
 #include "schedule/schedule_handler.h"
@@ -28,9 +31,9 @@ TEST_CASE("Correct schedule testing") {
     auto sched_inst2(sched_inst);
 
     REQUIRE(events.size() > 0);
-    REQUIRE(events[0].id() == schedule_description["schedule"]["events"][0]["id"].get<std::string>());
-    REQUIRE(events[0].day() == days(schedule_description["schedule"]["events"][0]["day"].get<unsigned int>()));
-    REQUIRE(events[0].actions()[0] ==
+    REQUIRE(events.begin()->id() == schedule_description["schedule"]["events"][0]["id"].get<std::string>());
+    REQUIRE(events.begin()->day() == days(schedule_description["schedule"]["events"][0]["day"].get<unsigned int>()));
+    REQUIRE(*events.begin()->actions().begin() ==
             schedule_description["schedule"]["events"][0]["actions"][0].get<std::string>());
 
     schedule_description["schedule"]["period_in_days"] = 1u;
@@ -63,8 +66,26 @@ TEST_CASE("Correct schedule testing") {
     auto sched_with_calc_period = schedule::create_from_description(schedule_description["schedule"]);
 
     REQUIRE(sched_with_calc_period.has_value());
-    REQUIRE(sched_with_calc_period->events().size() == 2);
+    REQUIRE(sched_with_calc_period->events().size() == 5);
     REQUIRE(sched_with_calc_period->period().count() == 4);
 
     // TODO add more test cases
+}
+
+TEST_CASE("Schedule event sorting") {
+    const std::filesystem::path testfiles[] = {"../tests/test_schedules/basic_test_schedule.json"};
+    json schedule_description2 = json::parse(std::ifstream(testfiles[0]));
+    schedule_description2["schedule"]["title"] = "aquarium#2";
+
+    auto sched = schedule::create_from_description(schedule_description2["schedule"]);
+
+    REQUIRE(sched.has_value());
+
+    auto events = sched->events();
+
+    REQUIRE(events.size() == 4);
+    REQUIRE(events[0].id() == "light_on");
+    REQUIRE(events[1].id() == "light_off#3");
+    REQUIRE(events[2].id() == "light_on#2");
+    REQUIRE(events[3].id() == "light_off#2");
 }

@@ -26,6 +26,24 @@
                 "day" : 0,
                 "trigger_at" : "10:00",
                 "actions" : ["light_on"]
+            },
+            {
+                "id" : "light_off#2",
+                "day" : 1,
+                "trigger_at" : "10:00",
+                "actions" : ["light_on"]
+            },
+            {
+                "id" : "light_off#3",
+                "day" : 0,
+                "trigger_at" : "10:10",
+                "actions" : ["light_on"]
+            },
+            {
+                "id" : "light_on#2",
+                "day" : 0,
+                "trigger_at" : "12:00",
+                "actions" : ["light_on"]
             }
         ],
         "repeating" :  true,

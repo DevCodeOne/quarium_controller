@@ -239,6 +239,7 @@ bool schedule::add_event(const schedule_event &event) {
         return false;
     }
     m_events.emplace_back(event);
+    std::sort(m_events.begin(), m_events.end(), is_earlier);
     recalculate_period();
     return true;
 }
