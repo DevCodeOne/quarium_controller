@@ -5,7 +5,14 @@
 #include "gui/view.h"
 #include "gui/view_controller.h"
 #include "logger.h"
+
+#ifdef USE_SDL
+#include "gui/sdl_lvgl_driver.h"
+#else
 #include "gui/fb_lvgl_driver.h"
+#endif
+
+
 #include "ring_buffer.h"
 #include "schedule.h"
 #include "signal_handler.h"

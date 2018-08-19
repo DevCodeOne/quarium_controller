@@ -44,7 +44,7 @@ lvgl_driver::lvgl_driver() {
         return;
     }
 
-    m_variable_info.bits_per_pixel = 16;
+    m_variable_info.bits_per_pixel = LV_COLOR_DEPTH;
 
     if (ioctl(m_framebuffer_descriptor, FBIOPUT_VSCREENINFO, &m_variable_info) < 0) {
         logger::instance()->warn("An error occured when trying to set the variable info of /dev/fb0");
