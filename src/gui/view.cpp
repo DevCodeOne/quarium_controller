@@ -5,7 +5,7 @@
 #include "gui/view.h"
 #include "gui/view_controller.h"
 #include "logger.h"
-#include "lvgl_driver.h"
+#include "gui/fb_lvgl_driver.h"
 #include "ring_buffer.h"
 #include "schedule.h"
 #include "signal_handler.h"

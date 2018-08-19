@@ -1,6 +1,6 @@
 #include "logger.h"
 
-#include "lvgl_driver.h"
+#include "gui/fb_lvgl_driver.h"
 
 std::shared_ptr<lvgl_driver> lvgl_driver::instance() {
     std::lock_guard<std::mutex> instance_guard{_instance_mutex};

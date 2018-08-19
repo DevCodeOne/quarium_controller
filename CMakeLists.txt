@@ -22,8 +22,8 @@ add_executable(quarium_controller
     src/schedule/schedule_handler.cpp
     src/gui/view.cpp
     src/gui/view_controller.cpp
-    src/chrono_time.cpp
-    src/lvgl_driver.cpp)
+    src/gui/fb_lvgl_driver.cpp
+    src/chrono_time.cpp)
 
 set_property(TARGET quarium_controller PROPERTY CXX_STANDARD 17)
 IF (CMAKE_BUILD_TYPE EQUAL "DEBUG")
