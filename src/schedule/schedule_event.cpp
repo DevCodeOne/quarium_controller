@@ -114,7 +114,3 @@ void schedule_event::mark() const { m_marker = true; }
 bool is_earlier(const schedule_event &lhs, const schedule_event &rhs) {
     return (lhs.day() < rhs.day()) || (lhs.day() == rhs.day() && lhs.trigger_time() < rhs.trigger_time());
 }
-
-bool are_simulateously(const schedule_event &lhs, const schedule_event &rhs) {
-    return (lhs.day() == rhs.day()) && (lhs.trigger_time() == rhs.trigger_time());
-}

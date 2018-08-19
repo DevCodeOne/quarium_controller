@@ -38,4 +38,3 @@ class schedule_event {
 };
 
 bool is_earlier(const schedule_event &lhs, const schedule_event &rhs);
-bool are_simulateously(const schedule_event &lhs, const schedule_event &rhs);
