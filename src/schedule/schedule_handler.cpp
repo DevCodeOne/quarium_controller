@@ -94,10 +94,15 @@ void schedule_handler::event_handler() {
             for (auto &current_schedule : handler_instance->m_active_schedules) {
                 logger::instance()->info("Checking events of schedule {}", current_schedule.title());
 
-                // TODO execute missed events in a dry run and apply the actions at the end so the actions don't really
-                // get executed
+                if (!current_schedule.start_at().has_value()) {
+                    continue;
+                }
+
+                auto day_in_schedule = current_day - current_schedule.start_at().value();
+
                 for (const auto &current_event : current_schedule.events()) {
-                    if ((current_event.trigger_time() > minutes_since_today) || current_event.is_marked()) {
+                    if ((current_event.day() > day_in_schedule) || (current_event.trigger_time() > minutes_since_today) ||
+                        current_event.is_marked()) {
                         continue;
                     }
 
