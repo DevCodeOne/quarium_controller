@@ -135,7 +135,8 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
     bool result = true;
 
     for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
-        if (is_valid_id(*current_id)) {
+        if (!is_valid_id(*current_id)) {
+            logger::instance()->warn("{} is not a valid id for an action", *current_id);
             return false;
         }
 
