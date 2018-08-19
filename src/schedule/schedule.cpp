@@ -1,6 +1,6 @@
 #include "schedule/schedule.h"
-#include "logger.h"
 #include "config.h"
+#include "logger.h"
 
 std::optional<schedule> schedule::create_from_file(const std::filesystem::path &schedule_file_path) {
     using namespace nlohmann;
@@ -204,20 +204,17 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
 schedule &schedule::start_at(const days &new_start) {
     m_start_at = new_start;
     recalculate_period();
-
     return *this;
 }
 
 schedule &schedule::end_at(const days &new_end) {
     m_end_at = new_end;
     recalculate_period();
-
     return *this;
 }
 
 schedule &schedule::period(const days &new_period) {
     recalculate_period();
-
     m_period = std::max(new_period, m_period);
     return *this;
 }

@@ -1,8 +1,10 @@
-#include "schedule/schedule_action.h"
+#include <map>
+
 #include "logger.h"
+#include "schedule/schedule_action.h"
 
 bool schedule_action::add_action(json &schedule_action_description) {
-    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
     json id_entry = schedule_action_description["id"];
     json gpios_entry = schedule_action_description["gpios"];
@@ -109,13 +111,13 @@ bool schedule_action::add_action(json &schedule_action_description) {
 }
 
 bool schedule_action::is_valid_id(const schedule_action_id &id) {
-    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
     return std::find_if(_actions.cbegin(), _actions.cend(),
                         [&id](const auto &current_action) { return current_action->id() == id; }) != _actions.cend();
 }
 
 bool schedule_action::execute_action(const schedule_action_id &id) {
-    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
     if (!is_valid_id(id)) {
         return false;
     }
@@ -126,9 +128,48 @@ bool schedule_action::execute_action(const schedule_action_id &id) {
     return (**action)();
 }
 
+bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids) {
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
+
+    std::map<schedule_gpio_id, gpio_pin::action> actions;
+    bool result = true;
+
+    for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
+        if (is_valid_id(*current_id)) {
+            return false;
+        }
+
+        schedule_action *action = nullptr;
+        for (auto &current_action : _actions) {
+            if (current_action->id() == *current_id) {
+                action = current_action.get();
+                break;
+            }
+        }
+
+        if (!action) {
+            continue;
+        }
+
+        for (auto &[current_pin, current_action] : action->m_pins) {
+            auto result = actions.emplace(current_pin, current_action);
+
+            if (!result.second) {
+                logger::instance()->info("Skip setting {}", current_pin);
+            }
+        }
+    }
+
+    for (auto &[current_pin_id, current_action] : actions) {
+        result &= schedule_gpio::control_pin(current_pin_id, current_action);
+    }
+
+    return result;
+}
+
 schedule_action::schedule_action(schedule_action &&other)
     : m_id(std::move(other.m_id)), m_pins(std::move(other.m_pins)) {
-    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
     if (is_valid_id(m_id)) {
         std::string id = m_id;

@@ -17,6 +17,7 @@ class schedule_action {
    public:
     static bool is_valid_id(const schedule_action_id &id);
     static bool execute_action(const schedule_action_id &id);
+    static bool execute_actions(const std::vector<schedule_action_id> &ids);
 
     schedule_action() = default;
     schedule_action(const schedule_action &other) = delete;
@@ -37,7 +38,7 @@ class schedule_action {
     std::vector<std::pair<schedule_gpio_id, gpio_pin::action>> m_pins;
 
     static inline std::vector<std::unique_ptr<schedule_action>> _actions;
-    static inline std::recursive_mutex _list_mutex;
+    static inline std::recursive_mutex _instance_mutex;
 
     friend class schedule;
 };

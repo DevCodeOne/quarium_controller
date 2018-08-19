@@ -78,6 +78,7 @@ bool schedule_handler::add_schedule(schedule sched) {
 
 void schedule_handler::event_handler() {
     signal_handler::disable_for_current_thread();
+    std::vector<schedule_action_id> actions_to_execute;
 
     auto handler_instance = instance();
 
@@ -93,28 +94,28 @@ void schedule_handler::event_handler() {
             for (auto &current_schedule : handler_instance->m_active_schedules) {
                 logger::instance()->info("Checking events of schedule {}", current_schedule.title());
 
-                for (auto &current_event : current_schedule.events()) {
-                    if (current_event.trigger_time() != minutes_since_today) {
-                        current_event.unmark();
+                // TODO execute missed events in a dry run and apply the actions at the end so the actions don't really
+                // get executed
+                for (const auto &current_event : current_schedule.events()) {
+                    if ((current_event.trigger_time() > minutes_since_today) || current_event.is_marked()) {
                         continue;
                     }
 
-                    if (current_event.is_marked()) {
-                        continue;
-                    }
-
-                    for (auto &current_action_id : current_event.actions()) {
-                        logger::instance()->info("Executing action {} of event {}", current_action_id,
-                                                 current_event.id());
-                        bool result = schedule_action::execute_action(current_action_id);
-
-                        if (!result) {
-                            logger::instance()->warn("Something went wrong when executing action {} in event {}",
-                                                     current_action_id, current_event.id());
-                        }
-                    }
+                    std::copy(current_event.actions().cbegin(), current_event.actions().cend(),
+                              std::back_inserter(actions_to_execute));
 
                     current_event.mark();
+                }
+
+                if (actions_to_execute.size() == 0) {
+                    continue;
+                }
+
+                bool result = schedule_action::execute_actions(actions_to_execute);
+                actions_to_execute.clear();
+
+                if (!result) {
+                    logger::instance()->critical("Failed to execute actions of schedule {}", current_schedule.title());
                 }
             }
 
@@ -132,6 +133,11 @@ void schedule_handler::event_handler() {
 
                 created_schedule.start_at(current_day);
                 created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period() - days(1));
+
+                for (const auto &current_event : created_schedule.events()) {
+                    current_event.unmark();
+                }
+
                 to_be_added_back.emplace_back(std::move(created_schedule));
             }
 
