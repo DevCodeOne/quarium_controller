@@ -58,18 +58,15 @@ bool schedule_handler::add_schedule(schedule sched) {
         sched.end_at(days(sched.start_at().value() + sched.period() - days(1)));
     }
 
-    if (!sched.start_at().has_value() || !sched.end_at().has_value()) {
+    if ((sched.schedule_mode() == schedule::mode::repeating) &&
+        (!sched.start_at().has_value() || !sched.end_at().has_value())) {
         logger::instance()->critical("Schedule {} is invalid", sched.title());
         return false;
     }
 
-    if (sched.start_at().value() <= current_day && sched.end_at().value() >= current_day) {
+    {
         std::lock_guard<std::recursive_mutex> instance_guard(m_schedules_list_mutex);
-        logger::instance()->info("Added schedule {} to active schedules", sched.title());
-        m_active_schedules.emplace_back(std::move(sched));
-    } else {
-        std::lock_guard<std::recursive_mutex> instance_guard(m_schedules_list_mutex);
-        logger::instance()->info("Added schedule {} to inactive schedules", sched.title());
+        logger::instance()->info("Added schedule {} to the list of schedules", sched.title());
         m_inactive_schedules.emplace_back(std::move(sched));
     }
 
@@ -101,8 +98,8 @@ void schedule_handler::event_handler() {
                 auto day_in_schedule = current_day - current_schedule.start_at().value();
 
                 for (const auto &current_event : current_schedule.events()) {
-                    if ((current_event.day() > day_in_schedule) || (current_event.trigger_time() > minutes_since_today) ||
-                        current_event.is_marked()) {
+                    if ((current_event.day() > day_in_schedule) ||
+                        (current_event.trigger_time() > minutes_since_today) || current_event.is_marked()) {
                         continue;
                     }
 
@@ -126,24 +123,28 @@ void schedule_handler::event_handler() {
 
             std::vector<schedule> to_be_added_back;
 
-            auto activate_schedules =
-                std::remove_if(handler_instance->m_inactive_schedules.begin(),
-                               handler_instance->m_inactive_schedules.end(), [](const auto &current_schedule) {
-                                   return current_schedule.schedule_mode() == schedule::mode::repeating;
-                               });
+            auto activate_schedules = std::remove_if(
+                handler_instance->m_inactive_schedules.begin(), handler_instance->m_inactive_schedules.end(),
+                [&current_day](const auto &current_schedule) {
+                    return current_schedule.schedule_mode() == schedule::mode::repeating ||
+                           current_schedule.end_at() >= current_day;
+                });
 
             for (auto current_schedule = activate_schedules;
                  current_schedule != handler_instance->m_inactive_schedules.cend(); ++current_schedule) {
-                schedule created_schedule(*current_schedule);
-
-                created_schedule.start_at(current_day);
-                created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period() - days(1));
+                auto created_schedule(*current_schedule);
 
                 for (const auto &current_event : created_schedule.events()) {
                     current_event.unmark();
                 }
 
-                to_be_added_back.emplace_back(std::move(created_schedule));
+                if (current_schedule->end_at() < current_day &&
+                    created_schedule.schedule_mode() == schedule::mode::repeating) {
+                    created_schedule.start_at(current_day);
+                    created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period());
+                }
+
+                handler_instance->m_active_schedules.emplace_back(std::move(created_schedule));
             }
 
             if (activate_schedules != handler_instance->m_inactive_schedules.cend()) {
@@ -157,29 +158,11 @@ void schedule_handler::event_handler() {
             if (to_be_removed != handler_instance->m_active_schedules.cend()) {
                 for (auto current_schedule = to_be_removed;
                      current_schedule != handler_instance->m_active_schedules.cend(); ++current_schedule) {
-                    if (current_schedule->schedule_mode() == schedule::mode::repeating) {
-                        schedule created_schedule(*current_schedule);
-
-                        created_schedule.start_at(current_day);
-                        created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period());
-
-                        to_be_added_back.emplace_back(std::move(created_schedule));
-                    } else {
-                        handler_instance->m_inactive_schedules.emplace_back(std::move(*current_schedule));
-                    }
+                    logger::instance()->info("Remove schedule {} from the list of active schedules",
+                                             current_schedule->title());
+                    handler_instance->m_inactive_schedules.emplace_back(std::move(*current_schedule));
                 }
                 handler_instance->m_active_schedules.erase(to_be_removed);
-            }
-
-            for (auto current_schedule : to_be_added_back) {
-                bool result = handler_instance->add_schedule(current_schedule);
-
-                if (result) {
-                    logger::instance()->info("Added schedule {} back to active schedules", current_schedule.title());
-                } else {
-                    logger::instance()->info("Couldn't add schedule {} back to active schedules",
-                                             current_schedule.title());
-                }
             }
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
