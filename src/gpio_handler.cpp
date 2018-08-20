@@ -37,7 +37,6 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
 
     if (!invert_signal_entry.is_null() && invert_signal_entry.is_boolean()) {
         invert_signal = invert_signal_entry.get<bool>();
-        logger::instance()->info("Inverting output {}", invert_signal);
     }
     int result = gpiod_line_request_output_flags(line, "quarium_controller",
                                                  invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0, 0);
@@ -56,11 +55,10 @@ bool gpio_pin::control(const action &act) {
     }
 
     switch (act) {
-        case action::off:
-            logger::instance()->info("Turning gpio {} of chip {} on", m_id.id(), m_id.gpio_chip_path().c_str());
-            break;
         case action::on:
-            logger::instance()->info("Turning gpio {} of chip {} off", m_id.id(), m_id.gpio_chip_path().c_str());
+        case action::off:
+            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), m_id.gpio_chip_path().c_str(),
+                                     act == action::on ? "on" : "off");
             break;
         case action::toggle:
             logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.gpio_chip_path().c_str());
