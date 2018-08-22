@@ -141,7 +141,7 @@ void schedule_handler::event_handler() {
                 if (current_schedule->end_at() < current_day &&
                     created_schedule.schedule_mode() == schedule::mode::repeating) {
                     created_schedule.start_at(current_day);
-                    created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period());
+                    created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period() - days(1));
                 }
 
                 handler_instance->m_active_schedules.emplace_back(std::move(created_schedule));
