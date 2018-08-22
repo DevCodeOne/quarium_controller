@@ -23,7 +23,11 @@ int main(int argc, char *argv[]) {
     handler.install_signal_handler(signal_handler::signal::sigterm, sigterm, {});
 
     std::string config_path = "";
-    uint16_t server_port;
+    std::string log_file = "log";
+    // TODO add other command line options
+    std::string log_level = "";
+    uint16_t server_port = 0;
+    bool show_help = false;
 
     // clang-format off
     auto cli =
@@ -35,20 +39,28 @@ int main(int argc, char *argv[]) {
                 server_port = p;
                 }, "sever_port")
             ["-p"]["--port"]
-            ("Which port to start the http server on");
+            ("Which port to start the http server on")
+        | clara::Opt(log_file, "log_file")
+                ["-l"]["--log-file"]
+                ("Location of the log file to write to")
+        | clara::Help(show_help);
     // clang-format on
 
     auto result = cli.parse(clara::Args(argc, argv));
 
-    if (!result) {
-        logger::instance()->critical("Error in command line : {}", result.errorMessage());
-
-        for (auto current_line : cli.getHelpColumns()) {
-            logger::instance()->info("{}, ", current_line.left, current_line.right);
+    if (!result || show_help) {
+        if (!result) {
+            logger::instance()->critical("Error in command line : {}", result.errorMessage());
         }
 
-        return EXIT_FAILURE;
+        for (auto current_line : cli.getHelpColumns()) {
+            std::cout << current_line.left << " " << current_line.right << std::endl;
+        }
+
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
     }
+
+    logger::configure_logger(logger::log_level::debug, logger::log_type::file);
 
     auto conf = config::instance();
     auto schedule_file_paths = conf->find("schedule_list");
