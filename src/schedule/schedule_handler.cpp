@@ -144,6 +144,7 @@ void schedule_handler::event_handler() {
                     created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period() - days(1));
                 }
 
+                logger::instance()->info("Added Schedule {} to the list of active schedules", created_schedule.title());
                 handler_instance->m_active_schedules.emplace_back(std::move(created_schedule));
             }
 

@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "network.h"
 #include "network_interface.h"
+#include "run_configuration.h"
 #include "schedule/schedule_handler.h"
 #include "signal_handler.h"
 
@@ -22,25 +23,21 @@ int main(int argc, char *argv[]) {
     handler.install_signal_handler(signal_handler::signal::sigint, sigint, {});
     handler.install_signal_handler(signal_handler::signal::sigterm, sigterm, {});
 
-    std::string config_path = "";
-    std::string log_file = "log";
     // TODO add other command line options
-    std::string log_level = "";
-    uint16_t server_port = 0;
     bool show_help = false;
 
     // clang-format off
     auto cli =
-        clara::Opt(config_path, "config_path")
+        clara::Opt([](const std::string &config_path) { run_configuration::instance()->config_path(config_path); }, "config_path")
             ["-c"]["--config"]
             ("Location of the configuration file to use")
         | clara::Opt(
-                [&server_port](uint16_t p) {
-                server_port = p;
+                [](const uint16_t &server_port) {
+                run_configuration::instance()->server_port(server_port);
                 }, "sever_port")
             ["-p"]["--port"]
             ("Which port to start the http server on")
-        | clara::Opt(log_file, "log_file")
+        | clara::Opt([](const std::string &log_file) { run_configuration::instance()->log_file(log_file); }, "log_file")
                 ["-l"]["--log-file"]
                 ("Location of the log file to write to")
         | clara::Help(show_help);
