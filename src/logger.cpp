@@ -9,7 +9,12 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
                 _instance = spdlog::stdout_color_mt(logger_name);
                 break;
             case log_type::file:
-                _instance = spdlog::basic_logger_mt(logger_name, filepath, true);
+                try {
+                    _instance = spdlog::basic_logger_mt(logger_name, filepath, true);
+                } catch (...) {
+                    _instance = spdlog::stdout_color_mt(logger_name);
+                    _instance->critical("Couldn't open log file");
+                }
         }
     }
 
@@ -25,4 +30,8 @@ std::shared_ptr<spdlog::logger> logger::instance() {
     }
 
     return _instance;
+}
+
+void logger::handle(const Pistache::Rest::Request &request, Pistache::Http::ResponseWriter response) {
+    response.send(Pistache::Http::Code::Ok, "Hello World");
 }

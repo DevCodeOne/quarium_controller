@@ -5,6 +5,8 @@
 
 #include "spdlog/spdlog.h"
 
+#include "network_header.h"
+
 class logger {
    public:
     enum struct log_level {
@@ -19,6 +21,8 @@ class logger {
 
     static void configure_logger(const log_level &level, const log_type &type = log_type::console);
     static std::shared_ptr<spdlog::logger> instance();
+
+    static void handle(const Pistache::Rest::Request &request, Pistache::Http::ResponseWriter response);
 
    private:
     static inline std::shared_ptr<spdlog::logger> _instance = nullptr;

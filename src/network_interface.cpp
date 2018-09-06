@@ -6,9 +6,14 @@ std::optional<network_interface> network_interface::create_on_port(port p) { ret
 network_interface::network_interface(port p) {
     Pistache::Address address(Pistache::Ipv4::any(), Pistache::Port(p));
     auto options = Pistache::Http::Endpoint::options().threads(1);
-    m_server = std::make_unique<Pistache::Http::Endpoint>(address);
-    m_server->setHandler(m_router.handler());
-    m_server->init(options);
+    try {
+        m_server = std::make_unique<Pistache::Http::Endpoint>(address);
+        setup_routes();
+        m_server->setHandler(m_router.handler());
+        m_server->init(options);
+    } catch (...) {
+        logger::instance()->warn("Couldn't create server");
+    }
 }
 
 network_interface::network_interface(network_interface &&other)
@@ -28,7 +33,10 @@ bool network_interface::start() {
         return false;
     }
 
-    m_server->serveThreaded();
+    try {
+        m_server->serveThreaded();
+    } catch (...) {
+    }
     return true;
 }
 
@@ -50,7 +58,7 @@ bool network_interface::stop() {
 void network_interface::setup_routes() {
     using namespace Pistache::Rest;
 
-    // Routes::Post(m_router, "/api/v0/gpios", Routes::bind(method));
+    Routes::Get(m_router, "/api/v0/log", Routes::bind(logger::handle));
 }
 
 network_interface::operator bool() const {

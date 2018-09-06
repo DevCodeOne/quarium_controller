@@ -77,15 +77,15 @@ int main(int argc, char *argv[]) {
         logger::instance()->warn("Couldn't open inst");
     }
 
-    // auto network_iface = network_interface::create_on_port(port(9980));
+    auto network_iface = network_interface::create_on_port(port(9980));
 
-    // if (!network_iface) {
-    //     logger::instance()->critical("Couldn't start network interface");
+    if (!network_iface) {
+        logger::instance()->critical("Couldn't start network interface");
 
-    //     return EXIT_FAILURE;
-    // }
+        return EXIT_FAILURE;
+    }
 
-    // network_iface->start();
+    network_iface->start();
 
     while (true) {
         if (_should_exit) {
@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
     if (inst) {
         inst->close_view();
     }
-    // network_iface->stop();
+
+    network_iface->stop();
     return EXIT_SUCCESS;
 }

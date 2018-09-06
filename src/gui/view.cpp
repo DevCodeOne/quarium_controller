@@ -12,7 +12,6 @@
 #include "gui/fb_lvgl_driver.h"
 #endif
 
-
 #include "ring_buffer.h"
 #include "schedule.h"
 #include "signal_handler.h"
