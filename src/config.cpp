@@ -2,12 +2,13 @@
 
 #include "config.h"
 #include "logger.h"
+#include "run_configuration.h"
 
 std::shared_ptr<config> config::instance() {
     std::lock_guard<std::mutex> instance_guard{_instance_mutex};
 
     if (!_instance) {
-        _instance = std::make_shared<config>(config(_default_config_path));
+        _instance = std::shared_ptr<config>(new config(run_configuration::instance()->config_path()));
     }
 
     return _instance;
@@ -49,6 +50,11 @@ void config::swap(config &other) {
     swap(m_is_valid, other.m_is_valid);
 }
 
-nlohmann::json config::find(const std::string &value) const { return m_config[value]; }
+nlohmann::json config::find(const std::string &value) const {
+    if (!m_is_valid) {
+        return nlohmann::json{};
+    }
+    return m_config[value];
+}
 
 void swap(config &lhs, config &rhs) { lhs.swap(rhs); }

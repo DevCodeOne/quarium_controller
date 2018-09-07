@@ -33,7 +33,9 @@ class run_configuration {
     static inline std::shared_ptr<run_configuration> _instance{nullptr};
     static inline std::recursive_mutex _instance_mutex{};
 
-    std::string m_config_path;
+    static constexpr inline char _default_config_path[] = DEFAULT_CONFIG_PATH;
+
+    std::string m_config_path = _default_config_path;
     std::optional<std::string> m_log_file;
     uint16_t m_server_port;
     logger::log_level m_log_level;

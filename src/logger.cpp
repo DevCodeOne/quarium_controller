@@ -8,18 +8,27 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
 
     // TODO apply runtime_configuration
     auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_st>();
-    auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_st>(filepath, 1024 * 1024 * 5, 0);
+    std::shared_ptr<spdlog::sinks::rotating_file_sink_st> file_sink = nullptr;
+    try {
+        file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_st>(filepath, 1024 * 1024 * 5, 0);
+    } catch (...) {
+    }
+
     if (!_instance) {
         switch (type) {
             case log_type::console:
-                _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(logger_name, {console_sink, file_sink}));
+                if (file_sink) {
+                    _instance =
+                        std::shared_ptr<spdlog::logger>(new spdlog::logger(logger_name, {console_sink, file_sink}));
+                } else {
+                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(logger_name, console_sink));
+                }
                 break;
             case log_type::file:
-                try {
-                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(logger_name, {file_sink}));
-                } catch (...) {
-                    _instance = spdlog::stdout_color_mt(logger_name);
-                    _instance->critical("Couldn't open log file");
+                if (file_sink) {
+                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(logger_name, file_sink));
+                } else {
+                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(logger_name, console_sink));
                 }
         }
     }

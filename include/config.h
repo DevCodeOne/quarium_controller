@@ -29,7 +29,6 @@ class config {
 
     static inline std::shared_ptr<config> _instance = nullptr;
     static inline std::mutex _instance_mutex;
-    static constexpr inline char _default_config_path [] = DEFAULT_CONFIG_PATH;
 };
 
 void swap(config &lhs, config &rhs);
