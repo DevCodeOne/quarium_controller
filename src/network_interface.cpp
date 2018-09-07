@@ -11,6 +11,7 @@ network_interface::network_interface(port p) {
         setup_routes();
         m_server->setHandler(m_router.handler());
         m_server->init(options);
+        logger::instance()->info("Created server");
     } catch (...) {
         logger::instance()->warn("Couldn't create server");
     }
@@ -26,17 +27,23 @@ network_interface::~network_interface() { stop(); }
 
 bool network_interface::start() {
     if (!m_server) {
+        logger::instance()->critical("Couldn't start server");
         return false;
     }
 
     if (m_server->isBound()) {
+        logger::instance()->critical("Couldn't start server");
         return false;
     }
 
     try {
         m_server->serveThreaded();
     } catch (...) {
+        logger::instance()->critical("Couldn't start server");
+        return false;
     }
+
+    logger::instance()->info("Started server");
     return true;
 }
 

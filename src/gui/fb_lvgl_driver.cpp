@@ -13,6 +13,7 @@ std::shared_ptr<lvgl_driver> lvgl_driver::instance() {
 }
 
 lvgl_driver::lvgl_driver() {
+    // TODO change to another virtual terminal to prevent the output of the kernel
     int tty_fd = open("/dev/tty0", O_RDONLY, 0);
 
     if (tty_fd < 0) {

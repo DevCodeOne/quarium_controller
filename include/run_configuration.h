@@ -37,6 +37,6 @@ class run_configuration {
 
     std::string m_config_path = _default_config_path;
     std::string m_log_file = "var/log/quarium_controller.log";
-    uint16_t m_server_port;
+    uint16_t m_server_port = 9980;
     logger::log_level m_log_level;
 };

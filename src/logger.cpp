@@ -1,6 +1,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "pistache/async.h"
+
 #include "logger.h"
 #include "run_configuration.h"
 
@@ -13,6 +15,7 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
         file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_st>(run_configuration::instance()->log_file(),
                                                                            1024 * 1024 * 5, 0);
     } catch (...) {
+        logger::instance()->warn("Couldn't open log file");
     }
 
     if (!_instance) {
@@ -59,5 +62,7 @@ void logger::handle(const Pistache::Rest::Request &request, Pistache::Http::Resp
     }
 
     complete_log.flush();
-    response.send(Pistache::Http::Code::Ok, complete_log.str().c_str());
+    auto promise = response.send(Pistache::Http::Code::Ok, complete_log.str(), MIME(Text, Plain));
+    Pistache::Async::Barrier barrier(promise);
+    barrier.wait();
 }
