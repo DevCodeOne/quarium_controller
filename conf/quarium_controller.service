@@ -1,0 +1,4 @@
+[Service]
+Description=Autostart the quarium_controller
+Requires=Network.target
+ExecStart=/opt/quarium_controller/quarium_controller
