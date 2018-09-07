@@ -23,7 +23,7 @@ class run_configuration {
     run_configuration &log_level(logger::log_level &new_log_level);
 
     const std::string &config_path() const;
-    const std::optional<std::string> &log_file() const;
+    const std::string &log_file() const;
     const uint16_t &server_port() const;
     const logger::log_level &log_level() const;
 
@@ -36,7 +36,7 @@ class run_configuration {
     static constexpr inline char _default_config_path[] = DEFAULT_CONFIG_PATH;
 
     std::string m_config_path = _default_config_path;
-    std::optional<std::string> m_log_file;
+    std::string m_log_file = "var/log/quarium_controller.log";
     uint16_t m_server_port;
     logger::log_level m_log_level;
 };

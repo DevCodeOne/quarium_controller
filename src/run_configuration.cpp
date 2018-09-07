@@ -32,7 +32,7 @@ run_configuration &run_configuration::log_level(logger::log_level &new_log_level
 
 const std::string &run_configuration::config_path() const { return m_config_path; }
 
-const std::optional<std::string> &run_configuration::log_file() const { return m_log_file; }
+const std::string &run_configuration::log_file() const { return m_log_file; }
 
 const uint16_t &run_configuration::server_port() const { return m_server_port; }
 

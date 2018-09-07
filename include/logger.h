@@ -28,6 +28,5 @@ class logger {
     static inline std::shared_ptr<spdlog::logger> _instance = nullptr;
     static inline std::mutex _instance_mutex;
 
-    static inline constexpr char logger_name[] = "default";
-    static inline constexpr char filepath[] = "log.txt";
+    static inline constexpr char _logger_name[] = "default";
 };
