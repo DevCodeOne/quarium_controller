@@ -7,7 +7,6 @@
 void logger::configure_logger(const log_level &level, const log_type &type) {
     std::lock_guard<std::mutex> instance_guard{_instance_mutex};
 
-    // TODO apply runtime_configuration
     auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_st>();
     std::shared_ptr<spdlog::sinks::rotating_file_sink_st> file_sink = nullptr;
     try {
