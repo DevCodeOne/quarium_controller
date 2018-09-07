@@ -62,7 +62,5 @@ void logger::handle(const Pistache::Rest::Request &request, Pistache::Http::Resp
     }
 
     complete_log.flush();
-    auto promise = response.send(Pistache::Http::Code::Ok, complete_log.str(), MIME(Text, Plain));
-    Pistache::Async::Barrier barrier(promise);
-    barrier.wait();
+    response.send(Pistache::Http::Code::Ok, complete_log.str(), MIME(Text, Plain));
 }
