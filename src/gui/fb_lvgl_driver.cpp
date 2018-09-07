@@ -13,9 +13,7 @@ std::shared_ptr<lvgl_driver> lvgl_driver::instance() {
 }
 
 lvgl_driver::lvgl_driver() {
-    int tty_fd = open("/dev/tty1", O_RDWR, 0);
-    ioctl(tty_fd, VT_ACTIVATE, 1);
-    ioctl(tty_fd, VT_WAITACTIVE, 1);
+    int tty_fd = open("/dev/tty0", O_RDONLY, 0);
 
     if (tty_fd < 0) {
         logger::instance()->warn("An error occured when trying to open /dev/tty0 {}", strerror(errno));
