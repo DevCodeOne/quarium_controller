@@ -82,9 +82,7 @@ void router::add_route(const std::regex &regex_path, route_func func) {
 }
 
 void router::onRequest(const Pistache::Http::Request &req, Pistache::Http::ResponseWriter response) {
-    logger::instance()->info("number of routes {}", m_routes.size());
     auto route = std::find_if(m_routes.begin(), m_routes.end(), [this, &req](auto &route_handler_pair) {
-        logger::instance()->info("{}", std::regex_match(req.resource(), route_handler_pair.first));
         return std::regex_match(req.resource(), route_handler_pair.first);
     });
 

@@ -4,6 +4,16 @@
     <title>Quarium Controller</title>
     </head>
     <body>
-        <h1>Work in progress</h1>
+
+        <gpio-control></gpio-control>
+
+        <script src="./webapp/gpio-control.tag" type="riot/tag"></script>
+
+        <!-- include riot.js and the compiler -->
+        <script src="https://cdn.jsdelivr.net/npm/riot@3.12/riot+compiler.min.js"></script>
+
+        <script>
+        riot.mount('*')
+        </script>
     </body>
 </html>
