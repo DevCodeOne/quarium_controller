@@ -26,7 +26,7 @@ class logger {
 
    private:
     static inline std::shared_ptr<spdlog::logger> _instance = nullptr;
-    static inline std::mutex _instance_mutex;
+    static inline std::recursive_mutex _instance_mutex;
 
     static inline constexpr char _logger_name[] = "default";
 };

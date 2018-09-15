@@ -1,4 +1,5 @@
 #include "network_interface.h"
+#include "web_application.h"
 #include "logger.h"
 
 std::optional<network_interface> network_interface::create_on_port(port p) { return network_interface(p); }
@@ -66,6 +67,7 @@ void network_interface::setup_routes() {
     using namespace Pistache::Rest;
 
     Routes::Get(m_router, "/api/v0/log", Routes::bind(logger::handle));
+    Routes::Get(m_router, "/webapp", Routes::bind(web_application::handle));
 }
 
 network_interface::operator bool() const {

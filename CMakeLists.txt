@@ -14,6 +14,7 @@ set (SOURCE_FILES
     src/config.cpp
     src/logger.cpp
     src/network_interface.cpp
+    src/web_application.cpp
     src/signal_handler.cpp
     src/gpio_handler.cpp
     src/run_configuration.cpp

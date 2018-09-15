@@ -7,7 +7,7 @@
 #include "run_configuration.h"
 
 void logger::configure_logger(const log_level &level, const log_type &type) {
-    std::lock_guard<std::mutex> instance_guard{_instance_mutex};
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
     auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_st>();
     std::shared_ptr<spdlog::sinks::rotating_file_sink_st> file_sink = nullptr;
@@ -18,23 +18,17 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
         logger::instance()->warn("Couldn't open log file");
     }
 
-    if (!_instance) {
+    if (!_instance && file_sink) {
         switch (type) {
             case log_type::console:
-                if (file_sink) {
-                    _instance =
-                        std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, {console_sink, file_sink}));
-                } else {
-                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, console_sink));
-                }
+                _instance =
+                    std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, {console_sink, file_sink}));
                 break;
             case log_type::file:
-                if (file_sink) {
-                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, file_sink));
-                } else {
-                    _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, console_sink));
-                }
+                _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, file_sink));
         }
+    } else {
+        logger::instance();
     }
 
     _instance->set_level((spdlog::level::level_enum)level);
@@ -42,7 +36,7 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
 }
 
 std::shared_ptr<spdlog::logger> logger::instance() {
-    std::lock_guard<std::mutex> instance_guard{_instance_mutex};
+    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
     if (!_instance) {
         _instance = spdlog::stdout_color_mt(_logger_name);
