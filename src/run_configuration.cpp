@@ -20,7 +20,7 @@ run_configuration &run_configuration::log_file(std::string new_log_file) {
     return *this;
 }
 
-run_configuration &run_configuration::server_port(uint16_t new_server_port) {
+run_configuration &run_configuration::server_port(port new_server_port) {
     m_server_port = new_server_port;
     return *this;
 }
@@ -34,6 +34,6 @@ const std::string &run_configuration::config_path() const { return m_config_path
 
 const std::string &run_configuration::log_file() const { return m_log_file; }
 
-const uint16_t &run_configuration::server_port() const { return m_server_port; }
+const port &run_configuration::server_port() const { return m_server_port; }
 
 const logger::log_level &run_configuration::log_level() const { return m_log_level; }

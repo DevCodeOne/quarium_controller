@@ -7,8 +7,7 @@
 #include "gpio_handler.h"
 #include "gui/view.h"
 #include "logger.h"
-#include "network.h"
-#include "network_interface.h"
+#include "network/network_interface.h"
 #include "run_configuration.h"
 #include "schedule/schedule_handler.h"
 #include "signal_handler.h"
@@ -33,7 +32,7 @@ int main(int argc, char *argv[]) {
             ("Location of the configuration file to use")
         | clara::Opt(
                 [](const uint16_t &server_port) {
-                run_configuration::instance()->server_port(server_port);
+                run_configuration::instance()->server_port(port(server_port));
                 }, "sever_port")
             ["-p"]["--port"]
             ("Which port to start the http server on")

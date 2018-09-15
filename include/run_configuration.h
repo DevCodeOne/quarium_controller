@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "logger.h"
+#include "network/network_interface.h"
 
 class run_configuration {
    public:
@@ -19,12 +20,12 @@ class run_configuration {
 
     run_configuration &config_path(std::string new_config_path);
     run_configuration &log_file(std::string new_log_file);
-    run_configuration &server_port(uint16_t new_server_port);
+    run_configuration &server_port(port new_server_port);
     run_configuration &log_level(logger::log_level &new_log_level);
 
     const std::string &config_path() const;
     const std::string &log_file() const;
-    const uint16_t &server_port() const;
+    const port &server_port() const;
     const logger::log_level &log_level() const;
 
    private:
@@ -37,6 +38,6 @@ class run_configuration {
 
     std::string m_config_path = _default_config_path;
     std::string m_log_file = "/var/log/quarium_controller.log";
-    uint16_t m_server_port = 9980;
+    port m_server_port = port(9980);
     logger::log_level m_log_level;
 };

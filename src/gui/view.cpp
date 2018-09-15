@@ -13,7 +13,7 @@
 #endif
 
 #include "ring_buffer.h"
-#include "schedule.h"
+#include "schedule/schedule.h"
 #include "signal_handler.h"
 
 std::shared_ptr<view> view::instance() {

@@ -13,8 +13,8 @@ set (SOURCE_FILES
     src/quarium_controller.cpp
     src/config.cpp
     src/logger.cpp
-    src/network_interface.cpp
-    src/web_application.cpp
+    src/network/network_interface.cpp
+    src/network/web_application.cpp
     src/signal_handler.cpp
     src/gpio_handler.cpp
     src/run_configuration.cpp
@@ -51,7 +51,6 @@ ENDIF()
 target_link_libraries(quarium_controller PUBLIC ${CONAN_LIBS})
 target_link_libraries(quarium_controller PUBLIC stdc++fs)
 target_include_directories(quarium_controller PRIVATE include)
-target_include_directories(quarium_controller PRIVATE include/schedule)
 
 IF (NOT QUARIUM_CONTROLLER_USE_SDL)
     target_link_libraries(quarium_controller PUBLIC ts)

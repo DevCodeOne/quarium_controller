@@ -45,7 +45,7 @@ std::shared_ptr<spdlog::logger> logger::instance() {
     return _instance;
 }
 
-void logger::handle(const Pistache::Rest::Request &request, Pistache::Http::ResponseWriter response) {
+void logger::handle(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
     std::ifstream log_file(run_configuration::instance()->log_file());
 
     std::ostringstream complete_log;
