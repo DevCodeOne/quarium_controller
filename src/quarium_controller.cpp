@@ -4,7 +4,6 @@
 #include "clara.hpp"
 
 #include "config.h"
-#include "gpio_handler.h"
 #include "gui/view.h"
 #include "logger.h"
 #include "network/network_interface.h"

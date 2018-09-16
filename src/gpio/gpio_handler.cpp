@@ -1,7 +1,8 @@
-#include "gpio_handler.h"
+#include "gpio/gpio_handler.h"
 #include "config.h"
 #include "logger.h"
 
+// TODO use some kind of wrapper so one can implement a stub system, so the code can be tested
 gpio_pin_id::gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path)
     : m_gpio_chip_path(gpio_chip_path), m_id(id) {}
 
@@ -117,6 +118,16 @@ bool gpio_pin::update_gpio() {
 unsigned int gpio_pin::gpio_id() const { return m_id.id(); }
 
 bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return lhs.id() < rhs.id(); }
+
+bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return lhs < rhs || lhs == rhs; }
+
+bool operator>=(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return lhs > rhs || lhs == rhs; }
+
+bool operator>(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return !(lhs < rhs || lhs == rhs); }
+
+bool operator==(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return lhs.id() == rhs.id(); }
+
+bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return !(lhs == rhs); }
 
 std::optional<std::shared_ptr<gpio_chip>> gpio_chip::instance(const std::filesystem::path &gpio_chip_path) {
     std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};

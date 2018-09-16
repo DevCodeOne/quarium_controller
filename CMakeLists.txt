@@ -13,11 +13,11 @@ set (SOURCE_FILES
     src/quarium_controller.cpp
     src/config.cpp
     src/logger.cpp
+    src/signal_handler.cpp
+    src/run_configuration.cpp
+    src/gpio/gpio_handler.cpp
     src/network/network_interface.cpp
     src/network/web_application.cpp
-    src/signal_handler.cpp
-    src/gpio_handler.cpp
-    src/run_configuration.cpp
     src/schedule/schedule.cpp
     src/schedule/schedule_action.cpp
     src/schedule/schedule_event.cpp
@@ -25,7 +25,6 @@ set (SOURCE_FILES
     src/schedule/schedule_handler.cpp
     src/gui/view.cpp
     src/gui/view_controller.cpp
-    src/run_configuration.cpp
     src/chrono_time.cpp)
 
 IF (NOT QUARIUM_CONTROLLER_USE_SDL)
@@ -64,7 +63,7 @@ if (QUARIUM_CONTROLLER_BUILD_TESTS)
         src/config.cpp
         src/logger.cpp
         src/signal_handler.cpp
-        src/gpio_handler.cpp
+        src/gpio/gpio_handler.cpp
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp

@@ -9,7 +9,7 @@
 #include "nlohmann/json.hpp"
 
 #include "../chrono_time.h"
-#include "../gpio_handler.h"
+#include "gpio/gpio_handler.h"
 #include "schedule.h"
 
 using json = nlohmann::json;

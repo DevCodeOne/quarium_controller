@@ -6,7 +6,7 @@
 
 #include "nlohmann/json.hpp"
 
-#include "gpio_handler.h"
+#include "gpio/gpio_handler.h"
 
 using schedule_gpio_id = std::string;
 
