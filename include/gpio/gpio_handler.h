@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-#include "gpiod.h"
+#include "gpio/gpiod_wrapper.h"
 
 class gpio_pin_id {
    public:
@@ -23,7 +23,6 @@ class gpio_pin_id {
 };
 
 bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
-// TODO implement those functions for completeness
 bool operator>(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator>=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
@@ -32,7 +31,7 @@ bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 
 class gpio_pin {
    public:
-    enum struct action { off = 0, on = 1, toggle = 2};
+    enum struct action { off = 0, on = 1, toggle = 2 };
 
     gpio_pin(gpio_pin &other) = delete;
     gpio_pin(gpio_pin &&other);
@@ -53,9 +52,9 @@ class gpio_pin {
 
     bool update_gpio();
 
-    gpio_pin(gpio_pin_id id, gpiod_line *line);
+    gpio_pin(gpio_pin_id id, gpiod::gpiod_line line);
 
-    std::shared_ptr<gpiod_line> m_line;
+    gpiod::gpiod_line m_line;
     gpio_pin::action m_controlled_action;
     std::optional<gpio_pin::action> m_overriden_action;
     const gpio_pin_id m_id;
@@ -67,7 +66,7 @@ class gpio_chip {
    public:
     static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
 
-    static std::optional<std::shared_ptr<gpio_chip>> instance(const std::filesystem::path &gpio_chip_path = default_gpio_dev_path);
+    static std::shared_ptr<gpio_chip> instance(const std::filesystem::path &gpio_chip_path = default_gpio_dev_path);
 
     gpio_chip(const gpio_chip &other) = delete;
     gpio_chip(gpio_chip &&other);
@@ -82,11 +81,11 @@ class gpio_chip {
    private:
     static std::optional<gpio_chip> open(const std::filesystem::path &gpio_chip_path);
 
-    gpio_chip(const std::filesystem::path &gpio_dev, gpiod_chip *chip);
+    gpio_chip(const std::filesystem::path &gpio_dev, gpiod::gpiod_chip chip);
 
     std::filesystem::path m_gpiochip_path;
     std::map<gpio_pin_id, std::shared_ptr<gpio_pin>> m_reserved_pins;
-    gpiod_chip *m_chip;
+    gpiod::gpiod_chip m_chip;
 
     static bool reserve_gpiochip(const std::filesystem::path &gpiochip_path);
     static bool free_gpiochip(const std::filesystem::path &gpiochip_path);

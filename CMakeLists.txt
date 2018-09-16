@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.6.2)
 
 add_definitions(-DDEFAULT_CONFIG_PATH="../conf/settings.json")
 
-option(QUARIUM_CONTROLLER_USE_SDL "Use sdl for the gui instead of the framebuffer" OFF)
-option(QUARIUM_CONTROLLER_BUILD_TESTS "Build tests for quarium_controller" ON)
+option(USE_SDL "Use sdl for the gui instead of the framebuffer" OFF)
+option(GPIOD_STUB "Use stub gpiod wrapper to test the functionality without the need of a real gpio_chip" OFF)
+option(BUILD_TESTS "Build tests for quarium_controller" ON)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(NO_OUTPUT_DIRS)
@@ -27,7 +28,11 @@ set (SOURCE_FILES
     src/gui/view_controller.cpp
     src/chrono_time.cpp)
 
-IF (NOT QUARIUM_CONTROLLER_USE_SDL)
+IF (GPIOD_STUB)
+    add_definitions(-DUSE_GPIOD_STUBS)
+ENDIF()
+
+IF (NOT USE_SDL)
     set (SOURCE_FILES ${SOURCE_FILES} src/gui/fb_lvgl_driver.cpp)
 ELSE()
     find_package(SDL2 REQUIRED)
@@ -51,13 +56,13 @@ target_link_libraries(quarium_controller PUBLIC ${CONAN_LIBS})
 target_link_libraries(quarium_controller PUBLIC stdc++fs)
 target_include_directories(quarium_controller PRIVATE include)
 
-IF (NOT QUARIUM_CONTROLLER_USE_SDL)
+IF (NOT USE_SDL)
     target_link_libraries(quarium_controller PUBLIC ts)
 ELSE()
     target_link_libraries(quarium_controller PUBLIC SDL2::SDL2)
 ENDIF()
 
-if (QUARIUM_CONTROLLER_BUILD_TESTS)
+if (BUILD_TESTS)
     enable_testing()
     add_executable(schedule_test tests/schedule_test.cpp
         src/config.cpp

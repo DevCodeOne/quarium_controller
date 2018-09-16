@@ -65,7 +65,7 @@ bool schedule_gpio::add_gpio(json &gpio_description) {
         // return false;
     }
 
-    if (chip && chip.value()->control_pin(pin_id, default_state) == false) {
+    if (chip && chip->control_pin(pin_id, default_state) == false) {
         logger::instance()->critical("The gpio {} on gpiochip {} is not accessable", id,
                                      pin_id.gpio_chip_path().c_str());
         // return false;
@@ -97,7 +97,7 @@ bool schedule_gpio::control_pin(const schedule_gpio_id &id, const gpio_pin::acti
         return false;
     }
 
-    return chip.value()->control_pin((*gpio)->m_pin_id, action);
+    return chip->control_pin((*gpio)->m_pin_id, action);
 }
 
 std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_id &id) {
@@ -116,7 +116,7 @@ std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_
         return {};
     }
 
-    auto pin = chip.value()->access_pin((*gpio)->pin());
+    auto pin = chip->access_pin((*gpio)->pin());
 
     if (!pin) {
         return {};
@@ -141,7 +141,7 @@ bool schedule_gpio::override_with(const schedule_gpio_id &id, const gpio_pin::ac
         return false;
     }
 
-    auto pin = chip.value()->access_pin((*gpio)->pin());
+    auto pin = chip->access_pin((*gpio)->pin());
 
     if (!pin) {
         return false;
@@ -166,7 +166,7 @@ bool schedule_gpio::restore_control(const schedule_gpio_id &id) {
         return false;
     }
 
-    auto pin = chip.value()->access_pin((*gpio)->pin());
+    auto pin = chip->access_pin((*gpio)->pin());
 
     if (!pin) {
         return false;
