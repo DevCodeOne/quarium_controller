@@ -2,7 +2,6 @@
 #include "config.h"
 #include "logger.h"
 
-// TODO use some kind of wrapper so one can implement a stub system, so the code can be tested
 gpio_pin_id::gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path)
     : m_gpio_chip_path(gpio_chip_path), m_id(id) {}
 
@@ -24,7 +23,7 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
         return {};
     }
 
-    gpiod::gpiod_line line = gpiod::chip_get_line(chip->m_chip, id.id());
+    gpiod::gpiod_line line = chip->m_chip.get_line(id.id());
 
     if (!line) {
         logger::instance()->critical("Couldn't get line with id {}", id.id());
@@ -37,8 +36,8 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
     if (!invert_signal_entry.is_null() && invert_signal_entry.is_boolean()) {
         invert_signal = invert_signal_entry.get<bool>();
     }
-    int result = gpiod::line_request_output_flags(line, "quarium_controller",
-                                                  invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0, 0);
+    int result =
+        line.request_output_flags("quarium_controller", invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0, 0);
 
     if (result == -1) {
         logger::instance()->critical("Couldn't request line with id {}", id.id());
@@ -88,7 +87,7 @@ bool gpio_pin::update_gpio() {
         to_write = m_overriden_action.value();
     }
 
-    int value = gpiod::line_get_value(m_line);
+    int value = m_line.get_value();
 
     if (value == -1) {
         return false;
@@ -100,11 +99,11 @@ bool gpio_pin::update_gpio() {
 
     switch (to_write) {
         case action::on:
-            return gpiod::line_set_value(m_line, 1) == 0 ? true : false;
+            return m_line.set_value(1) == 0 ? true : false;
         case action::off:
-            return gpiod::line_set_value(m_line, 0) == 0 ? true : false;
+            return m_line.set_value(0) == 0 ? true : false;
         case action::toggle:
-            return gpiod::line_set_value(m_line, !value) == 0 ? true : false;
+            return m_line.set_value(!value) == 0 ? true : false;
         default:
             logger::instance()->critical("Invalid action to write to gpio {}", gpio_id());
             break;
@@ -143,7 +142,7 @@ std::shared_ptr<gpio_chip> gpio_chip::instance(const std::filesystem::path &gpio
 }
 
 std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_path) {
-    gpiod::gpiod_chip opened_chip = gpiod::chip_open(gpio_chip_path.c_str());
+    gpiod::gpiod_chip opened_chip = gpiod::gpiod_chip(gpio_chip_path.c_str());
 
     if (!opened_chip) {
         logger::instance()->critical("Couldn't open gpiochip {}", gpio_chip_path.c_str());
@@ -201,7 +200,7 @@ gpio_chip::~gpio_chip() {
         // Possible problem in libgpiod where the chip might include the pins as resources, so the pins have to be
         // destroyed before the chip
         m_reserved_pins.clear();
-        gpiod::chip_close(m_chip);
+        m_chip.release_resource();
     }
 }
 
