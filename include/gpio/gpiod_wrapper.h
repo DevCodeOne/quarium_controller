@@ -126,9 +126,8 @@ namespace gpiod {
 
         inline const native_gpiod_chip *gpiod_chip<real>::native() const { return m_native; }
 
-        inline gpiod_line<real>::gpiod_line(gpiod_chip<real> &chip, unsigned int offset) {
-            gpiod_chip_get_line(chip.native(), offset);
-        }
+        inline gpiod_line<real>::gpiod_line(gpiod_chip<real> &chip, unsigned int offset)
+            : m_native(gpiod_chip_get_line(chip.native(), offset)) {}
 
         inline gpiod_line<real>::gpiod_line(gpiod_line<real> &&other) : m_native(other.m_native) {
             other.m_native = nullptr;
