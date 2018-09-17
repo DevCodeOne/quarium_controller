@@ -83,10 +83,59 @@ namespace gpiod {
         };
 
         template<>
-        class gpiod_chip<stub> {};
+        class gpiod_line<stub> {
+           public:
+            gpiod_line(const gpiod_line<stub> &other) = delete;
+            gpiod_line(gpiod_line<stub> &&other);
+            ~gpiod_line() = default;
+
+            gpiod_line &operator=(const gpiod_line<stub> &other) = delete;
+            gpiod_line &operator=(gpiod_line<stub> &&other);
+            void swap(gpiod_line<stub> &other);
+
+            int get_value();
+            int set_value(int value);
+            int request_output_flags(const char *consumer, int flags, int default_val);
+
+            explicit operator bool() const;
+
+            void release_resource();
+
+           private:
+            gpiod_line(gpiod_chip<stub> &chip, unsigned int offset);
+
+            int m_offset = 0;
+            int m_value = 0;
+            int m_flags = 0;
+            bool m_valid = false;
+            const char *m_consumer = nullptr;
+
+            friend class gpiod_chip<stub>;
+        };
 
         template<>
-        class gpiod_line<stub> {};
+        class gpiod_chip<stub> {
+           public:
+            gpiod_chip(const char *path);
+            gpiod_chip(const gpiod_chip<stub> &other) = delete;
+            gpiod_chip(gpiod_chip<stub> &&other) = default;
+            ~gpiod_chip() = default;
+
+            gpiod_chip &operator=(const gpiod_chip<stub> &other) = delete;
+            gpiod_chip &operator=(gpiod_chip<stub> &&other) = default;
+            void swap(gpiod_chip<stub> &other);
+
+            explicit operator bool() const;
+
+            gpiod_line<stub> get_line(unsigned int offset);
+
+            void release_resource();
+
+           private:
+            const char *m_path;
+
+            friend class gpiod_line<stub>;
+        };
 
         inline gpiod_chip<real>::gpiod_chip(const char *path) : m_native(gpiod_chip_open(path)) {}
 
@@ -170,6 +219,73 @@ namespace gpiod {
         inline native_gpiod_line *gpiod_line<real>::native() { return m_native; }
 
         inline const native_gpiod_line *gpiod_line<real>::native() const { return m_native; }
+
+        inline gpiod_chip<stub>::gpiod_chip(const char *path) : m_path(path) {}
+
+        inline void gpiod_chip<stub>::swap(gpiod_chip<stub> &other) {
+            using std::swap;
+
+            swap(m_path, other.m_path);
+        }
+
+        inline gpiod_chip<stub>::operator bool() const { return m_path != nullptr; }
+
+        inline gpiod_line<stub> gpiod_chip<stub>::get_line(unsigned int offset) {
+            return gpiod_line<stub>(*this, offset);
+        }
+
+        inline void gpiod_chip<stub>::release_resource() {}
+
+        inline gpiod_line<stub>::gpiod_line(gpiod_chip<stub> &chip, unsigned int offset)
+            : m_offset(offset), m_value(0), m_valid(true) {}
+
+        inline gpiod_line<stub>::gpiod_line(gpiod_line<stub> &&other)
+            : m_offset(other.m_offset),
+              m_value(other.m_value),
+              m_flags(other.m_flags),
+              m_valid(other.m_valid),
+              m_consumer(other.m_consumer) {
+            other.m_offset = 0;
+            other.m_value = 0;
+            other.m_flags = 0;
+            other.m_valid = false;
+            other.m_consumer = nullptr;
+        }
+
+        inline gpiod_line<stub> &gpiod_line<stub>::operator=(gpiod_line<stub> &&other) {
+            gpiod_line<stub> tmp(std::move(other));
+            swap(tmp);
+
+            return *this;
+        }
+
+        inline void gpiod_line<stub>::swap(gpiod_line<stub> &other) {
+            using std::swap;
+
+            swap(m_offset, other.m_offset);
+            swap(m_value, other.m_value);
+            swap(m_flags, other.m_flags);
+            swap(m_valid, other.m_valid);
+            swap(m_consumer, other.m_consumer);
+        }
+
+        inline int gpiod_line<stub>::get_value() { return m_value; }
+
+        inline int gpiod_line<stub>::set_value(int value) {
+            m_value = value;
+            return 0;
+        }
+
+        inline int gpiod_line<stub>::request_output_flags(const char *consumer, int flags, int default_val) {
+            m_consumer = consumer;
+            m_flags = flags;
+            m_value = default_val;
+            return 0;
+        }
+
+        inline gpiod_line<stub>::operator bool() const { return m_valid; }
+
+        inline void gpiod_line<stub>::release_resource() { m_valid = false; }
 
     }  // namespace detail
 
