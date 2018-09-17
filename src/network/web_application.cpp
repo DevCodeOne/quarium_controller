@@ -17,5 +17,6 @@ void web_application::handle(const Pistache::Http::Request &request, Pistache::H
 
     logger::instance()->info("Requesting {}", relative_path);
 
+    // Doesn't close the file properly so it will eventually throw an execption
     Http::serveFile(response, relative_path.c_str());
 };
