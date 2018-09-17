@@ -82,6 +82,12 @@ namespace gpiod {
             friend class gpiod_line<real>;
         };
 
+        template<>
+        class gpiod_chip<stub> {};
+
+        template<>
+        class gpiod_line<stub> {};
+
         inline gpiod_chip<real>::gpiod_chip(const char *path) : m_native(gpiod_chip_open(path)) {}
 
         inline gpiod_chip<real>::gpiod_chip(gpiod_chip<real> &&other) : m_native(other.m_native) {
@@ -153,7 +159,14 @@ namespace gpiod {
 
         inline gpiod_line<real>::operator bool() const { return m_native != nullptr; }
 
-        inline void gpiod_line<real>::release_resource() { gpiod_line_release(m_native); }
+        inline void gpiod_line<real>::release_resource() {
+            if (!m_native) {
+                return;
+            }
+
+            gpiod_line_release(m_native);
+            m_native = nullptr;
+        }
 
         inline native_gpiod_line *gpiod_line<real>::native() { return m_native; }
 
