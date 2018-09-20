@@ -13,7 +13,6 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
     }
 
     json schedule_file;
-    bool is_valid = true;
 
     try {
         schedule_file = json::parse(file_as_stream);
@@ -21,10 +20,7 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         logger::instance()->critical("Schedule file {} contains errors",
                                      std::filesystem::canonical(schedule_file_path).c_str());
         logger::instance()->critical(e.what());
-        is_valid = false;
-    }
 
-    if (!is_valid) {
         return {};
     }
 
@@ -76,6 +72,7 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
 
     if (title_entry.is_null()) {
         using namespace std::literals;
+
         logger::instance()->warn("Schedule has no title");
         created_schedule.title("Schedule"s + std::to_string(_instance_count));
     } else if (title_entry.is_string()) {

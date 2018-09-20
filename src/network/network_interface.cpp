@@ -1,100 +1,126 @@
-#include "network/network_interface.h"
+#include <functional>
+
 #include "logger.h"
+#include "network/network_interface.h"
 #include "network/web_application.h"
 
-std::optional<network_interface> network_interface::create_on_port(port p) { return network_interface(p); }
-
-network_interface::network_interface(port p) {
-    Pistache::Address address(Pistache::Ipv4::any(), Pistache::Port(p));
-    auto options = Pistache::Http::Endpoint::options().threads(1);
+std::optional<network_interface> network_interface::create_on_port(port p) {
     try {
-        m_server = std::make_unique<Pistache::Http::Endpoint>(address);
-        setup_routes();
-        m_server->setHandler(Pistache::Http::make_handler<router>(m_router));
-        m_server->init(options);
-        logger::instance()->info("Created server");
-    } catch (...) {
+        auto io_context = std::make_unique<boost::asio::io_context>(1);
+        auto connection_acceptor = std::unique_ptr<boost::asio::ip::tcp::acceptor>(new boost::asio::ip::tcp::acceptor{
+            *io_context.get(), {boost::asio::ip::make_address("0.0.0.0"), (uint16_t)p}});
+        auto socket = std::make_unique<boost::asio::ip::tcp::socket>(*io_context.get());
+
+        return network_interface(std::move(io_context), std::move(connection_acceptor), std::move(socket));
+    } catch (std::exception e) {
+        return {};
         logger::instance()->warn("Couldn't create server");
     }
+
+    return {};
+}
+
+network_interface::network_interface(std::unique_ptr<boost::asio::io_context> io_context,
+                                     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor,
+                                     std::unique_ptr<boost::asio::ip::tcp::socket> socket)
+    : m_io_context(std::move(io_context)), m_acceptor(std::move(acceptor)), m_socket(std::move(socket)) {
+    setup_routes();
 }
 
 network_interface::network_interface(network_interface &&other)
-    : m_server(std::move(other.m_server)), m_stopped(other.m_stopped) {
-    other.m_server = nullptr;
-    other.m_stopped = true;
-}
+    : m_io_context(std::move(other.m_io_context)),
+      m_acceptor(std::move(other.m_acceptor)),
+      m_socket(std::move(other.m_socket)),
+      m_stop(std::move(other.m_stop)) {}
 
 network_interface::~network_interface() { stop(); }
 
+// TODO prevent double start
 bool network_interface::start() {
-    if (!m_server) {
-        logger::instance()->critical("Couldn't create server");
+    if (!m_io_context) {
+        logger::instance()->critical("Io context is not valid");
         return false;
     }
 
-    if (m_server->isBound()) {
-        logger::instance()->critical("Couldn't bind port");
-        return false;
-    }
-
-    try {
-        m_server->serveThreaded();
-    } catch (...) {
-        logger::instance()->critical("Couldn't start serve thread");
+    if (!m_acceptor->is_open()) {
+        logger::instance()->critical("Acceptor isn't open");
         return false;
     }
 
     logger::instance()->info("Started server");
+
+    run_server();
+    m_io_context_thread = std::thread([this]() { m_io_context->run(); });
     return true;
 }
 
-bool network_interface::stop() {
-    if (!m_server) {
-        return false;
+void network_interface::stop() {
+    if (m_stop) {
+        *m_stop = true;
     }
 
-    if (m_stopped || !m_server->isBound()) {
-        return false;
+    if (m_acceptor) {
+        m_acceptor->cancel();
     }
 
-    m_server->shutdown();
-    m_server = nullptr;
-    m_stopped = true;
-
-    return true;
+    if (m_io_context_thread.joinable()) {
+        m_io_context_thread.join();
+    }
 }
 
 void network_interface::setup_routes() {
-    m_router.add_route(std::regex("/api/v0/log", std::regex_constants::basic), logger::handle);
-    m_router.add_route(std::regex("/webapp.*", std::regex_constants::basic), web_application::handle);
+    router::add_route(std::regex("/api/v0/log", std::regex_constants::basic), logger::handle_request);
+    router::add_route(std::regex("/webapp.*", std::regex_constants::basic), web_application::handle_request);
 }
 
-network_interface::operator bool() const {
-    if (!m_server) {
-        return false;
-    }
+network_interface::operator bool() const { return m_socket->is_open() && m_acceptor->is_open(); }
 
-    return m_server->isBound();
+void network_interface::run_server() {
+    m_acceptor->async_accept(*m_socket.get(), [this](boost::beast::error_code ec) {
+        if (m_stop && !(*m_stop)) {
+            std::make_shared<router>(std::move(*m_socket.get()))->handle_request();
+            this->run_server();
+        }
+    });
 }
+
+router::router(boost::asio::ip::tcp::socket socket) : m_socket(std::move(socket)) {}
 
 void router::add_route(const std::regex &regex_path, route_func func) {
-    m_routes.emplace_back(std::make_pair(regex_path, func));
+    _routes.emplace_back(std::make_pair(regex_path, func));
 }
 
-void router::onRequest(const Pistache::Http::Request &req, Pistache::Http::ResponseWriter response) {
-    auto route = std::find_if(m_routes.begin(), m_routes.end(), [this, &req](auto &route_handler_pair) {
-        return std::regex_match(req.resource(), route_handler_pair.first);
+void router::handle_request() {
+    auto self = shared_from_this();
+    boost::asio::basic_waitable_timer<std::chrono::steady_clock> timeout_timer(m_socket.get_executor().context(),
+                                                                               std::chrono::seconds(30));
+    timeout_timer.async_wait([self](boost::beast::error_code code) { self->m_socket.close(code); });
+
+    http::read(m_socket, m_buffer, m_request);
+    std::lock_guard<std::mutex> instance_guard(_instance_mutex);
+
+    std::string target_as_string = m_request.target().data();
+
+    auto route = std::find_if(_routes.begin(), _routes.end(), [target_as_string](auto &route_handler) {
+        return std::regex_match(target_as_string, route_handler.first);
     });
 
-    if (route != m_routes.cend()) {
-        route->second(req, std::move(response));
+    http::response<http::dynamic_body> response;
+
+    if (route == _routes.cend()) {
+        response.version(m_request.version());
+        response.result(http::status::not_found);
+        response.set(http::field::server, "Beast");
+
+        boost::beast::ostream(response.body()) << "Route not found";
+
     } else {
-        response.send(Pistache::Http::Code::Not_Found, "Wrong Route");
+        response = route->second(m_request);
     }
-}
 
-void router::onTimeout(const Pistache::Http::Request &req, Pistache::Http::ResponseWriter response) {
-    response.send(Pistache::Http::Code::Request_Timeout, "Timeout");
-}
+    response.set(http::field::content_length, response.body().size());
+    http::write(m_socket, response);
 
-std::shared_ptr<Pistache::Tcp::Handler> router::clone() const { return std::make_shared<router>(*this); }
+    m_socket.shutdown(tcp::socket::shutdown_send);
+    timeout_timer.cancel();
+}

@@ -59,16 +59,15 @@ bool schedule_gpio::add_gpio(json &gpio_description) {
 
     auto chip = gpio_chip::instance();
 
-    // TODO add back later so the user knows that this won't work
     if (!chip) {
         logger::instance()->critical("The gpiochip of the gpio with the id {} is not accessable", id);
-        // return false;
+        return false;
     }
 
     if (chip && chip->control_pin(pin_id, default_state) == false) {
         logger::instance()->critical("The gpio {} on gpiochip {} is not accessable", id,
                                      pin_id.gpio_chip_path().c_str());
-        // return false;
+        return false;
     }
 
     _gpios.emplace_back(std::make_unique<schedule_gpio>(id, pin_id, default_state));

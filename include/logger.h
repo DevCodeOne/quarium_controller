@@ -4,8 +4,9 @@
 #include <mutex>
 
 #include "spdlog/spdlog.h"
+#include "boost/beast.hpp"
 
-#include "network/network_header.h"
+namespace http = boost::beast::http;
 
 class logger {
    public:
@@ -22,7 +23,7 @@ class logger {
     static void configure_logger(const log_level &level, const log_type &type = log_type::console);
     static std::shared_ptr<spdlog::logger> instance();
 
-    static void handle(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response);
+    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
 
    private:
     static inline std::shared_ptr<spdlog::logger> _instance = nullptr;

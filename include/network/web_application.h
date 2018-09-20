@@ -1,8 +1,8 @@
 #pragma once
 
-#include "network_header.h"
+#include "network_interface.h"
 
 class web_application {
    public:
-    static void handle(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response);
+    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
 };

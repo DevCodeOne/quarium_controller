@@ -1,8 +1,6 @@
 #include <fstream>
 #include <sstream>
 
-#include "pistache/async.h"
-
 #include "logger.h"
 #include "run_configuration.h"
 
@@ -45,16 +43,19 @@ std::shared_ptr<spdlog::logger> logger::instance() {
     return _instance;
 }
 
-void logger::handle(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
-    std::ifstream log_file(run_configuration::instance()->log_file());
+http::response<http::dynamic_body> logger::handle_request(const http::request<http::dynamic_body> &request) {
+    http::response<http::dynamic_body> response;
 
-    std::ostringstream complete_log;
+    std::ifstream log_file(run_configuration::instance()->log_file());
     std::string current_line;
 
-    while (std::getline(log_file, current_line)) {
-        complete_log << current_line << '\n';
+    if (log_file) {
+        while (std::getline(log_file, current_line)) {
+            boost::beast::ostream(response.body()) << current_line << '\n';
+        }
+    } else {
+        boost::beast::ostream(response.body()) << "The log file couldn't be opened" << '\n';
     }
 
-    complete_log.flush();
-    response.send(Pistache::Http::Code::Ok, complete_log.str(), MIME(Text, Plain));
+    return std::move(response);
 }

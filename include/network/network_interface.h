@@ -2,35 +2,42 @@
 
 #include <cstdint>
 
-#include "network_header.h"
-
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <regex>
+#include <thread>
 #include <vector>
+
+#include "boost/asio.hpp"
+#include "boost/beast.hpp"
 
 enum port : uint16_t {};
 
-class router final : public Pistache::Http::Handler {
-   public:
-    using route_func = std::function<void(const Pistache::Http::Request &, Pistache::Http::ResponseWriter)>;
+namespace http = boost::beast::http;
+using tcp = boost::asio::ip::tcp;
 
-    router() = default;
+class router final : public std::enable_shared_from_this<router> {
+   public:
+    using route_func = std::function<http::response<http::dynamic_body>(const http::request<http::dynamic_body> &)>;
+
+    router(boost::asio::ip::tcp::socket socket);
     router(const router &other) = default;
     router(router &&other) = default;
     ~router() = default;
 
-    // Don't use the preprocessor for such unnecessary things
-    typedef Pistache::Http::details::prototype_tag tag;
-    std::shared_ptr<Pistache::Tcp::Handler> clone() const override;
+    static void add_route(const std::regex &path, route_func func);
 
-    void onRequest(const Pistache::Http::Request &req, Pistache::Http::ResponseWriter response) override;
-    void onTimeout(const Pistache::Http::Request &req, Pistache::Http::ResponseWriter response) override;
-
-    void add_route(const std::regex &path, route_func func);
+    void handle_request();
 
    private:
-    std::vector<std::pair<std::regex, route_func>> m_routes;
+    boost::asio::ip::tcp::socket m_socket;
+    boost::beast::flat_buffer m_buffer{8192};
+    http::request<http::dynamic_body> m_request;
+    http::response<http::dynamic_body> m_response;
+
+    static inline std::vector<std::pair<std::regex, route_func>> _routes;
+    static inline std::mutex _instance_mutex;
 };
 
 class network_interface final {
@@ -41,7 +48,7 @@ class network_interface final {
     ~network_interface();
 
     bool start();
-    bool stop();
+    void stop();
 
     explicit operator bool() const;
     network_interface &operator=(const network_interface &other) = delete;
@@ -50,14 +57,17 @@ class network_interface final {
     void swap(network_interface &other);
 
    private:
-    network_interface(port p);
-
+    network_interface(std::unique_ptr<boost::asio::io_context> io_context,
+                      std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor,
+                      std::unique_ptr<boost::asio::ip::tcp::socket> socket);
     void setup_routes();
+    void run_server();
 
-    std::unique_ptr<Pistache::Http::Endpoint> m_server = nullptr;
-    router m_router;
-    bool m_stopped = false;
-    bool m_is_initialized = false;
+    std::unique_ptr<boost::asio::io_context> m_io_context = nullptr;
+    std::unique_ptr<boost::asio::ip::tcp::acceptor> m_acceptor = nullptr;
+    std::unique_ptr<boost::asio::ip::tcp::socket> m_socket = nullptr;
+    std::unique_ptr<volatile bool> m_stop = std::make_unique<volatile bool>();
+    std::thread m_io_context_thread;
 };
 
 void swap(network_interface &lhs, network_interface &rhs);

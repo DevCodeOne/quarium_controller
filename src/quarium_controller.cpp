@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
         schedule_handler::instance()->add_schedule(schedule.value());
     } else {
         logger::instance()->critical("Schedule is not valid");
+        return EXIT_FAILURE;
     }
 
     auto inst = view::instance();
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
     if (inst) {
         inst->open_view();
     } else {
-        logger::instance()->warn("Couldn't open inst");
+        logger::instance()->warn("Couldn't open gui");
     }
 
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));

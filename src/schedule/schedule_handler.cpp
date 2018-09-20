@@ -170,7 +170,6 @@ void schedule_handler::event_handler() {
     }
 }
 
-// TODO implement remove code duplication
 bool schedule_handler::is_conflicting_with_other_schedules(const schedule &sched) {
     auto is_conflicting = [&sched](const auto &current_sched) { return sched.title() == current_sched.title(); };
 
