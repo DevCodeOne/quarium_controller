@@ -9,16 +9,21 @@
 #include <string>
 
 #include "gpio/gpiod_wrapper.h"
+#include "network/rest_resource.h"
+
+class gpio_chip;
+class gpio_pin;
 
 class gpio_pin_id {
    public:
-    gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path);
+    gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip);
 
     unsigned int id() const;
-    const std::filesystem::path &gpio_chip_path() const;
+    const std::shared_ptr<gpio_chip> chip() const;
+    std::shared_ptr<gpio_pin> open_pin();
 
    private:
-    std::filesystem::path m_gpio_chip_path;
+    const std::shared_ptr<gpio_chip> m_chip = nullptr;
     unsigned int m_id;
 };
 
@@ -59,6 +64,7 @@ class gpio_pin {
     std::optional<gpio_pin::action> m_overriden_action;
     const gpio_pin_id m_id;
 
+    friend class gpio_pin_id;
     friend class gpio_chip;
 };
 
@@ -75,20 +81,18 @@ class gpio_chip {
     gpio_chip &operator=(const gpio_chip &other) = delete;
     gpio_chip &operator=(gpio_chip &&other);
 
-    bool control_pin(const gpio_pin_id &id, const gpio_pin::action &action);
-    std::shared_ptr<gpio_pin> access_pin(const gpio_pin_id &id);
+    const std::filesystem::path &path_to_file() const;
 
    private:
     static std::optional<gpio_chip> open(const std::filesystem::path &gpio_chip_path);
+    static bool reserve_gpiochip(const std::filesystem::path &gpiochip_path);
+    static bool free_gpiochip(const std::filesystem::path &gpiochip_path);
 
     gpio_chip(const std::filesystem::path &gpio_dev, gpiod::gpiod_chip chip);
 
     std::filesystem::path m_gpiochip_path;
     std::map<gpio_pin_id, std::shared_ptr<gpio_pin>> m_reserved_pins;
     gpiod::gpiod_chip m_chip;
-
-    static bool reserve_gpiochip(const std::filesystem::path &gpiochip_path);
-    static bool free_gpiochip(const std::filesystem::path &gpiochip_path);
 
     static inline std::recursive_mutex _instance_mutex;
     static inline std::map<std::filesystem::path, std::shared_ptr<gpio_chip>> _gpiochip_access_map;

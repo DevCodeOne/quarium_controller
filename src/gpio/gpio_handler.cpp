@@ -2,24 +2,33 @@
 #include "config.h"
 #include "logger.h"
 
-gpio_pin_id::gpio_pin_id(unsigned int id, std::filesystem::path gpio_chip_path)
-    : m_gpio_chip_path(gpio_chip_path), m_id(id) {}
+gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_chip(chip), m_id(id) {}
 
 unsigned int gpio_pin_id::id() const { return m_id; }
 
-std::optional<gpio_pin::action> gpio_pin::is_overriden() const { return m_overriden_action; }
+std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() {
+    auto pin = std::move(gpio_pin::open(*this));
 
-const std::filesystem::path &gpio_pin_id::gpio_chip_path() const { return m_gpio_chip_path; }
+    if (!pin) {
+        return nullptr;
+    }
+
+    return std::make_shared<gpio_pin>(std::move(pin.value()));
+}
+
+const std::shared_ptr<gpio_chip> gpio_pin_id::chip() const { return m_chip; }
+
+std::optional<gpio_pin::action> gpio_pin::is_overriden() const { return m_overriden_action; }
 
 gpio_pin::gpio_pin(gpio_pin_id id, gpiod::gpiod_line line) : m_id(id), m_line(std::move(line)) {}
 
 gpio_pin::gpio_pin(gpio_pin &&other) : m_id(std::move(other.m_id)), m_line(std::move(other.m_line)) {}
 
 std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
-    auto chip = gpio_chip::instance(id.gpio_chip_path());
+    auto chip = id.chip();
 
     if (!chip) {
-        logger::instance()->critical("Couldn't get an instance of gpiochip", id.gpio_chip_path().c_str());
+        logger::instance()->critical("Chip of the provided gpio_pin_id is not valid");
         return {};
     }
 
@@ -48,18 +57,18 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
 }
 
 bool gpio_pin::control(const action &act) {
-    if (!m_line) {
+    if (!m_line || !m_id.chip()) {
         return false;
     }
 
     switch (act) {
         case action::on:
         case action::off:
-            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), m_id.gpio_chip_path().c_str(),
+            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), m_id.chip()->path_to_file().c_str(),
                                      act == action::on ? "on" : "off");
             break;
         case action::toggle:
-            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.gpio_chip_path().c_str());
+            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.chip()->path_to_file().c_str());
             break;
     }
 
@@ -204,45 +213,4 @@ gpio_chip::~gpio_chip() {
     }
 }
 
-bool gpio_chip::control_pin(const gpio_pin_id &id, const gpio_pin::action &action) {
-    std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
-
-    auto pin = access_pin(id);
-
-    if (!pin) {
-        return false;
-    }
-
-    return pin->control(action);
-}
-
-std::shared_ptr<gpio_pin> gpio_chip::access_pin(const gpio_pin_id &id) {
-    std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
-
-    if (id.gpio_chip_path() != m_gpiochip_path) {
-        logger::instance()->warn("Wrong gpio_chip path");
-        return nullptr;
-    }
-
-    if (auto result = m_reserved_pins.find(id); result != m_reserved_pins.cend()) {
-        return result->second;
-    }
-
-    auto created_pin = gpio_pin::open(id);
-
-    if (!created_pin) {
-        logger::instance()->critical("Couldn't open pin with id {}", id.id());
-        return nullptr;
-    }
-
-    if (auto result =
-            m_reserved_pins.emplace(std::make_pair(id, std::make_shared<gpio_pin>(std::move(created_pin.value()))));
-        result.second) {
-        logger::instance()->warn("Reserved new pin {}", id.id());
-        return result.first->second;
-    } else {
-        logger::instance()->warn("Couldn't create pin with id {}", id.id());
-    }
-
-    return nullptr;
-}
+const std::filesystem::path &gpio_chip::path_to_file() const { return m_gpiochip_path; }
