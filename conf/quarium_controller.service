@@ -1,4 +1,11 @@
-[Service]
+[Unit]
+After=logind.service
+Requires=network.target
 Description=Autostart the quarium_controller
-Requires=Network.target
-ExecStart=/opt/quarium_controller/quarium_controller
+
+[Service]
+ExecStartPre=/bin/sleep 5
+ExecStart=/opt/quarium_controller/build/quarium_controller --config=/opt/quarium_controller/conf/settings.json --log-file=/opt/quarium_controller/log.txt
+
+[Install]
+WantedBy=multi-user.target
