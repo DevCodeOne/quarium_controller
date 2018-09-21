@@ -50,7 +50,14 @@ bool network_interface::start() {
     logger::instance()->info("Started server");
 
     run_server();
-    m_io_context_thread = std::thread([this]() { m_io_context->run(); });
+    m_io_context_thread = std::thread([this]() {
+        boost::beast::error_code code;
+        m_io_context->run(code);
+
+        if (code) {
+            logger::instance()->critical("Failed to start the io_context");
+        }
+    });
     return true;
 }
 
@@ -60,7 +67,12 @@ void network_interface::stop() {
     }
 
     if (m_acceptor) {
-        m_acceptor->cancel();
+        boost::beast::error_code code;
+        m_acceptor->cancel(code);
+
+        if (code) {
+            logger::instance()->critical("Failed to cancel the acceptor");
+        }
     }
 
     if (m_io_context_thread.joinable()) {
@@ -77,7 +89,7 @@ network_interface::operator bool() const { return m_socket->is_open() && m_accep
 
 void network_interface::run_server() {
     m_acceptor->async_accept(*m_socket.get(), [this](boost::beast::error_code ec) {
-        if (m_stop && !(*m_stop)) {
+        if (!ec && m_stop && !(*m_stop)) {
             std::make_shared<router>(std::move(*m_socket.get()))->handle_request();
             this->run_server();
         }
@@ -92,15 +104,21 @@ void router::add_route(const std::regex &regex_path, route_func func) {
 
 void router::handle_request() {
     auto self = shared_from_this();
+
     boost::asio::basic_waitable_timer<std::chrono::steady_clock> timeout_timer(m_socket.get_executor().context(),
                                                                                std::chrono::seconds(30));
     timeout_timer.async_wait([self](boost::beast::error_code code) { self->m_socket.close(code); });
 
-    http::read(m_socket, m_buffer, m_request);
-    std::lock_guard<std::mutex> instance_guard(_instance_mutex);
+    boost::beast::error_code code;
+    http::read(m_socket, m_buffer, m_request, code);
+
+    if (code) {
+        logger::instance()->critical("An error occured when trying to read data from the socket : {}", code.message());
+    }
 
     std::string target_as_string = m_request.target().to_string();
 
+    std::lock_guard<std::mutex> instance_guard(_instance_mutex);
     auto route = std::find_if(_routes.begin(), _routes.end(), [target_as_string](auto &route_handler) {
         return std::regex_match(target_as_string, route_handler.first);
     });
@@ -121,8 +139,17 @@ void router::handle_request() {
     }
 
     response.set(http::field::content_length, response.body().size());
-    http::write(m_socket, response);
+    http::write(m_socket, response, code);
 
-    m_socket.shutdown(tcp::socket::shutdown_send);
+    if (code) {
+        logger::instance()->critical("An error occured when trying to send data to the socket : {}", code.message());
+    }
+
+    m_socket.shutdown(tcp::socket::shutdown_send, code);
+
+    if (code) {
+        logger::instance()->critical("An error occured when trying to close the socket : {}", code.message());
+    }
+
     timeout_timer.cancel();
 }

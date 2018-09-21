@@ -32,7 +32,7 @@ http::response<http::dynamic_body> web_application::handle_request(const http::r
         }
 
     } else {
-        boost::beast::ostream(response.body()) << "Resource : " << resource_path.c_str() << "doesn't exist" << '\n';
+        boost::beast::ostream(response.body()) << "Resource : " << resource_path.c_str() << " doesn't exist" << '\n';
     }
 
     return std::move(response);
