@@ -99,13 +99,15 @@ void router::handle_request() {
     http::read(m_socket, m_buffer, m_request);
     std::lock_guard<std::mutex> instance_guard(_instance_mutex);
 
-    std::string target_as_string = m_request.target().data();
+    std::string target_as_string = m_request.target().to_string();
 
     auto route = std::find_if(_routes.begin(), _routes.end(), [target_as_string](auto &route_handler) {
         return std::regex_match(target_as_string, route_handler.first);
     });
 
     http::response<http::dynamic_body> response;
+
+    logger::instance()->info("Requesting resource {}", target_as_string);
 
     if (route == _routes.cend()) {
         response.version(m_request.version());

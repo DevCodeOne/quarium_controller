@@ -24,7 +24,7 @@ http::response<http::dynamic_body> web_application::handle_request(const http::r
 
         if (!input_file) {
             boost::beast::ostream(response.body())
-                << "Resource : " << resource_path.c_str() << "couldn't be opened" << '\n';
+                << "Resource : " << resource_path.c_str() << " couldn't be opened" << '\n';
         }
 
         while (std::getline(input_file, current_line)) {
