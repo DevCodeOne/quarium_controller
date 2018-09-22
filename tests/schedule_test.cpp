@@ -39,7 +39,7 @@ TEST_CASE("Correct schedule testing") {
     schedule_description["schedule"]["period_in_days"] = 1u;
     schedule_description["schedule"]["end_at"] = "10.01.1970";
 
-    auto sched_with_end = schedule::create_from_description(schedule_description["schedule"]);
+    auto sched_with_end = schedule::deserialize(schedule_description["schedule"]);
 
     REQUIRE(sched_with_end.has_value());
 
@@ -51,7 +51,7 @@ TEST_CASE("Correct schedule testing") {
 
     schedule_description["schedule"]["end_at"] = "01.01.1970";
 
-    auto sched_with_start_eq_end = schedule::create_from_description(schedule_description["schedule"]);
+    auto sched_with_start_eq_end = schedule::deserialize(schedule_description["schedule"]);
 
     REQUIRE(sched_with_start_eq_end.has_value() == false);
 
@@ -63,7 +63,7 @@ TEST_CASE("Correct schedule testing") {
                 "actions" : ["light_off"]
             })"_json);
 
-    auto sched_with_calc_period = schedule::create_from_description(schedule_description["schedule"]);
+    auto sched_with_calc_period = schedule::deserialize(schedule_description["schedule"]);
 
     REQUIRE(sched_with_calc_period.has_value());
     REQUIRE(sched_with_calc_period->events().size() == 5);
@@ -77,7 +77,7 @@ TEST_CASE("Schedule event sorting") {
     json schedule_description2 = json::parse(std::ifstream(testfiles[0]));
     schedule_description2["schedule"]["title"] = "aquarium#2";
 
-    auto sched = schedule::create_from_description(schedule_description2["schedule"]);
+    auto sched = schedule::deserialize(schedule_description2["schedule"]);
 
     REQUIRE(sched.has_value());
 

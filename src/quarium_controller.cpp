@@ -17,27 +17,27 @@ void sigint(int) { _should_exit = true; }
 void sigterm(int) { _should_exit = true; }
 
 int main(int argc, char *argv[]) {
-    signal_handler handler;
-    handler.install_signal_handler(signal_handler::signal::sigint, sigint, {});
-    handler.install_signal_handler(signal_handler::signal::sigterm, sigterm, {});
+    signal_handler::install_signal_handler(signal_handler::signal::sigint, sigint, {});
+    signal_handler::install_signal_handler(signal_handler::signal::sigterm, sigterm, {});
 
-    // TODO add other command line options
     bool show_help = false;
+    bool print_to_console = false;
 
     // clang-format off
     auto cli =
         clara::Opt([](const std::string &config_path) { run_configuration::instance()->config_path(config_path); }, "config_path")
             ["-c"]["--config"]
-            ("Location of the configuration file to use")
+            ("location of the configuration file to use")
         | clara::Opt(
                 [](const uint16_t &server_port) {
                 run_configuration::instance()->server_port(port(server_port));
                 }, "sever_port")
             ["-p"]["--port"]
-            ("Which port to start the http server on")
+            ("which port to start the http server on")
         | clara::Opt([](const std::string &log_file) { run_configuration::instance()->log_file(log_file); }, "log_file")
                 ["-l"]["--log-file"]
-                ("Location of the log file to write to")
+                ("location of the log file to write to")
+        | clara::Opt(print_to_console)["--print-to-console"]("specify if the output should also be printed to the standard output")
         | clara::Help(show_help);
     // clang-format on
 
@@ -48,13 +48,12 @@ int main(int argc, char *argv[]) {
             logger::instance()->critical("Error in command line : {}", result.errorMessage());
         }
 
-        for (auto current_line : cli.getHelpColumns()) {
-            std::cout << current_line.left << " " << current_line.right << std::endl;
-        }
+        cli.writeToStream(std::cout);
 
         return result ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
+    run_configuration::instance()->print_to_console(print_to_console);
     logger::configure_logger(logger::log_level::debug, logger::log_type::file);
 
     auto conf = config::instance();

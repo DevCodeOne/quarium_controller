@@ -56,10 +56,10 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
 
     auto schedule = schedule_file["schedule"];
 
-    return create_from_description(schedule);
+    return deserialize(schedule);
 }
 
-std::optional<schedule> schedule::create_from_description(json &schedule_description) {
+std::optional<schedule> schedule::deserialize(json &schedule_description) {
     json event_description_array_entry = schedule_description["events"];
     json title_entry = schedule_description["title"];
     json start_date_entry = schedule_description["start_at"];
@@ -197,6 +197,8 @@ std::optional<schedule> schedule::create_from_description(json &schedule_descrip
     ++_instance_count;
     return created_schedule;
 }
+
+nlohmann::json schedule::serialize() const { return nlohmann::json{}; }
 
 schedule &schedule::start_at(const days &new_start) {
     m_start_at = new_start;

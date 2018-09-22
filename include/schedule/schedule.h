@@ -9,16 +9,17 @@
 #include "nlohmann/json.hpp"
 
 #include "../chrono_time.h"
+#include "../network/rest_resource.h"
 #include "schedule_event.h"
 
 using json = nlohmann::json;
 
-class schedule {
+class schedule : public rest_resource<schedule> {
    public:
     enum struct mode { repeating, single_iteration };
 
     static std::optional<schedule> create_from_file(const std::filesystem::path &schedule_file_path);
-    static std::optional<schedule> create_from_description(json &schedule_description);
+    static std::optional<schedule> deserialize(json &schedule_description);
 
     schedule &start_at(const days &new_start);
     schedule &end_at(const days &new_end);
@@ -35,6 +36,7 @@ class schedule {
     mode schedule_mode() const;
 
     explicit operator bool() const;
+    nlohmann::json serialize() const;
 
    private:
     static bool events_conflict(const std::vector<schedule_event> &events);

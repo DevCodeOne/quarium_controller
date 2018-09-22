@@ -32,8 +32,8 @@ class signal_handler final {
         sigxfsz = SIGXFSZ
     };
 
-    signal_handler() = default;
-    ~signal_handler() = default;
+    signal_handler() = delete;
+    ~signal_handler() = delete;
 
     static bool disable_for_current_thread();
     static int install_signal_handler(signal sig, void (*handler)(int), std::initializer_list<signal> ignored_signals);

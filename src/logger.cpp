@@ -17,13 +17,10 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
     }
 
     if (!_instance && file_sink) {
-        switch (type) {
-            case log_type::console:
-                _instance =
-                    std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, {console_sink, file_sink}));
-                break;
-            case log_type::file:
-                _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, file_sink));
+        if (type == log_type::console || run_configuration::instance()->print_to_console()) {
+            _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, {console_sink, file_sink}));
+        } else if (type == log_type::file) {
+            _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, file_sink));
         }
     } else {
         logger::instance();
