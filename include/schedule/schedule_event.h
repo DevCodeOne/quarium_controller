@@ -1,20 +1,21 @@
 #pragma once
 
+#include <chrono>
 #include <optional>
 #include <string>
-#include <chrono>
 #include <vector>
 
 #include "nlohmann/json.hpp"
 
-#include "../chrono_time.h"
+#include "chrono_time.h"
+#include "network/rest_resource.h"
 #include "schedule_action.h"
 
 using json = nlohmann::json;
 
-class schedule_event {
+class schedule_event final : public rest_resource<schedule_event> {
    public:
-    static std::optional<schedule_event> create_from_description(json &schedule_event_description);
+    static std::optional<schedule_event> deserialize(json &schedule_event_description);
 
     schedule_event &id(const std::string &new_id);
     schedule_event &trigger_time(const std::chrono::minutes new_trigger_time);
@@ -28,6 +29,8 @@ class schedule_event {
     bool is_marked() const;
     void unmark() const;
     void mark() const;
+
+    nlohmann::json serialize() const;
 
    private:
     std::string m_id;

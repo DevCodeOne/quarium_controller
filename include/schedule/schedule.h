@@ -8,13 +8,13 @@
 
 #include "nlohmann/json.hpp"
 
-#include "../chrono_time.h"
-#include "../network/rest_resource.h"
+#include "chrono_time.h"
+#include "network/rest_resource.h"
 #include "schedule_event.h"
 
 using json = nlohmann::json;
 
-class schedule : public rest_resource<schedule> {
+class schedule final : public rest_resource<schedule> {
    public:
     enum struct mode { repeating, single_iteration };
 

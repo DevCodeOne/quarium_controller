@@ -6,13 +6,10 @@
 #include <thread>
 #include <vector>
 
-#include "nlohmann/json.hpp"
-
-#include "../chrono_time.h"
+#include "chrono_time.h"
 #include "gpio/gpio_handler.h"
+#include "network/network_interface.h"
 #include "schedule.h"
-
-using json = nlohmann::json;
 
 class schedule_handler {
    public:
@@ -21,6 +18,8 @@ class schedule_handler {
     bool add_schedule(schedule sched);
     void start_event_handler();
     void stop_event_handler();
+
+    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
 
    private:
     schedule_handler() = default;

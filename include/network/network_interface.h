@@ -17,6 +17,7 @@ enum port : uint16_t {};
 namespace http = boost::beast::http;
 using tcp = boost::asio::ip::tcp;
 
+// TODO add function to stop all router
 class router final : public std::enable_shared_from_this<router> {
    public:
     using route_func = std::function<http::response<http::dynamic_body>(const http::request<http::dynamic_body> &)>;
@@ -56,11 +57,13 @@ class network_interface final {
 
     void swap(network_interface &other);
 
+    template<typename T, typename F>
+    void add_route(const T &regex, F function);
+
    private:
     network_interface(std::unique_ptr<boost::asio::io_context> io_context,
                       std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor,
                       std::unique_ptr<boost::asio::ip::tcp::socket> socket);
-    void setup_routes();
     void run_server();
 
     std::unique_ptr<boost::asio::io_context> m_io_context = nullptr;
@@ -71,3 +74,8 @@ class network_interface final {
 };
 
 void swap(network_interface &lhs, network_interface &rhs);
+
+template<typename T, typename F>
+void network_interface::network_interface::add_route(const T &regex, F function) {
+    router::add_route(regex, std::move(function));
+}

@@ -7,6 +7,7 @@
 #include "gui/view.h"
 #include "logger.h"
 #include "network/network_interface.h"
+#include "network/web_application.h"
 #include "run_configuration.h"
 #include "schedule/schedule_handler.h"
 #include "signal_handler.h"
@@ -76,6 +77,10 @@ int main(int argc, char *argv[]) {
     }
 
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));
+    network_iface->add_route(std::regex("/api/v0/log", std::regex_constants::extended), rest_resource<logger>::handle_request);
+    network_iface->add_route(std::regex("/api/v0/schedules.*", std::regex_constants::extended), rest_resource<schedule_handler>::handle_request);
+    network_iface->add_route(std::regex("/api/v0/gpio_chip.*", std::regex_constants::extended), rest_resource<gpio_chip>::handle_request);
+    network_iface->add_route(std::regex("/webapp.*", std::regex_constants::extended), rest_resource<web_application>::handle_request);
 
     if (!(network_iface && network_iface->start())) {
         logger::instance()->critical("Couldn't start network interface");

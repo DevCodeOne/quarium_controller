@@ -1,8 +1,10 @@
 #include <functional>
 
+#include "gpio/gpio_handler.h"
 #include "logger.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"
+#include "schedule/schedule_handler.h"
 
 std::optional<network_interface> network_interface::create_on_port(port p) {
     try {
@@ -23,9 +25,7 @@ std::optional<network_interface> network_interface::create_on_port(port p) {
 network_interface::network_interface(std::unique_ptr<boost::asio::io_context> io_context,
                                      std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor,
                                      std::unique_ptr<boost::asio::ip::tcp::socket> socket)
-    : m_io_context(std::move(io_context)), m_acceptor(std::move(acceptor)), m_socket(std::move(socket)) {
-    setup_routes();
-}
+    : m_io_context(std::move(io_context)), m_acceptor(std::move(acceptor)), m_socket(std::move(socket)) {}
 
 network_interface::network_interface(network_interface &&other)
     : m_io_context(std::move(other.m_io_context)),
@@ -80,11 +80,6 @@ void network_interface::stop() {
     }
 }
 
-void network_interface::setup_routes() {
-    router::add_route(std::regex("/api/v0/log", std::regex_constants::basic), logger::handle_request);
-    router::add_route(std::regex("/webapp.*", std::regex_constants::basic), web_application::handle_request);
-}
-
 network_interface::operator bool() const { return m_socket->is_open() && m_acceptor->is_open(); }
 
 void network_interface::run_server() {
@@ -106,7 +101,7 @@ void router::handle_request() {
     auto self = shared_from_this();
 
     boost::asio::basic_waitable_timer<std::chrono::steady_clock> timeout_timer(m_socket.get_executor().context(),
-                                                                               std::chrono::seconds(30));
+                                                                               std::chrono::seconds(10));
     timeout_timer.async_wait([self](boost::beast::error_code code) { self->m_socket.close(code); });
 
     boost::beast::error_code code;

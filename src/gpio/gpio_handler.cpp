@@ -1,5 +1,7 @@
-#include "gpio/gpio_handler.h"
+#include <regex>
+
 #include "config.h"
+#include "gpio/gpio_handler.h"
 #include "logger.h"
 
 gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_chip(chip), m_id(id) {}
@@ -148,6 +150,32 @@ std::shared_ptr<gpio_chip> gpio_chip::instance(const std::filesystem::path &gpio
     }
 
     return _gpiochip_access_map[gpio_chip_path];
+}
+
+http::response<http::dynamic_body> gpio_chip::handle_request(const http::request<http::dynamic_body> &request) {
+    http::response<http::dynamic_body> response;
+
+    std::string resource_path_string(request.target().to_string());
+    std::regex list_gpio_chips_regex(R"(/api/v0/gpio_chip/?)", std::regex_constants::extended);
+    std::regex gpio_chip_id_regex(R"([a-zA-z0-9]+)", std::regex_constants::extended);
+
+    if (std::regex_match(resource_path_string, list_gpio_chips_regex) && request.method() == http::verb::get) {
+        std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
+
+        nlohmann::json gpio_chips;
+
+        auto add_serialized_gpio_chip = [&gpio_chips](const auto &current_gpio_chip) {
+            gpio_chips.push_back(std::string(current_gpio_chip.second->path_to_file().c_str()));
+        };
+
+        std::for_each(_gpiochip_access_map.cbegin(), _gpiochip_access_map.cend(), add_serialized_gpio_chip);
+
+        boost::beast::ostream(response.body()) << gpio_chips.dump();
+        return std::move(response);
+    }
+
+    boost::beast::ostream(response.body()) << "Couldn't find resource " << resource_path_string;
+    return std::move(response);
 }
 
 std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_path) {

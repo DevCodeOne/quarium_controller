@@ -3,8 +3,6 @@
 #include "logger.h"
 
 std::optional<schedule> schedule::create_from_file(const std::filesystem::path &schedule_file_path) {
-    using namespace nlohmann;
-
     std::ifstream file_as_stream(schedule_file_path);
 
     if (!file_as_stream) {
@@ -12,22 +10,21 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
-    json schedule_file;
+    nlohmann::json schedule_file;
 
     try {
-        schedule_file = json::parse(file_as_stream);
+        schedule_file = nlohmann::json::parse(file_as_stream);
     } catch (std::exception &e) {
-        logger::instance()->critical("Schedule file {} contains errors",
-                                     std::filesystem::canonical(schedule_file_path).c_str());
-        logger::instance()->critical(e.what());
-
+        logger::instance()->critical("Schedule file {} contains errors : {}",
+                                     std::filesystem::canonical(schedule_file_path).c_str(), e.what());
         return {};
     }
 
     auto gpios = schedule_file["gpios"];
 
     if (gpios.is_null()) {
-        logger::instance()->warn("No gpios are defined in the file {}", schedule_file_path.c_str());
+        logger::instance()->critical("No gpios are defined in the file {}", schedule_file_path.c_str());
+        return {};
     }
 
     bool successfully_parsed_all_gpios = std::all_of(gpios.begin(), gpios.end(), [](auto &current_action_description) {
@@ -42,7 +39,8 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
     auto actions = schedule_file["actions"];
 
     if (actions.is_null()) {
-        logger::instance()->warn("No actions are defined in the file {}", schedule_file_path.c_str());
+        logger::instance()->critical("No actions are defined in the file {}", schedule_file_path.c_str());
+        return {};
     }
 
     bool successfully_parsed_all_actions = std::all_of(
@@ -94,18 +92,18 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
 
     std::vector<schedule_event> created_events;
 
-    bool successfully_created_all_events = std::all_of(
-        event_description_array_entry.begin(), event_description_array_entry.end(),
-        [&created_events](auto &current_event_description) {
-            auto created_schedule_event = schedule_event::create_from_description(current_event_description);
+    bool successfully_created_all_events =
+        std::all_of(event_description_array_entry.begin(), event_description_array_entry.end(),
+                    [&created_events](auto &current_event_description) {
+                        auto created_schedule_event = schedule_event::deserialize(current_event_description);
 
-            if (!created_schedule_event) {
-                return false;
-            }
+                        if (!created_schedule_event) {
+                            return false;
+                        }
 
-            created_events.emplace_back(std::move(*created_schedule_event));
-            return true;
-        });
+                        created_events.emplace_back(std::move(*created_schedule_event));
+                        return true;
+                    });
 
     if (!successfully_created_all_events) {
         logger::instance()->critical("Description of one or more events contains errors");
@@ -198,7 +196,28 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
     return created_schedule;
 }
 
-nlohmann::json schedule::serialize() const { return nlohmann::json{}; }
+// TODO test serialize method
+nlohmann::json schedule::serialize() const {
+    nlohmann::json serialized;
+
+    for (auto &current_event : m_events) {
+        serialized["events"].push_back(current_event.serialize());
+    }
+
+    serialized["title"] = m_title;
+    serialized["period_in_days"] = (unsigned int) m_period.count();
+    serialized["repeating"] = m_mode == mode::repeating;
+
+    if (m_start_at) {
+        serialized["start_at"] = m_start_at.value().count();
+    }
+
+    if (m_end_at) {
+        serialized["end_at"] = m_end_at.value().count();
+    }
+
+    return std::move(serialized);
+}
 
 schedule &schedule::start_at(const days &new_start) {
     m_start_at = new_start;

@@ -1,7 +1,7 @@
 #include "schedule/schedule_event.h"
 #include "logger.h"
 
-std::optional<schedule_event> schedule_event::create_from_description(json &schedule_event_description) {
+std::optional<schedule_event> schedule_event::deserialize(json &schedule_event_description) {
     json id_entry = schedule_event_description["id"];
     json day_entry = schedule_event_description["day"];
     json trigger_at_entry = schedule_event_description["trigger_at"];
@@ -113,4 +113,19 @@ void schedule_event::mark() const { m_marker = true; }
 
 bool is_earlier(const schedule_event &lhs, const schedule_event &rhs) {
     return (lhs.day() < rhs.day()) || (lhs.day() == rhs.day() && lhs.trigger_time() < rhs.trigger_time());
+}
+
+// TODO Test serialize method
+nlohmann::json schedule_event::serialize() const {
+    nlohmann::json serialized;
+
+    serialized["id"] = m_id;
+    serialized["day"] = m_day.count();
+    serialized["trigger_at"] = m_trigger_time.count();
+
+    for (auto &current_action_id : m_actions) {
+        serialized["actions"].push_back(current_action_id);
+    }
+
+    return std::move(serialized);
 }
