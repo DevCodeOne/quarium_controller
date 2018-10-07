@@ -35,7 +35,7 @@ bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator==(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 
-class gpio_pin final {
+class gpio_pin final : public rest_resource<gpio_pin> {
    public:
     enum struct action { off = 0, on = 1, toggle = 2 };
 
@@ -53,6 +53,10 @@ class gpio_pin final {
     unsigned int gpio_id() const;
     std::optional<gpio_pin::action> is_overriden() const;
 
+    nlohmann::json serialize() const;
+    // TODO implement this
+    static std::optional<gpio_chip> deserialize(nlohmann::json &description);
+
    private:
     static std::optional<gpio_pin> open(gpio_pin_id id);
 
@@ -65,7 +69,6 @@ class gpio_pin final {
     std::optional<gpio_pin::action> m_overriden_action;
     const gpio_pin_id m_id;
 
-    friend class gpio_pin_id;
     friend class gpio_chip;
 };
 
@@ -84,9 +87,10 @@ class gpio_chip final : public rest_resource<gpio_chip> {
     gpio_chip &operator=(gpio_chip &&other);
 
     const std::filesystem::path &path_to_file() const;
+    std::shared_ptr<gpio_pin> open_pin(gpio_pin_id &id);
 
-    // TODO implement these
     nlohmann::json serialize() const;
+    // TODO implement this
     static std::optional<gpio_chip> deserialize(nlohmann::json &description);
 
    private:

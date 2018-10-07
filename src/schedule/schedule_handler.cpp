@@ -197,7 +197,7 @@ http::response<http::dynamic_body> schedule_handler::handle_request(const http::
 
     std::string resource_path_string(request.target().to_string());
     std::regex list_schedules_regex(R"(/api/v0/schedules/?)", std::regex_constants::extended);
-    std::regex schedule_id_regex(R"([1-9][0-9]*)", std::regex_constants::extended);
+    std::regex schedule_id_regex(R"([1-9][0-9]*|[0-9])", std::regex_constants::extended);
 
     if (std::regex_match(resource_path_string, list_schedules_regex) && request.method() == http::verb::get) {
         auto instance = schedule_handler::instance();

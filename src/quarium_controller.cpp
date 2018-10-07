@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     signal_handler::install_signal_handler(signal_handler::signal::sigint, sigint, {});
     signal_handler::install_signal_handler(signal_handler::signal::sigterm, sigterm, {});
 
+    // TODO add option to disable gui and network
     bool show_help = false;
     bool print_to_console = false;
 
@@ -77,10 +78,14 @@ int main(int argc, char *argv[]) {
     }
 
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));
-    network_iface->add_route(std::regex("/api/v0/log", std::regex_constants::extended), rest_resource<logger>::handle_request);
-    network_iface->add_route(std::regex("/api/v0/schedules.*", std::regex_constants::extended), rest_resource<schedule_handler>::handle_request);
-    network_iface->add_route(std::regex("/api/v0/gpio_chip.*", std::regex_constants::extended), rest_resource<gpio_chip>::handle_request);
-    network_iface->add_route(std::regex("/webapp.*", std::regex_constants::extended), rest_resource<web_application>::handle_request);
+    network_iface->add_route(std::regex("/api/v0/log", std::regex_constants::extended),
+                             rest_resource<logger>::handle_request);
+    network_iface->add_route(std::regex("/api/v0/schedules.*", std::regex_constants::extended),
+                             rest_resource<schedule_handler>::handle_request);
+    network_iface->add_route(std::regex("/api/v0/gpio_chip.*", std::regex_constants::extended),
+                             rest_resource<gpio_chip>::handle_request);
+    network_iface->add_route(std::regex("/webapp.*", std::regex_constants::extended),
+                             rest_resource<web_application>::handle_request);
 
     if (!(network_iface && network_iface->start())) {
         logger::instance()->critical("Couldn't start network interface");
