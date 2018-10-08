@@ -1,15 +1,14 @@
 #pragma once
 
 #include <filesystem>
-#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
 
-#include "gpio/gpiod_wrapper.h"
 #include "gpio/gpio_pin.h"
+#include "gpio/gpiod_wrapper.h"
 #include "network/network_interface.h"
 #include "network/rest_resource.h"
 
@@ -50,4 +49,13 @@ class gpio_chip final : public rest_resource<gpio_chip, rest_resource_types::ent
 
     friend class gpio_handler;
     friend class gpio_pin;
+};
+
+// TODO specialize all other values in this class that are rest_resources
+template<>
+struct rest_resource_description<gpio_chip> {
+    using value = gpio_chip;
+    using values_variant = std::variant<gpio_pin *>;
+
+    static inline constexpr rest_resource_types resource_type = rest_resource_types::list;
 };
