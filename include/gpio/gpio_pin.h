@@ -29,7 +29,7 @@ bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator==(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 
-class gpio_pin final : public rest_resource<gpio_pin, rest_resource_types::entry> {
+class gpio_pin final : public rest_resource<gpio_pin> {
    public:
     enum struct action { off = 0, on = 1, toggle = 2 };
 

@@ -14,7 +14,7 @@
 
 using json = nlohmann::json;
 
-class schedule final : public rest_resource<schedule, rest_resource_types::entry> {
+class schedule final : public rest_resource<schedule> {
    public:
     enum struct mode { repeating, single_iteration };
 
