@@ -1,6 +1,6 @@
 #include <functional>
 
-#include "gpio/gpio_handler.h"
+#include "gpio/gpio_chip.h"
 #include "logger.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"

@@ -16,7 +16,8 @@ set (SOURCE_FILES
     src/logger.cpp
     src/signal_handler.cpp
     src/run_configuration.cpp
-    src/gpio/gpio_handler.cpp
+    src/gpio/gpio_chip.cpp
+    src/gpio/gpio_pin.cpp
     src/network/network_interface.cpp
     src/network/web_application.cpp
     src/schedule/schedule.cpp
@@ -68,7 +69,8 @@ if (BUILD_TESTS)
         src/config.cpp
         src/logger.cpp
         src/signal_handler.cpp
-        src/gpio/gpio_handler.cpp
+        src/gpio/gpio_chip.cpp
+        src/gpio/gpio_pin.cpp
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
