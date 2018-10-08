@@ -13,7 +13,7 @@
 #include "network/network_interface.h"
 #include "network/rest_resource.h"
 
-class gpio_chip final : public rest_resource<gpio_chip, rest_resource_types::entry> {
+class gpio_chip final : public rest_resource<gpio_chip> {
    public:
     static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
 
