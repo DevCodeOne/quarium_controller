@@ -9,9 +9,10 @@
 #include "chrono_time.h"
 #include "gpio/gpio_handler.h"
 #include "network/network_interface.h"
+#include "network/rest_resource.h"
 #include "schedule.h"
 
-class schedule_handler {
+class schedule_handler : rest_resource<schedule_handler, rest_resource_types::entry> {
    public:
     static std::shared_ptr<schedule_handler> instance();
 

@@ -13,7 +13,7 @@
 
 using json = nlohmann::json;
 
-class schedule_event final : public rest_resource<schedule_event> {
+class schedule_event final : public rest_resource<schedule_event, rest_resource_types::entry> {
    public:
     static std::optional<schedule_event> deserialize(json &schedule_event_description);
 

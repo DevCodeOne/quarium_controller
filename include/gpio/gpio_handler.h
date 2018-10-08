@@ -35,7 +35,7 @@ bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator==(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 
-class gpio_pin final : public rest_resource<gpio_pin> {
+class gpio_pin final : public rest_resource<gpio_pin, rest_resource_types::entry> {
    public:
     enum struct action { off = 0, on = 1, toggle = 2 };
 
@@ -72,7 +72,7 @@ class gpio_pin final : public rest_resource<gpio_pin> {
     friend class gpio_chip;
 };
 
-class gpio_chip final : public rest_resource<gpio_chip> {
+class gpio_chip final : public rest_resource<gpio_chip, rest_resource_types::entry> {
    public:
     static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
 
