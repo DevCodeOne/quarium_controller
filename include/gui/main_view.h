@@ -9,15 +9,18 @@
 
 #include "lvgl.h"
 
+#include "gui/manual_control_view.h"
 #include "ring_buffer.h"
 
-class view {
+class main_view {
    public:
-    static std::shared_ptr<view> instance();
+    static std::shared_ptr<main_view> instance();
     void open_view();
     void close_view();
+    std::shared_ptr<manual_control_view> manual_control_view_instance();
+    const std::shared_ptr<manual_control_view> manual_control_view_instance() const;
 
-    ~view();
+    ~main_view();
 
    private:
     enum struct page_index : uint8_t {
@@ -31,7 +34,7 @@ class view {
 
     static void view_loop();
 
-    view() = default;
+    main_view() = default;
 
     void create_pages();
     void switch_page(const page_index &new_index);
@@ -45,25 +48,24 @@ class view {
 
     lv_obj_t *m_screen = nullptr;
     lv_obj_t *m_content_container = nullptr;
+    lv_obj_t *m_status_bar = nullptr;
+    lv_obj_t *m_clock = nullptr;
     lv_theme_t *m_theme = nullptr;
     std::array<lv_obj_t *, 6> m_container;
+    std::shared_ptr<manual_control_view> m_manual_view;
+    std::string m_time;
     ring_buffer<page_index, 20> m_visited_pages;
-    page_index current_page = page_index::front;
+    page_index m_current_page = page_index::front;
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
 
-    lv_obj_t *m_gpio_chooser = nullptr;
-    lv_obj_t *m_gpio_control_switch = nullptr;
-    lv_obj_t *m_gpio_override_checkbox = nullptr;
-    std::unique_ptr<char[]> m_gpio_list = nullptr;
-    size_t m_gpio_list_len = 0;
-
-    static inline std::shared_ptr<view> _instance{nullptr};
+    static inline std::shared_ptr<main_view> _instance{nullptr};
     static inline std::recursive_mutex _instance_mutex{};
 
     static inline constexpr unsigned int screen_width = 320;
     static inline constexpr unsigned int screen_height = 480;
     static inline constexpr unsigned int navigation_buttons_height = 40;
+    static inline constexpr unsigned int status_bar_height = 30;
 
     static inline constexpr char front_button_titles[5][15] = {"Schedules", "Manual Control", "Stats", "Logs", ""};
 

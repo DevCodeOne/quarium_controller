@@ -4,7 +4,7 @@
 #include "clara.hpp"
 
 #include "config.h"
-#include "gui/view.h"
+#include "gui/main_view.h"
 #include "logger.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto inst = view::instance();
+    auto inst = main_view::instance();
 
     if (inst) {
         inst->open_view();

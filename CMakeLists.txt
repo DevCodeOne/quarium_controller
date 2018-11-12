@@ -25,8 +25,10 @@ set (SOURCE_FILES
     src/schedule/schedule_event.cpp
     src/schedule/schedule_gpio.cpp
     src/schedule/schedule_handler.cpp
-    src/gui/view.cpp
-    src/gui/view_controller.cpp
+    src/gui/main_view.cpp
+    src/gui/main_view_controller.cpp
+    src/gui/manual_control_view.cpp
+    src/gui/manual_control_view_controller.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)
