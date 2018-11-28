@@ -7,9 +7,7 @@ gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_c
 
 unsigned int gpio_pin_id::id() const { return m_id; }
 
-std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() { /*auto pin = */
-    return m_chip->open_pin(*this);
-}
+std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() { return m_chip->open_pin(*this); }
 
 const std::shared_ptr<gpio_chip> gpio_pin_id::chip() const { return m_chip; }
 
@@ -73,13 +71,13 @@ bool gpio_pin::control(const action &act) {
 
 bool gpio_pin::override_with(const action &act) {
     m_overriden_action = act;
-    logger::instance()->info("Override gpio {} control to be {}", m_id.id(), act == action::on ? "off" : "on");
-    m_overriden_action = act;
+    logger::instance()->info("Override gpio {} control to be {}", m_id.id(), act == action::on ? "on" : "off");
     return update_gpio();
 }
 
 bool gpio_pin::restore_control() {
     m_overriden_action = {};
+    logger::instance()->info("Restore gpio {} to be controlled by the schedule again", m_id.id());
     return update_gpio();
 }
 

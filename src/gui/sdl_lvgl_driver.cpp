@@ -84,15 +84,7 @@ bool lvgl_driver::handle_input(lv_indev_data_t *data) {
         }
 
         if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
-            SDL_GetMouseState(&inst->m_mouse_x, &inst->m_mouse_y);
-
-            if (inst->is_pressed && event.type == SDL_MOUSEBUTTONUP) {
-                inst->is_pressed = false;
-            }
-
-            if (!inst->is_pressed && event.type == SDL_MOUSEBUTTONDOWN) {
-                inst->is_pressed = true;
-            }
+            inst->is_pressed = SDL_BUTTON(SDL_BUTTON_LEFT) & SDL_GetMouseState(&inst->m_mouse_x, &inst->m_mouse_y);
         }
     }
 

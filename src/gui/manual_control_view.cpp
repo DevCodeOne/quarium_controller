@@ -4,70 +4,126 @@
 #include "gui/manual_control_view_controller.h"
 #include "schedule/schedule_gpio.h"
 
+manual_control_view::gpio_override_element::gpio_override_element(lv_obj_t *parent, const std::string &id,
+                                                                  const std::string &override_text)
+    : m_id(id),
+      m_override_checkbox(lv_cb_create(parent, nullptr)),
+      m_override_switch(lv_sw_create(parent, nullptr)),
+      m_override_text(std::make_unique<char[]>(override_text.size() + 1)) {
+    std::strncpy(m_override_text.get(), override_text.data(), override_text.size());
+    lv_cb_set_text(m_override_checkbox, m_override_text.get());
+}
+
+lv_obj_t *manual_control_view::gpio_override_element::override_switch() { return m_override_switch; }
+
+lv_obj_t *manual_control_view::gpio_override_element::override_checkbox() { return m_override_checkbox; }
+
+const lv_obj_t *manual_control_view::gpio_override_element::override_switch() const { return m_override_switch; }
+
+const lv_obj_t *manual_control_view::gpio_override_element::override_checkbox() const { return m_override_checkbox; }
+
+const char *manual_control_view::gpio_override_element::text() const { return (const char *)m_override_text.get(); }
+
+const std::string &manual_control_view::gpio_override_element::id() const { return m_id; }
+
 manual_control_view::manual_control_view(lv_obj_t *container) : m_container(container) { create_gui(); }
 
 void manual_control_view::create_gui() {
-    int screen_width = ::lv_obj_get_width(m_container);
-    m_gpio_override_checkbox = lv_cb_create(m_container, nullptr);
-    lv_cb_set_text(m_gpio_override_checkbox, "Manual control");
-    lv_cb_set_action(m_gpio_override_checkbox, manual_control_view_controller::check_override_schedule);
-    lv_obj_set_size(m_gpio_override_checkbox, screen_width - 60, 20);
-    lv_obj_align(m_gpio_override_checkbox, m_container, LV_ALIGN_IN_TOP_LEFT, 10, 60);
+    int screen_width = lv_obj_get_width(m_container);
+    m_page = lv_page_create(m_container, nullptr);
+    lv_obj_set_size(m_page, lv_obj_get_width(m_container), lv_obj_get_height(m_container));
+    lv_page_set_scrl_fit(m_page, false, true);
+    lv_page_set_sb_mode(m_page, LV_SB_MODE_AUTO);
 
-    m_gpio_control_switch = lv_sw_create(m_container, nullptr);
-    lv_sw_set_action(m_gpio_control_switch, manual_control_view_controller::manually_control_gpio);
-    lv_obj_set_size(m_gpio_control_switch, (screen_width - lv_obj_get_width(m_gpio_override_checkbox) - 30) / 2,
-                    lv_obj_get_height(m_gpio_override_checkbox));
-    lv_obj_align(m_gpio_control_switch, m_container, LV_ALIGN_IN_TOP_RIGHT, -10, 60);
-    lv_obj_set_hidden(m_gpio_control_switch, true);
-
-    m_gpio_chooser = lv_ddlist_create(m_container, nullptr);
-    lv_ddlist_set_hor_fit(m_gpio_chooser, false);
-    lv_ddlist_set_anim_time(m_gpio_chooser, LV_DDLIST_ANIM_TIME / 2);
-    lv_ddlist_set_action(m_gpio_chooser, manual_control_view_controller::select_gpio_event);
-    lv_obj_set_width(m_gpio_chooser, screen_width - 20);
-    lv_obj_align(m_gpio_chooser, m_container, LV_ALIGN_IN_TOP_MID, 0, 10);
-
-    lv_ddlist_set_selected(m_gpio_chooser, 0);
+    update_override_elements();
 }
 
-void manual_control_view::update_contents() {
-    std::ostringstream gpio_list_output("");
+void manual_control_view::update_contents() { update_override_elements(); }
 
+void manual_control_view::update_override_elements() {
+    recreate_override_elements();
+
+    for (auto &current_override_element : m_manual_overrides) {
+        auto is_overriden = schedule_gpio::is_overriden(current_override_element.id());
+        // TODO somehow update when the pin is overwritten from somewhere else eg network
+        // lv_cb_set_checked(current_override_element.override_checkbox(), (bool)is_overriden);
+        lv_obj_set_hidden(current_override_element.override_switch(), !is_overriden);
+
+        switch (*is_overriden) {
+            case gpio_pin::action::off:
+                lv_sw_off(current_override_element.override_switch());
+                break;
+            case gpio_pin::action::on:
+                lv_sw_on(current_override_element.override_switch());
+                break;
+            default:
+                lv_sw_off(current_override_element.override_switch());
+        }
+    }
+}
+void manual_control_view::recreate_override_elements() {
     auto gpio_id_list = schedule_gpio::get_ids();
 
     if (gpio_id_list.size() == 0) {
         return;
     }
 
-    for (auto current_gpio_id = gpio_id_list.cbegin(); current_gpio_id != gpio_id_list.cend() - 1; ++current_gpio_id) {
-        gpio_list_output << *current_gpio_id << "\n";
+    bool missing_id = std::any_of(m_manual_overrides.cbegin(), m_manual_overrides.cend(),
+                                  [&gpio_id_list](const auto &current_override_element) -> bool {
+                                      return std::find(gpio_id_list.cbegin(), gpio_id_list.cend(),
+                                                       current_override_element.id()) == gpio_id_list.cend();
+                                  });
+
+    // If all gpio_ids of the manual_overrides are found and the number of elements in both lists is the same every
+    // entry is contained in the other list and vice versa, so for the override_elements to be outdated one or more
+    // entries have to be missing from the gpiod_id_list or the size has to be different
+    if (missing_id || m_manual_overrides.size() == gpio_id_list.size()) {
+        // No update necessary gui is up to date
+        return;
     }
-    gpio_list_output << gpio_id_list.back();
 
-    size_t len = gpio_list_output.str().size();
-    m_gpio_list_len = len + 1;
-    m_gpio_list = std::make_unique<char[]>(m_gpio_list_len);
-    std::strncpy(m_gpio_list.get(), gpio_list_output.str().c_str(), len + 1);
+    if (m_manual_overrides.size() > 0) {
+        lv_obj_clean(m_page);
+        m_manual_overrides.clear();
+    }
 
-    lv_ddlist_set_options(m_gpio_chooser, m_gpio_list.get());
-    lv_ddlist_set_selected(m_gpio_chooser, 0);
+    std::ostringstream override_text_stream;
+    override_text_stream << "Override " << *gpio_id_list.cbegin();
+
+    gpio_override_element current_override_element(m_page, *gpio_id_list.cbegin(), override_text_stream.str());
+    lv_obj_set_height(current_override_element.override_checkbox(), 75);
+    lv_obj_set_height(current_override_element.override_switch(),
+                      lv_obj_get_height(current_override_element.override_checkbox()));
+    lv_obj_align(current_override_element.override_checkbox(), m_page, LV_ALIGN_IN_TOP_LEFT, 10, 10);
+    lv_obj_align(current_override_element.override_switch(), m_page, LV_ALIGN_IN_TOP_RIGHT, -10, 15);
+    lv_sw_set_action(current_override_element.override_switch(), manual_control_view_controller::toggle_switch);
+    lv_cb_set_action(current_override_element.override_checkbox(),
+                     manual_control_view_controller::check_override_schedule);
+
+    m_manual_overrides.emplace_back(std::move(current_override_element));
+    // Reuse std::ostringstream the correct way
+    override_text_stream.clear();
+    override_text_stream.str(std::string());
+
+    for (auto current_gpio_id = gpio_id_list.cbegin() + 1; current_gpio_id != gpio_id_list.cend(); ++current_gpio_id) {
+        override_text_stream << "Override " << *current_gpio_id;
+
+        gpio_override_element current_override_element(m_page, *current_gpio_id, override_text_stream.str());
+        lv_obj_set_height(current_override_element.override_switch(),
+                          lv_obj_get_height(current_override_element.override_checkbox()));
+
+        lv_obj_align(current_override_element.override_checkbox(), m_manual_overrides.back().override_checkbox(),
+                     LV_ALIGN_OUT_BOTTOM_LEFT, 0, 10);
+        lv_obj_align(current_override_element.override_switch(), m_manual_overrides.back().override_switch(),
+                     LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 10);
+        lv_sw_set_action(current_override_element.override_switch(), manual_control_view_controller::toggle_switch);
+        lv_cb_set_action(current_override_element.override_checkbox(),
+                         manual_control_view_controller::check_override_schedule);
+
+        m_manual_overrides.emplace_back(std::move(current_override_element));
+        override_text_stream.clear();
+        override_text_stream.str(std::string());
+    }
 }
 
 lv_obj_t *manual_control_view::container() { return m_container; }
-
-lv_obj_t *manual_control_view::gpio_chooser() { return m_gpio_chooser; }
-
-lv_obj_t *manual_control_view::gpio_control_switch() { return m_gpio_control_switch; }
-
-lv_obj_t *manual_control_view::gpio_override_checkbox() { return m_gpio_override_checkbox; }
-
-const lv_obj_t *manual_control_view::container() const { return m_container; }
-
-const lv_obj_t *manual_control_view::gpio_chooser() const { return m_gpio_chooser; }
-
-const lv_obj_t *manual_control_view::gpio_control_switch() const { return m_gpio_control_switch; }
-
-const lv_obj_t *manual_control_view::gpio_override_checkbox() const { return m_gpio_override_checkbox; }
-
-size_t manual_control_view::gpio_list_string_len() const { return m_gpio_list_len; }

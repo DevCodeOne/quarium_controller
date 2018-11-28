@@ -43,6 +43,4 @@ const port &run_configuration::server_port() const { return m_server_port; }
 
 const logger::log_level &run_configuration::log_level() const { return m_log_level; }
 
-const bool &run_configuration::print_to_console() const {
-    return m_print_to_console;
-}
+const bool &run_configuration::print_to_console() const { return m_print_to_console; }

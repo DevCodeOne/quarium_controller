@@ -1,10 +1,10 @@
 #include <chrono>
 #include <cstring>
+#include <iomanip>
 #include <sstream>
 
 #include "gui/main_view.h"
 #include "gui/main_view_controller.h"
-#include "logger.h"
 
 #ifdef USE_SDL
 #include "gui/sdl_lvgl_driver.h"
@@ -95,17 +95,19 @@ void main_view::view_loop() {
     lv_obj_set_size(inst->m_status_bar, screen_width, status_bar_height);
     lv_obj_align(inst->m_status_bar, inst->m_screen, LV_ALIGN_IN_TOP_MID, 0, 0);
     inst->m_clock = lv_label_create(inst->m_status_bar, nullptr);
-    lv_obj_set_size(inst->m_clock, 60, status_bar_height - 10);
-    lv_obj_align(inst->m_clock, inst->m_status_bar, LV_ALIGN_IN_TOP_MID, 0, 5);
-    lv_label_set_text(inst->m_clock, "00:00");
+    lv_obj_set_size(inst->m_clock, 50, status_bar_height - 10);
+    lv_obj_align(inst->m_clock, inst->m_status_bar, LV_ALIGN_IN_TOP_MID, -10, 5);
+    lv_label_set_align(inst->m_clock, LV_LABEL_ALIGN_CENTER);
+    lv_label_set_text(inst->m_clock, "00:00:00");
 
     inst->create_pages();
 
     while (!inst->m_should_exit) {
         inst->update_contents(inst->m_current_page);
         lv_task_handler();
-        lv_tick_inc(10);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        lv_tick_inc(15);
+        // TODO add correct way to sleep, so that one iteration takes 15 ms
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
 
     lv_obj_del(inst->m_screen);
@@ -163,8 +165,12 @@ void main_view::update_contents(const page_index &index) {
     std::chrono::minutes minutes_since_hour =
         duration_since_epoch<std::chrono::minutes>() - duration_since_epoch<std::chrono::hours>();
 
+    std::chrono::seconds seconds_since_minute =
+        duration_since_epoch<std::chrono::seconds>() - duration_since_epoch<std::chrono::minutes>();
+
     std::ostringstream os;
-    os << hours_since_today.count() << ":" << minutes_since_hour.count();
+    os << std::setfill('0') << std::setw(2) << hours_since_today.count() << ":" << std::setw(2)
+       << minutes_since_hour.count() << ":" << std::setw(2) << seconds_since_minute.count();
     m_time = os.str();
     lv_label_set_text(m_clock, m_time.data());
 
