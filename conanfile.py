@@ -2,11 +2,19 @@ from conans import ConanFile, CMake
 
 class QuariumController(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    requires = "spdlog/0.17.0@bincrafters/stable", "catch2/2.3.0@bincrafters/stable", "jsonformoderncpp/3.1.2@vthiery/stable", "clara@1.1.4@bincrafters/stable", "boost_beast@1.66.0@bincrafters/stable", "libgpiod/1.1.1-2@user/stable", "lvgl_cmake/5.1.1-3@user/stable"
+    requires =  "spdlog/0.17.0@bincrafters/stable", "catch2/2.3.0@bincrafters/stable", "jsonformoderncpp/3.1.2@vthiery/stable", "clara@1.1.4@bincrafters/stable", "boost_beast@1.66.0@bincrafters/stable", "libgpiod/1.1.1-3@user/stable", "lvgl_cmake/5.1.1-3@user/stable"
     options = {"build_tests" : [True, False], "use_sdl" : [True, False], "use_gpiod_stub" : [True, False]}
     default_options = {"build_tests" : True, "use_sdl" : True, "use_gpiod_stub" : True}
     exports_sources = "tests*", "include*", "src*", "CMakeLists.txt"
     generators = "cmake", "ycm"
+
+    def configure(self):
+        if self.options.use_sdl:
+            self.requires("sdl2/2.0.9@bincrafters/stable")
+            self.options["sdl2"].jack = False
+            self.options["sdl2"].alsa = False
+            self.options["sdl2"].pulse = False
+            self.options["sdl2"].nas = False
 
     def build(self):
         cmake = CMake(self)

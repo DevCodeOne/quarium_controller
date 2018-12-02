@@ -8,7 +8,7 @@ option(GPIOD_STUB "Use stub gpiod wrapper to test the functionality without the 
 option(BUILD_TESTS "Build tests for quarium_controller" ON)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup(NO_OUTPUT_DIRS)
+conan_basic_setup()
 
 set (SOURCE_FILES
     src/quarium_controller.cpp
@@ -58,12 +58,6 @@ ENDIF()
 target_link_libraries(quarium_controller PUBLIC ${CONAN_LIBS})
 target_link_libraries(quarium_controller PUBLIC stdc++fs)
 target_include_directories(quarium_controller PRIVATE include)
-
-IF (NOT USE_SDL)
-    target_link_libraries(quarium_controller PUBLIC ts)
-ELSE()
-    target_link_libraries(quarium_controller PUBLIC SDL2::SDL2)
-ENDIF()
 
 if (BUILD_TESTS)
     enable_testing()
