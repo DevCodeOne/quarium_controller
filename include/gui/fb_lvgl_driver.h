@@ -18,6 +18,8 @@
 #include "tslib.h"
 #include "lvgl.h"
 
+#include "logger.h"
+
 class lvgl_driver {
    public:
     static std::shared_ptr<lvgl_driver> instance();

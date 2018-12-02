@@ -15,6 +15,8 @@ class QuariumController(ConanFile):
             self.options["sdl2"].alsa = False
             self.options["sdl2"].pulse = False
             self.options["sdl2"].nas = False
+        else:
+            self.requires("tslib/1.18-1@user/stable")
 
     def build(self):
         cmake = CMake(self)

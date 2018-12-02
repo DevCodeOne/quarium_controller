@@ -1,22 +1,19 @@
-target_host=aarch64-unknown-linux-gnu
-standalone_toolchain=/home/chris/xtools8/aarch64-unknown-linux-gnu
+target_host=arm-unknown-linux-gnueabihf
+standalone_toolchain=/home/chris/xtools7h/arm-unknown-linux-gnueabihf
 cc_compiler=gcc
 cxx_compiler=g++
 
 [options]
-*:nas=False
-*:alsa=False
-*:pulse=False
-*:jack=False
 *:use_sdl=False
 *:build_tests=False
 *:use_gpiod_stub=False
+*:shared=False
 
 [settings]
 os_build=Linux
 arch_build=x86_64
 os=Linux
-arch=armv8
+arch=armv7hf
 compiler=gcc
 compiler.version=8
 compiler.libcxx=libstdc++11
