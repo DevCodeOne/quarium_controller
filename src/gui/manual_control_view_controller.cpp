@@ -67,10 +67,25 @@ lv_res_t manual_control_view_controller::check_override_schedule(lv_obj_t *check
 
     bool is_checked = lv_cb_is_checked(checkbox);
     lv_obj_set_hidden(override_element->override_switch(), !is_checked);
+
     if (is_checked) {
-        schedule_gpio::override_with(gpio_id, lv_sw_get_state(override_element->override_switch())
-                                                  ? gpio_pin::action::on
-                                                  : gpio_pin::action::off);
+
+        // TODO somehow remove this element, because its id is not valid
+        auto current_state = schedule_gpio::current_state(gpio_id);
+        if (!current_state.has_value()) {
+            return LV_RES_OK;
+        }
+
+        switch (current_state.value()) {
+            case gpio_pin::action::on:
+                lv_sw_on(override_element->override_switch());
+                break;
+            default:
+                lv_sw_off(override_element->override_switch());
+                break;
+        }
+
+        schedule_gpio::override_with(gpio_id, current_state.value());
     } else {
         schedule_gpio::restore_control(gpio_id);
     }

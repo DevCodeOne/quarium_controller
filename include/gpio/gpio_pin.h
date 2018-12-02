@@ -46,6 +46,7 @@ class gpio_pin final : public rest_resource<gpio_pin> {
 
     unsigned int gpio_id() const;
     std::optional<gpio_pin::action> is_overriden() const;
+    gpio_pin::action current_state() const;
 
     nlohmann::json serialize() const;
     // TODO implement this

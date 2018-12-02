@@ -18,7 +18,7 @@
         {
             "id" : "skim#1",
             "pin" : 5,
-            "default" : "on"
+            "default" : "off"
         },
         {
             "id" : "light#2",

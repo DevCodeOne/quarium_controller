@@ -13,6 +13,16 @@ const std::shared_ptr<gpio_chip> gpio_pin_id::chip() const { return m_chip; }
 
 std::optional<gpio_pin::action> gpio_pin::is_overriden() const { return m_overriden_action; }
 
+// TODO remove code duplication in gpio_pin::update_gpio
+gpio_pin::action gpio_pin::current_state() const {
+    action controlled_state = m_controlled_action;
+    if (m_overriden_action.has_value()) {
+        controlled_state = m_overriden_action.value();
+    }
+
+    return controlled_state;
+}
+
 gpio_pin::gpio_pin(gpio_pin_id id, gpiod::gpiod_line line) : m_id(id), m_line(std::move(line)) {}
 
 gpio_pin::gpio_pin(gpio_pin &&other) : m_id(std::move(other.m_id)), m_line(std::move(other.m_line)) {}

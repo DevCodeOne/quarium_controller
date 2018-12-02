@@ -126,6 +126,19 @@ bool schedule_gpio::restore_control(const schedule_gpio_id &id) {
     return (*gpio)->pin()->restore_control();
 }
 
+std::optional<gpio_pin::action> schedule_gpio::current_state(const schedule_gpio_id &id) {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+
+    auto gpio = std::find_if(_gpios.cbegin(), _gpios.cend(),
+                             [&id](const auto &current_action) { return current_action->id() == id; });
+
+    if (gpio == _gpios.cend()) {
+        return {};
+    }
+
+    return (*gpio)->pin()->current_state();
+}
+
 std::vector<schedule_gpio_id> schedule_gpio::get_ids() {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
