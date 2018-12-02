@@ -67,7 +67,7 @@ class main_view {
     static inline constexpr unsigned int navigation_buttons_height = 40;
     static inline constexpr unsigned int status_bar_height = 30;
 
-    static inline constexpr char front_button_titles[5][15] = {"Schedules", "Manual Control", "Stats", "Logs", ""};
+    static inline constexpr std::array<const char [32], 6> front_button_titles = {"Schedules", "Manual Control", "Modules", "Stats", "Logs", ""};
 
     friend class view_controller;
 };

@@ -86,5 +86,14 @@
         "period_in_days" : 1,
         "start_at" : "17.10.2018",
         "title" : "aquariums"
+    },
+    "module": {
+        "type" : "remote_function",
+        "url" : "http://aquarium-lights:9980/control_led",
+        "value" : {
+            "name" : "value",
+            "type" : "int",
+            "range" : [0, 255]
+        }
     }
 }

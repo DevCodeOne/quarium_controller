@@ -124,20 +124,23 @@ void main_view::create_pages() {
     }
     switch_page(page_index::front);
 
-    std::array<lv_obj_t *, 4> front_buttons{nullptr, nullptr, nullptr, nullptr};
+    std::array<lv_obj_t *, front_button_titles.size()> front_buttons{nullptr, nullptr, nullptr, nullptr, nullptr};
+    int button_width = (lv_obj_get_width(m_container[(uint8_t)page_index::front]) / 2) - 15;
+    int button_height = (lv_obj_get_height(m_container[(uint8_t)page_index::front]) / 3) - 15;
 
-    for (int i = 0; i < front_buttons.size(); ++i) {
+    for (int i = 0; i < front_buttons.size() - 1; ++i) {
         front_buttons[i] = lv_btn_create(m_container[(uint8_t)page_index::front], nullptr);
-        int size = (lv_obj_get_width(m_container[(uint8_t)page_index::front]) / 2) - 15;
-        lv_obj_set_size(front_buttons[i], size, size);
+        lv_obj_set_size(front_buttons[i], button_width, button_height);
         lv_obj_t *button_label = lv_label_create(front_buttons[i], nullptr);
         lv_label_set_text(button_label, front_button_titles[i]);
     }
 
+    // TODO create via template
     lv_obj_align(front_buttons[0], m_content_container, LV_ALIGN_IN_TOP_LEFT, 10, 10);
     lv_obj_align(front_buttons[1], front_buttons[0], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
+    lv_obj_align(front_buttons[4], front_buttons[2], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
     // Manual Control
     lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK,
