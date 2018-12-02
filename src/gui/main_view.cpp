@@ -128,11 +128,12 @@ void main_view::create_pages() {
     int button_width = (lv_obj_get_width(m_container[(uint8_t)page_index::front]) / 2) - 15;
     int button_height = (lv_obj_get_height(m_container[(uint8_t)page_index::front]) / 3) - 15;
 
-    for (int i = 0; i < front_buttons.size() - 1; ++i) {
+    for (int i = 0; i < front_buttons.size(); ++i) {
         front_buttons[i] = lv_btn_create(m_container[(uint8_t)page_index::front], nullptr);
         lv_obj_set_size(front_buttons[i], button_width, button_height);
         lv_obj_t *button_label = lv_label_create(front_buttons[i], nullptr);
         lv_label_set_text(button_label, front_button_titles[i]);
+        lv_btn_set_action(front_buttons[(uint8_t)i], LV_BTN_ACTION_CLICK, view_controller::front_button_event);
     }
 
     // TODO create via template
@@ -142,10 +143,8 @@ void main_view::create_pages() {
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_obj_align(front_buttons[4], front_buttons[2], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
-    // Manual Control
-    lv_btn_set_action(front_buttons[(uint8_t)page_index::manual_control], LV_BTN_ACTION_CLICK,
-                      view_controller::front_button_event);
     m_manual_view = std::make_shared<manual_control_view>(m_container[(uint8_t)page_index::manual_control]);
+    m_module_view = std::make_shared<module_view>(m_container[(uint8_t)page_index::module]);
 }
 
 void main_view::switch_page(const page_index &new_index) {
@@ -158,6 +157,8 @@ void main_view::switch_page(const page_index &new_index) {
         last_page.has_value() && last_page.value() == m_current_page) {
         return;
     }
+
+    logger::instance()->info("Switched page");
 
     m_visited_pages.put(m_current_page);
 }
@@ -180,11 +181,19 @@ void main_view::update_contents(const page_index &index) {
     if (index == page_index::manual_control && m_manual_view) {
         m_manual_view->update_contents();
     }
+
+    if (index == page_index::module && m_module_view) {
+        m_module_view->update_contents();
+    }
 }
 
 std::shared_ptr<manual_control_view> main_view::manual_control_view_instance() { return m_manual_view; }
 
 const std::shared_ptr<manual_control_view> main_view::manual_control_view_instance() const { return m_manual_view; }
+
+std::shared_ptr<module_view> main_view::module_view_instance() { return m_module_view; }
+
+const std::shared_ptr<module_view> main_view::module_view_instance() const { return m_module_view; }
 
 void main_view::switch_to_last_page() {
     if (m_visited_pages.size() <= 1) {

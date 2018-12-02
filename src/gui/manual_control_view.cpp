@@ -26,10 +26,11 @@ const char *manual_control_view::gpio_override_element::text() const { return (c
 
 const std::string &manual_control_view::gpio_override_element::id() const { return m_id; }
 
-manual_control_view::manual_control_view(lv_obj_t *container) : m_container(container) { create_gui(); }
+manual_control_view::manual_control_view(lv_obj_t *container) : m_container(container), m_manual_overrides() {
+    create_gui();
+}
 
 void manual_control_view::create_gui() {
-    int screen_width = lv_obj_get_width(m_container);
     m_page = lv_page_create(m_container, nullptr);
     lv_obj_set_size(m_page, lv_obj_get_width(m_container), lv_obj_get_height(m_container));
     lv_page_set_scrl_fit(m_page, false, true);
@@ -45,9 +46,12 @@ void manual_control_view::update_override_elements() {
 
     for (auto &current_override_element : m_manual_overrides) {
         auto is_overriden = schedule_gpio::is_overriden(current_override_element.id());
-        // TODO somehow update when the pin is overwritten from somewhere else eg network
-        // lv_cb_set_checked(current_override_element.override_checkbox(), (bool)is_overriden);
+
         lv_obj_set_hidden(current_override_element.override_switch(), !is_overriden);
+
+        if (!is_overriden) {
+            continue;
+        }
 
         switch (*is_overriden) {
             case gpio_pin::action::off:

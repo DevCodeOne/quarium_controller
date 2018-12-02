@@ -10,6 +10,7 @@
 #include "lvgl.h"
 
 #include "gui/manual_control_view.h"
+#include "gui/module_view.h"
 #include "ring_buffer.h"
 
 class main_view {
@@ -18,7 +19,9 @@ class main_view {
     void open_view();
     void close_view();
     std::shared_ptr<manual_control_view> manual_control_view_instance();
+    std::shared_ptr<module_view> module_view_instance();
     const std::shared_ptr<manual_control_view> manual_control_view_instance() const;
+    const std::shared_ptr<module_view> module_view_instance() const;
 
     ~main_view();
 
@@ -28,8 +31,9 @@ class main_view {
         manual_control = 1,
         stats = 2,
         logs = 3,
-        configuration = 4,
-        front = 5,
+        module = 4,
+        configuration = 5,
+        front = 6,
     };
 
     static void view_loop();
@@ -51,8 +55,9 @@ class main_view {
     lv_obj_t *m_status_bar = nullptr;
     lv_obj_t *m_clock = nullptr;
     lv_theme_t *m_theme = nullptr;
-    std::array<lv_obj_t *, 6> m_container;
+    std::array<lv_obj_t *, (int)page_index::front + 1> m_container;
     std::shared_ptr<manual_control_view> m_manual_view;
+    std::shared_ptr<module_view> m_module_view;
     std::string m_time;
     ring_buffer<page_index, 20> m_visited_pages;
     page_index m_current_page = page_index::front;
@@ -67,7 +72,8 @@ class main_view {
     static inline constexpr unsigned int navigation_buttons_height = 40;
     static inline constexpr unsigned int status_bar_height = 30;
 
-    static inline constexpr std::array<const char [32], 6> front_button_titles = {"Schedules", "Manual Control", "Modules", "Stats", "Logs", ""};
+    static inline constexpr std::array<const char[32], 5> front_button_titles = {"Schedules", "Manual Control", "Stats",
+                                                                                 "Logs", "Modules"};
 
     friend class view_controller;
 };

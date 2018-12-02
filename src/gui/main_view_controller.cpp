@@ -3,6 +3,7 @@
 
 #include "gui/main_view.h"
 #include "gui/main_view_controller.h"
+#include "logger.h"
 #include "schedule/schedule_gpio.h"
 
 lv_res_t view_controller::front_button_event(lv_obj_t *obj) {
@@ -20,7 +21,7 @@ lv_res_t view_controller::front_button_event(lv_obj_t *obj) {
 
     std::string_view text = lv_label_get_text(label);
 
-    for (uint8_t i = 0; i <= (uint8_t)main_view::page_index::logs; ++i) {
+    for (uint8_t i = 0; i <= (uint8_t)main_view::page_index::front; ++i) {
         if (text == inst->front_button_titles[i]) {
             inst->switch_page(main_view::page_index(i));
             break;
