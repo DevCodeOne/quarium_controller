@@ -1,6 +1,8 @@
 from conans import ConanFile, CMake
 
 class QuariumController(ConanFile):
+    name = "quarium_controller"
+    version = "none"
     settings = "os", "compiler", "build_type", "arch"
     requires =  "spdlog/0.17.0@bincrafters/stable", "catch2/2.3.0@bincrafters/stable", "jsonformoderncpp/3.1.2@vthiery/stable", "clara@1.1.4@bincrafters/stable", "boost_beast@1.66.0@bincrafters/stable", "libgpiod/1.1.1-3@user/stable", "lvgl_cmake/5.1.1-3@user/stable"
     options = {"build_tests" : [True, False], "use_sdl" : [True, False], "use_gpiod_stub" : [True, False]}
@@ -28,10 +30,13 @@ class QuariumController(ConanFile):
         cmake.build()
 
     def package(self):
-        self.copy(pattern="*.h", dst="include", src="include")
-        self.copy(pattern="*a", dst="lib", keep_path=False)
+        self.copy(pattern="quarium_controller*", dst="bin", src="bin")
+        self.copy(pattern="*.h", dst="include", src="include", keep_path=False)
+        self.copy(pattern="*.a", dst="lib", keep_path=False)
         self.copy(pattern="*so", dst="lib", keep_path=False)
         self.copy(pattern="*so.*", dst="lib", keep_path=False)
 
-    def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+    def deploy(self):
+        self.copy("bin/quarium_controller")
+        self.copy_deps("*.so")
+        self.copy_deps("*.so.*")

@@ -89,11 +89,16 @@
     },
     "module": {
         "type" : "remote_function",
-        "url" : "http://aquarium-lights:9980/control_led",
-        "value" : {
-            "name" : "value",
-            "type" : "int",
-            "range" : [0, 255]
+        "description" : {
+            "url" : "http://aquarium-lights:9980/control_led",
+            "values" : [
+                {
+                    "name" : "value",
+                    "type" : "int",
+                    "range" : [0, 255]
+                }
+            ]
+
         }
     }
 }

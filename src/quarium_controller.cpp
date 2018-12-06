@@ -6,6 +6,7 @@
 #include "config.h"
 #include "gui/main_view.h"
 #include "logger.h"
+#include "modules/module_collection.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"
 #include "run_configuration.h"
@@ -59,7 +60,19 @@ int main(int argc, char *argv[]) {
     logger::configure_logger(logger::log_level::debug, logger::log_type::file);
 
     auto conf = config::instance();
+
+    if (conf == nullptr) {
+        logger::instance()->critical("No configuration file is specified ...");
+        return EXIT_FAILURE;
+    }
+
     auto schedule_file_paths = conf->find("schedule_list");
+
+    if (schedule_file_paths.size() == 0) {
+        logger::instance()->critical("No schedule is specified ...");
+        return EXIT_FAILURE;
+    }
+
     auto schedule = schedule::create_from_file(schedule_file_paths.at(0).get<std::string>());
     if (schedule.has_value()) {
         schedule_handler::instance()->start_event_handler();
@@ -70,6 +83,9 @@ int main(int argc, char *argv[]) {
     }
 
     auto inst = main_view::instance();
+
+    auto modules = module_collection::instance();
+    modules->add_module("aquarium-lights", remote_function{});
 
     if (inst) {
         inst->open_view();
