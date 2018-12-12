@@ -17,6 +17,7 @@ class manual_control_view {
     const lv_obj_t *container() const;
 
    private:
+    // TODO put everything in one container so it can be easier aligned
     class gpio_override_element {
        public:
         gpio_override_element(lv_obj_t *parent, const std::string &id,

@@ -95,11 +95,10 @@ void manual_control_view::recreate_override_elements() {
     override_text_stream << "Override " << *gpio_id_list.cbegin();
 
     gpio_override_element current_override_element(m_page, *gpio_id_list.cbegin(), override_text_stream.str());
-    lv_obj_set_height(current_override_element.override_checkbox(), 75);
     lv_obj_set_height(current_override_element.override_switch(),
                       lv_obj_get_height(current_override_element.override_checkbox()));
     lv_obj_align(current_override_element.override_checkbox(), m_page, LV_ALIGN_IN_TOP_LEFT, 10, 10);
-    lv_obj_align(current_override_element.override_switch(), m_page, LV_ALIGN_IN_TOP_RIGHT, -10, 15);
+    lv_obj_align(current_override_element.override_switch(), m_page, LV_ALIGN_IN_TOP_RIGHT, -10, 18);
     lv_sw_set_action(current_override_element.override_switch(), manual_control_view_controller::toggle_switch);
     lv_cb_set_action(current_override_element.override_checkbox(),
                      manual_control_view_controller::check_override_schedule);
