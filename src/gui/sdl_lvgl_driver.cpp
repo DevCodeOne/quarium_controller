@@ -40,7 +40,7 @@ void lvgl_driver::flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, c
         return;
     }
 
-    if ((inst->m_window == nullptr && inst->m_surface) || x2 < 0 || y2 < 0 || x1 > inst->m_surface->w - 1 ||
+    if ((inst->m_window == nullptr || inst->m_surface == nullptr) || x2 < 0 || y2 < 0 || x1 > inst->m_surface->w - 1 ||
         y1 > inst->m_surface->h - 1) {
         lv_flush_ready();
         return;
@@ -59,6 +59,13 @@ void lvgl_driver::flush_buffer(int32_t x1, int32_t y1, int32_t x2, int32_t y2, c
             break;
         default:
             break;
+    }
+
+    auto *window_surface = SDL_GetWindowSurface(inst->m_window);
+
+    if (window_surface == nullptr) {
+        lv_flush_ready();
+        return;
     }
 
     SDL_BlitSurface(inst->m_surface, nullptr, SDL_GetWindowSurface(inst->m_window), nullptr);

@@ -7,10 +7,15 @@
 
 #include "lvgl.h"
 
-class manual_control_view {
+#include "gui/page_interface.h"
+
+class manual_control_view final : public page_interface {
    public:
     manual_control_view(lv_obj_t *container);
-    void update_contents();
+
+    page_event enter_page() override;
+    page_event leave_page() override;
+    page_event update_contents() override;
 
     lv_obj_t *container();
 

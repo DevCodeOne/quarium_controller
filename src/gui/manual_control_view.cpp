@@ -39,7 +39,14 @@ void manual_control_view::create_gui() {
     update_override_elements();
 }
 
-void manual_control_view::update_contents() { update_override_elements(); }
+page_event manual_control_view::enter_page() { return page_event::ok; }
+
+page_event manual_control_view::leave_page() { return page_event::ok; }
+
+page_event manual_control_view::update_contents() {
+    update_override_elements();
+    return page_event::ok;
+}
 
 void manual_control_view::update_override_elements() {
     recreate_override_elements();

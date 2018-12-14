@@ -143,8 +143,10 @@ void main_view::create_pages() {
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_obj_align(front_buttons[4], front_buttons[2], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
-    m_manual_view = std::make_shared<manual_control_view>(m_container[(uint8_t)page_index::manual_control]);
-    m_module_view = std::make_shared<module_view>(m_container[(uint8_t)page_index::module]);
+    m_pages.emplace(std::make_pair(page_index::manual_control, std::make_shared<manual_control_view>(
+                                                                   m_container[(uint8_t)page_index::manual_control])));
+    m_pages.emplace(
+        std::make_pair(page_index::module, std::make_shared<module_view>(m_container[(uint8_t)page_index::module])));
 }
 
 void main_view::switch_page(const page_index &new_index) {
@@ -178,22 +180,42 @@ void main_view::update_contents(const page_index &index) {
     m_time = os.str();
     lv_label_set_text(m_clock, m_time.data());
 
-    if (index == page_index::manual_control && m_manual_view) {
-        m_manual_view->update_contents();
-    }
+    std::shared_ptr<page_interface> current_view = m_pages[index];
 
-    if (index == page_index::module && m_module_view) {
-        m_module_view->update_contents();
+    if (current_view) {
+        current_view->update_contents();
     }
 }
 
-std::shared_ptr<manual_control_view> main_view::manual_control_view_instance() { return m_manual_view; }
+std::shared_ptr<manual_control_view> main_view::manual_control_view_instance() {
+    return std::dynamic_pointer_cast<manual_control_view>(view_instance(page_index::manual_control));
+}
 
-const std::shared_ptr<manual_control_view> main_view::manual_control_view_instance() const { return m_manual_view; }
+std::shared_ptr<const manual_control_view> main_view::manual_control_view_instance() const {
+    return std::dynamic_pointer_cast<const manual_control_view>(view_instance(page_index::manual_control));
+}
 
-std::shared_ptr<module_view> main_view::module_view_instance() { return m_module_view; }
+std::shared_ptr<module_view> main_view::module_view_instance() {
+    return std::dynamic_pointer_cast<module_view>(view_instance(page_index::module));
+}
 
-const std::shared_ptr<module_view> main_view::module_view_instance() const { return m_module_view; }
+std::shared_ptr<const module_view> main_view::module_view_instance() const {
+    return std::dynamic_pointer_cast<const module_view>(view_instance(page_index::module));
+}
+
+std::shared_ptr<page_interface> main_view::view_instance(page_index index) {
+    return std::const_pointer_cast<page_interface>(const_cast<const main_view *>(this)->view_instance(index));
+}
+
+std::shared_ptr<const page_interface> main_view::view_instance(page_index index) const {
+    auto retrieved_element = m_pages.find(index);
+
+    if (retrieved_element != m_pages.cend()) {
+        return retrieved_element->second;
+    }
+
+    return nullptr;
+}
 
 void main_view::switch_to_last_page() {
     if (m_visited_pages.size() <= 1) {

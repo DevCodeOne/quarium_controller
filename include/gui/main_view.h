@@ -2,30 +2,20 @@
 
 #include <array>
 #include <atomic>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <thread>
-#include <vector>
 
 #include "lvgl.h"
 
 #include "gui/manual_control_view.h"
 #include "gui/module_view.h"
+#include "gui/page_interface.h"
 #include "ring_buffer.h"
 
 class main_view {
    public:
-    static std::shared_ptr<main_view> instance();
-    void open_view();
-    void close_view();
-    std::shared_ptr<manual_control_view> manual_control_view_instance();
-    std::shared_ptr<module_view> module_view_instance();
-    const std::shared_ptr<manual_control_view> manual_control_view_instance() const;
-    const std::shared_ptr<module_view> module_view_instance() const;
-
-    ~main_view();
-
-   private:
     enum struct page_index : uint8_t {
         schedule_list = 0,
         manual_control = 1,
@@ -36,6 +26,20 @@ class main_view {
         front = 6,
     };
 
+    static std::shared_ptr<main_view> instance();
+    void open_view();
+    void close_view();
+
+    std::shared_ptr<manual_control_view> manual_control_view_instance();
+    std::shared_ptr<module_view> module_view_instance();
+    std::shared_ptr<const manual_control_view> manual_control_view_instance() const;
+    std::shared_ptr<const module_view> module_view_instance() const;
+    std::shared_ptr<page_interface> view_instance(page_index index);
+    std::shared_ptr<const page_interface> view_instance(page_index index) const;
+
+    ~main_view();
+
+   private:
     static void view_loop();
 
     main_view() = default;
@@ -56,8 +60,7 @@ class main_view {
     lv_obj_t *m_clock = nullptr;
     lv_theme_t *m_theme = nullptr;
     std::array<lv_obj_t *, (int)page_index::front + 1> m_container;
-    std::shared_ptr<manual_control_view> m_manual_view;
-    std::shared_ptr<module_view> m_module_view;
+    std::map<page_index, std::shared_ptr<page_interface>> m_pages;
     std::string m_time;
     ring_buffer<page_index, 20> m_visited_pages;
     page_index m_current_page = page_index::front;
