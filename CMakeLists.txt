@@ -30,6 +30,8 @@ set (SOURCE_FILES
     src/gui/manual_control_view.cpp
     src/gui/manual_control_view_controller.cpp
     src/gui/module_view.cpp
+    src/modules/module_collection.cpp
+    src/modules/remote_function.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)

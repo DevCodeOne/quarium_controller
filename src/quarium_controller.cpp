@@ -84,9 +84,6 @@ int main(int argc, char *argv[]) {
 
     auto inst = main_view::instance();
 
-    auto modules = module_collection::instance();
-    modules->add_module("aquarium-lights", remote_function{});
-
     if (inst) {
         inst->open_view();
     } else {
