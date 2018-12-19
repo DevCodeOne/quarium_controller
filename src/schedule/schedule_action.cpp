@@ -140,19 +140,15 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
             return false;
         }
 
-        schedule_action *action = nullptr;
-        for (auto &current_action : _actions) {
-            if (current_action->id() == *current_id) {
-                action = current_action.get();
-                break;
-            }
-        }
+        auto action = std::find_if(_actions.begin(), _actions.end(),
+                                   [&current_id](const auto &action) { return action->id() == *current_id; });
 
-        if (!action) {
+        if ((*action) == nullptr) {
             continue;
         }
 
-        for (auto &[current_pin, current_action] : action->m_pins) {
+        // Do this manually to prevent setting the same pins multiple times
+        for (auto &[current_pin, current_action] : (*action)->m_pins) {
             auto result = actions.emplace(current_pin, current_action);
 
             if (!result.second) {

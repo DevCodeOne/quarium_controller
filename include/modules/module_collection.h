@@ -18,8 +18,7 @@ class module_collection final {
     module_collection() = default;
     ~module_collection() = default;
 
-    bool add_module(const module_id &id, const std::shared_ptr<module_interface> &module);
-    std::map<module_id, module_interface> get_modules();
+    bool add_module(const module_id &id, std::shared_ptr<module_interface> module);
     const std::map<module_id, std::shared_ptr<module_interface>> get_modules() const;
 
    private:

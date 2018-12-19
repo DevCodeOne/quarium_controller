@@ -1,6 +1,7 @@
 #include "schedule/schedule.h"
 #include "config.h"
 #include "logger.h"
+#include "modules/module_collection.h"
 
 std::optional<schedule> schedule::create_from_file(const std::filesystem::path &schedule_file_path) {
     std::ifstream file_as_stream(schedule_file_path);
@@ -27,7 +28,7 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
-    bool successfully_parsed_all_gpios = std::all_of(gpios.begin(), gpios.end(),[](auto &current_action_description) {
+    bool successfully_parsed_all_gpios = std::all_of(gpios.begin(), gpios.end(), [](auto &current_action_description) {
         return schedule_gpio::add_gpio(current_action_description);
     });
 
@@ -52,6 +53,40 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
+    auto modules = schedule_file["modules"];
+
+    if (!modules.is_null()) {
+        bool successfully_parsed_all_modules =
+            std::all_of(modules.cbegin(), modules.cend(), [](auto &current_module_description) {
+                auto ptr = create_module(current_module_description);
+
+                if (ptr == nullptr) {
+                    logger::instance()->critical("Couldn't create module");
+                    return false;
+                }
+
+                auto module_collection_instance = module_collection::instance();
+
+                if (module_collection_instance == nullptr) {
+                    logger::instance()->critical("module_collection has no valid instance");
+                    return false;
+                }
+
+                bool result = module_collection_instance->add_module(ptr->id(), ptr);
+
+                if (!result) {
+                    logger::instance()->critical("Failed to add module {} to the module collection", ptr->id());
+                }
+
+                return result;
+            });
+
+        if (!successfully_parsed_all_modules) {
+            logger::instance()->critical("Description of one or more modules contains errors");
+            return {};
+        }
+    }
+
     auto schedule = schedule_file["schedule"];
 
     return deserialize(schedule);
@@ -64,6 +99,12 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
     json end_date_entry = schedule_description["end_at"];
     json repeating_entry = schedule_description["repeating"];
     json period_entry = schedule_description["period_in_days"];
+
+    if (config::instance() == nullptr) {
+        logger::instance()->critical("No config found");
+        return {};
+    }
+
     std::string date_format = config::instance()->find("date_format").get<std::string>();
 
     schedule created_schedule;
@@ -205,7 +246,7 @@ nlohmann::json schedule::serialize() const {
     }
 
     serialized["title"] = m_title;
-    serialized["period_in_days"] = (unsigned int) m_period.count();
+    serialized["period_in_days"] = (unsigned int)m_period.count();
     serialized["repeating"] = m_mode == mode::repeating;
 
     if (m_start_at) {

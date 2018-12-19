@@ -31,6 +31,7 @@ set (SOURCE_FILES
     src/gui/manual_control_view_controller.cpp
     src/gui/module_view.cpp
     src/modules/module_collection.cpp
+    src/modules/module_interface.cpp
     src/modules/remote_function.cpp
     src/chrono_time.cpp)
 
@@ -74,6 +75,9 @@ if (BUILD_TESTS)
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
         src/schedule/schedule_gpio.cpp
+        src/modules/module_collection.cpp
+        src/modules/module_interface.cpp
+        src/modules/remote_function.cpp
         src/run_configuration.cpp
         src/chrono_time.cpp)
 

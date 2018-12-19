@@ -87,18 +87,20 @@
         "start_at" : "17.10.2018",
         "title" : "aquariums"
     },
-    "module": {
-        "type" : "remote_function",
-        "description" : {
-            "url" : "http://aquarium-lights:9980/control_led",
-            "values" : [
-                {
-                    "name" : "value",
-                    "type" : "int",
-                    "range" : [0, 255]
-                }
-            ]
-
+    "modules": [
+        {
+            "id" : "lamp_module",
+            "type" : "remote_function",
+            "description" : {
+                "url" : "http://aquarium-lights:9980/control_led",
+                "values" : [
+                    {
+                        "name" : "value",
+                        "type" : "int",
+                        "range" : [0, 255]
+                    }
+                ]
+            }
         }
-    }
+    ]
 }
