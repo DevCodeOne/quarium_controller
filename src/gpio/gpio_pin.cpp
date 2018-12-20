@@ -7,7 +7,13 @@ gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_c
 
 unsigned int gpio_pin_id::id() const { return m_id; }
 
-std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() { return m_chip->open_pin(*this); }
+std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() {
+    if (!m_chip) {
+        return nullptr;
+    }
+
+    return m_chip->open_pin(*this);
+}
 
 const std::shared_ptr<gpio_chip> gpio_pin_id::chip() const { return m_chip; }
 

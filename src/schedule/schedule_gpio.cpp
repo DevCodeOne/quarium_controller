@@ -93,7 +93,7 @@ std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
                              [&id](const auto &current_action) { return current_action->id() == id; });
 
-    if (gpio == _gpios.cend()) {
+    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
         return {};
     }
 

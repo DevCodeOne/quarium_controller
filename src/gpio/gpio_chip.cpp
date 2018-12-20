@@ -147,7 +147,7 @@ std::shared_ptr<gpio_pin> gpio_chip::open_pin(gpio_pin_id &id) {
     }
 
     auto pin = std::move(gpio_pin::open(id));
-    if (!pin) {
+    if (!pin.has_value()) {
         return nullptr;
     }
 
