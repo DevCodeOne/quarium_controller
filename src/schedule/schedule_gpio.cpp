@@ -80,7 +80,11 @@ bool schedule_gpio::control_pin(const schedule_gpio_id &id, const gpio_pin::acti
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
                              [&id](const auto &current_action) { return current_action->id() == id; });
 
-    if (gpio == _gpios.cend()) {
+    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+        return false;
+    }
+
+    if ((*gpio)->pin() == nullptr) {
         return false;
     }
 
@@ -97,6 +101,10 @@ std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_
         return {};
     }
 
+    if ((*gpio)->pin() == nullptr) {
+        return {};
+    }
+
     return (*gpio)->pin()->is_overriden();
 }
 
@@ -106,7 +114,11 @@ bool schedule_gpio::override_with(const schedule_gpio_id &id, const gpio_pin::ac
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
                              [&id](const auto &current_action) { return current_action->id() == id; });
 
-    if (gpio == _gpios.cend()) {
+    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+        return false;
+    }
+
+    if ((*gpio)->pin() == nullptr) {
         return false;
     }
 
@@ -119,7 +131,11 @@ bool schedule_gpio::restore_control(const schedule_gpio_id &id) {
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
                              [&id](const auto &current_action) { return current_action->id() == id; });
 
-    if (gpio == _gpios.cend()) {
+    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+        return false;
+    }
+
+    if ((*gpio)->pin() == nullptr) {
         return false;
     }
 
@@ -132,7 +148,11 @@ std::optional<gpio_pin::action> schedule_gpio::current_state(const schedule_gpio
     auto gpio = std::find_if(_gpios.cbegin(), _gpios.cend(),
                              [&id](const auto &current_action) { return current_action->id() == id; });
 
-    if (gpio == _gpios.cend()) {
+    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+        return {};
+    }
+
+    if ((*gpio)->pin() == nullptr) {
         return {};
     }
 
