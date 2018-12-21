@@ -8,8 +8,8 @@
 #include <optional>
 #include <string>
 
-#include "gpio/gpiod_wrapper.h"
 #include "gpio/gpio_pin.h"
+#include "gpio/gpiod_wrapper.h"
 #include "network/network_interface.h"
 #include "network/rest_resource.h"
 
@@ -28,7 +28,7 @@ class gpio_chip final : public rest_resource<gpio_chip> {
     gpio_chip &operator=(gpio_chip &&other);
 
     const std::filesystem::path &path_to_file() const;
-    std::shared_ptr<gpio_pin> open_pin(gpio_pin_id &id);
+    std::shared_ptr<gpio_pin> open_pin(const gpio_pin_id &id);
 
     nlohmann::json serialize() const;
     // TODO implement this

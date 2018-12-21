@@ -122,6 +122,7 @@ void schedule_handler::event_handler() {
 
                 if (!result) {
                     logger::instance()->critical("Failed to execute actions of schedule {}", current_schedule.title());
+                    signal_handler::terminate_program();
                 }
             }
 

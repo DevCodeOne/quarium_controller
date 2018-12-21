@@ -108,7 +108,7 @@ namespace gpiod {
             int m_value = 0;
             int m_flags = 0;
             bool m_valid = false;
-            const char *m_consumer = nullptr;
+            std::string m_consumer = "";
 
             friend class gpiod_chip<stub>;
         };
@@ -132,7 +132,7 @@ namespace gpiod {
             void release_resource();
 
            private:
-            const char *m_path;
+            std::string m_path;
 
             friend class gpiod_line<stub>;
         };
@@ -228,7 +228,7 @@ namespace gpiod {
             swap(m_path, other.m_path);
         }
 
-        inline gpiod_chip<stub>::operator bool() const { return m_path != nullptr; }
+        inline gpiod_chip<stub>::operator bool() const { return m_path != ""; }
 
         inline gpiod_line<stub> gpiod_chip<stub>::get_line(unsigned int offset) {
             return gpiod_line<stub>(*this, offset);
@@ -244,12 +244,12 @@ namespace gpiod {
               m_value(other.m_value),
               m_flags(other.m_flags),
               m_valid(other.m_valid),
-              m_consumer(other.m_consumer) {
+              m_consumer(std::move(other.m_consumer)) {
             other.m_offset = 0;
             other.m_value = 0;
             other.m_flags = 0;
             other.m_valid = false;
-            other.m_consumer = nullptr;
+            other.m_consumer = "";
         }
 
         inline gpiod_line<stub> &gpiod_line<stub>::operator=(gpiod_line<stub> &&other) {

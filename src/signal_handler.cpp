@@ -22,3 +22,11 @@ bool signal_handler::disable_for_current_thread() {
     sigfillset(&mask);
     return pthread_sigmask(SIG_BLOCK, &mask, nullptr) >= 0;
 }
+
+bool signal_handler::terminate_program() {
+    if (kill(getpid(), SIGTERM) < 0) {
+        return false;
+    }
+
+    return true;
+}

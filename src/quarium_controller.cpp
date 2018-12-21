@@ -106,11 +106,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    while (true) {
-        if (_should_exit) {
-            break;
-        }
-
+    while (!_should_exit) {
         if (pause() < 0) {
             if (errno == EINTR) {
                 continue;

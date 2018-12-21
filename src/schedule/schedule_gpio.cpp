@@ -60,7 +60,7 @@ bool schedule_gpio::add_gpio(json &gpio_description) {
 
     if (pin_inst && pin_inst->control(default_state) == false) {
         logger::instance()->critical("The gpio {} on gpiochip {} is not accessable", id,
-                                     pin_id.chip()->path_to_file().c_str());
+                                     pin_id.gpio_chip_path().c_str());
         return false;
     }
 

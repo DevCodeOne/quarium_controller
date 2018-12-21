@@ -77,7 +77,7 @@ http::response<http::dynamic_body> gpio_chip::handle_request(const http::request
 }
 
 std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_path) {
-    gpiod::gpiod_chip opened_chip = gpiod::gpiod_chip(gpio_chip_path.c_str());
+    auto opened_chip = gpiod::gpiod_chip(gpio_chip_path.c_str());
 
     if (!opened_chip) {
         logger::instance()->critical("Couldn't open gpiochip {}", gpio_chip_path.c_str());
@@ -90,34 +90,22 @@ std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_
 bool gpio_chip::reserve_gpiochip(const std::filesystem::path &gpio_chip_path) {
     std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
 
-    auto result = _gpiochip_access_map.find(gpio_chip_path);
-
-    if (result != _gpiochip_access_map.cend()) {
+    if (_gpiochip_access_map.find(gpio_chip_path) != _gpiochip_access_map.cend()) {
         return false;
     }
 
-    auto created_gpio_chip = gpio_chip::open(gpio_chip_path);
-
-    if (!created_gpio_chip) {
-        return false;
+    if (auto created_gpio_chip = gpio_chip::open(gpio_chip_path); created_gpio_chip.has_value()) {
+        _gpiochip_access_map.try_emplace(gpio_chip_path, std::make_shared<gpio_chip>(std::move(*created_gpio_chip)));
+        return true;
     }
 
-    _gpiochip_access_map.emplace(gpio_chip_path, std::make_shared<gpio_chip>(std::move(created_gpio_chip.value())));
-    return true;
+    return false;
 }
 
 bool gpio_chip::free_gpiochip(const std::filesystem::path &gpio_chip_path) {
     std::lock_guard<std::recursive_mutex> _access_map_guard{_instance_mutex};
 
-    auto result = _gpiochip_access_map.find(gpio_chip_path);
-
-    if (result == _gpiochip_access_map.cend()) {
-        return false;
-    }
-
-    _gpiochip_access_map.erase(gpio_chip_path);
-
-    return true;
+    return _gpiochip_access_map.erase(gpio_chip_path);
 }
 
 gpio_chip::gpio_chip(const std::filesystem::path &gpio_dev, gpiod::gpiod_chip chip)
@@ -141,19 +129,19 @@ gpio_chip::~gpio_chip() {
 
 const std::filesystem::path &gpio_chip::path_to_file() const { return m_gpiochip_path; }
 
-std::shared_ptr<gpio_pin> gpio_chip::open_pin(gpio_pin_id &id) {
+std::shared_ptr<gpio_pin> gpio_chip::open_pin(const gpio_pin_id &id) {
     if (auto result = m_reserved_pins.find(id); result != m_reserved_pins.cend()) {
         return result->second;
     }
 
-    auto pin = std::move(gpio_pin::open(id));
+    auto pin = gpio_pin::open(id);
     if (!pin.has_value()) {
         return nullptr;
     }
 
-    m_reserved_pins.emplace(id, std::make_shared<gpio_pin>(std::move(pin.value())));
-
-    return m_reserved_pins[id];
+    // TODO FIX : Error is here remove all the code which adds elements to m_reserved_pins and the error is gone
+    auto [position, result] = m_reserved_pins.try_emplace(id, std::make_shared<gpio_pin>(std::move(*pin)));
+    return position->second;
 }
 
 nlohmann::json gpio_chip::serialize() const {

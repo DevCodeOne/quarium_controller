@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <optional>
 
@@ -9,16 +10,19 @@
 class gpio_chip;
 class gpio_pin;
 
+// TODO replace std::shared_ptr with std::weak_ptr because gpio_chip has a reference to gpio_pin_id and gpio_pin_id to
+// gpio_chip -> issues occur when gpio_chip tries to destroy its references to gpio_pin_id
 class gpio_pin_id final {
    public:
     gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip);
 
     unsigned int id() const;
-    const std::shared_ptr<gpio_chip> chip() const;
+    const std::filesystem::path &gpio_chip_path() const;
+
     std::shared_ptr<gpio_pin> open_pin();
 
    private:
-    const std::shared_ptr<gpio_chip> m_chip = nullptr;
+    const std::filesystem::path m_gpiochip_path = "";
     unsigned int m_id;
 };
 

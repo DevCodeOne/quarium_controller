@@ -3,19 +3,21 @@
 #include "gpio/gpio_chip.h"
 #include "logger.h"
 
-gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_chip(chip), m_id(id) {}
+gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip)
+    : m_gpiochip_path(chip->path_to_file()), m_id(id) {}
 
 unsigned int gpio_pin_id::id() const { return m_id; }
 
 std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() {
-    if (!m_chip) {
+    auto chip_instance = gpio_chip::instance(m_gpiochip_path);
+    if (!chip_instance) {
         return nullptr;
     }
 
-    return m_chip->open_pin(*this);
+    return chip_instance->open_pin(*this);
 }
 
-const std::shared_ptr<gpio_chip> gpio_pin_id::chip() const { return m_chip; }
+const std::filesystem::path &gpio_pin_id::gpio_chip_path() const { return m_gpiochip_path; }
 
 std::optional<gpio_pin::action> gpio_pin::is_overriden() const { return m_overriden_action; }
 
@@ -34,14 +36,14 @@ gpio_pin::gpio_pin(gpio_pin_id id, gpiod::gpiod_line line) : m_id(id), m_line(st
 gpio_pin::gpio_pin(gpio_pin &&other) : m_id(std::move(other.m_id)), m_line(std::move(other.m_line)) {}
 
 std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
-    auto chip = id.chip();
+    auto chip_instance = gpio_chip::instance(id.gpio_chip_path());
 
-    if (!chip) {
+    if (!chip_instance) {
         logger::instance()->critical("Chip of the provided gpio_pin_id is not valid");
         return {};
     }
 
-    gpiod::gpiod_line line = chip->m_chip.get_line(id.id());
+    gpiod::gpiod_line line = chip_instance->m_chip.get_line(id.id());
 
     if (!line) {
         logger::instance()->critical("Couldn't get line with id {}", id.id());
@@ -66,18 +68,19 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
 }
 
 bool gpio_pin::control(const action &act) {
-    if (!m_line || !m_id.chip()) {
+    auto chip_instance = gpio_chip::instance(m_id.gpio_chip_path());
+    if (!m_line || !chip_instance) {
         return false;
     }
 
     switch (act) {
         case action::on:
         case action::off:
-            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), m_id.chip()->path_to_file().c_str(),
+            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), m_id.gpio_chip_path().c_str(),
                                      act == action::on ? "on" : "off");
             break;
         case action::toggle:
-            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.chip()->path_to_file().c_str());
+            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.gpio_chip_path().c_str());
             break;
     }
 
