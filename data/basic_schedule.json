@@ -92,10 +92,24 @@
             "id" : "lamp_module",
             "type" : "remote_function",
             "description" : {
-                "url" : "http://aquarium-lights:9980/control_led",
+                "url" : "aquarium-lights:9980/control_led",
                 "values" : [
                     {
-                        "name" : "value",
+                        "name" : "brightness",
+                        "type" : "int",
+                        "range" : [0, 255]
+                    }
+                ]
+            }
+        },
+        {
+            "id" : "lamp_module#2",
+            "type" : "remote_function",
+            "description" : {
+                "url" : "aquarium-lights-two:9980/control_led",
+                "values" : [
+                    {
+                        "name" : "brightness",
                         "type" : "int",
                         "range" : [0, 255]
                     }

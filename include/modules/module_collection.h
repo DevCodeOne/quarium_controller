@@ -19,7 +19,8 @@ class module_collection final {
     ~module_collection() = default;
 
     bool add_module(const module_id &id, std::shared_ptr<module_interface> module);
-    const std::map<module_id, std::shared_ptr<module_interface>> get_modules() const;
+    std::map<module_id, std::shared_ptr<module_interface>> get_modules() const;
+    std::shared_ptr<module_interface> get_module(const std::string &id) const;
 
    private:
     static inline std::shared_ptr<module_collection> _instance = nullptr;

@@ -3,6 +3,7 @@
 
 #include "logger.h"
 
+// TODO add register function to register a module type
 std::shared_ptr<module_interface> create_module(const nlohmann::json &description) {
     if (description.is_null() || !description.is_object()) {
         return nullptr;
@@ -55,7 +56,7 @@ std::optional<module_value> module_value::deserialize(const nlohmann::json &desc
     }
 
     try {
-        auto name = type_entry.get<std::string>();
+        auto name = name_entry.get<std::string>();
         auto type = type_entry.get<std::string>();
 
         auto value_type = map_type_string_to_enum(type);
@@ -83,7 +84,8 @@ std::optional<module_value> module_value::deserialize(const nlohmann::json &desc
 
             if (value1_entry.type() == value2_entry.type()) {
                 if (value_type == module_value_type::integer &&
-                    value1_entry.type() == nlohmann::json::value_t::number_integer) {
+                    (value1_entry.type() == nlohmann::json::value_t::number_integer ||
+                     value1_entry.type() == nlohmann::json::value_t::number_unsigned)) {
                     int left = value1_entry.get<int>();
                     int right = value2_entry.get<int>();
 
@@ -99,8 +101,8 @@ std::optional<module_value> module_value::deserialize(const nlohmann::json &desc
                     return module_value(name, left, right);
                 }
             } else {
-                // There's no sense for a string to have a range look into more sensible approaches, maybe a list of
-                // possible strings
+                // TODO: There's no sense for a string to have a range look into more sensible approaches, maybe a list
+                // of possible strings
                 return {};
             }
         }
@@ -121,6 +123,16 @@ std::optional<module_value> module_value::deserialize(const nlohmann::json &desc
     return {};
 }
 
+module_value_type module_value::what_type() const {
+    if (std::holds_alternative<int>(m_value)) {
+        return module_value_type::integer;
+    } else if (std::holds_alternative<float>(m_value)) {
+        return module_value_type::floating;
+    }
+
+    return module_value_type::string;
+}
+
 const std::string &module_value::name() const { return m_name; }
 
 std::optional<module_interface_description> module_interface_description::deserialize(
@@ -135,8 +147,8 @@ std::optional<module_interface_description> module_interface_description::deseri
         return {};
     }
 
-    std::vector<std::pair<std::string, module_value>> values{};
-    std::vector<std::pair<std::string, nlohmann::json>> other_values{};
+    std::map<std::string, module_value> values{};
+    std::map<std::string, nlohmann::json> other_values{};
 
     for (auto &current_item : description["values"].items()) {
         auto &current_value_description_entry = current_item.value();
@@ -149,7 +161,7 @@ std::optional<module_interface_description> module_interface_description::deseri
         auto value_description = module_value::deserialize(current_value_description_entry);
 
         if (value_description.has_value()) {
-            values.emplace_back(value_description.value().name(), value_description.value());
+            values.emplace(std::make_pair(value_description.value().name(), value_description.value()));
         }
     }
 
@@ -158,7 +170,7 @@ std::optional<module_interface_description> module_interface_description::deseri
             continue;
         }
 
-        other_values.emplace_back(current_item.key(), current_item.value());
+        other_values.emplace(std::make_pair(current_item.key(), current_item.value()));
     }
 
     if (values.size() == 0) {
@@ -168,31 +180,34 @@ std::optional<module_interface_description> module_interface_description::deseri
     return module_interface_description(values, other_values);
 }
 
-module_interface_description::module_interface_description(
-    const std::vector<std::pair<std::string, module_value>> &values,
-    const std::vector<std::pair<std::string, nlohmann::json>> &other_values)
+module_interface_description::module_interface_description(const std::map<std::string, module_value> &values,
+                                                           const std::map<std::string, nlohmann::json> &other_values)
     : m_values(values), m_other_values(other_values) {}
 
-module_interface::module_interface(const std::string &id, const module_interface_description &description)
-    : m_id(id), m_description(description) {}
+const std::map<std::string, module_value> &module_interface_description::values() const { return m_values; }
 
-bool module_interface::value(const std::string &id, const module_value_types &value) {
-    decltype(m_values)::iterator result = m_values.find(id);
-    if (result == m_values.cend()) {
-        return false;
-    }
-
-    result->second = value;
-    return update_values();
+const std::map<std::string, nlohmann::json> &module_interface_description::other_values() const {
+    return m_other_values;
 }
 
-std::optional<module_value_types> module_interface::value(const std::string &id) const {
-    if (auto result = m_values.find(id); result != m_values.cend()) {
+std::optional<module_value> module_interface_description::lookup_value(const std::string &id) const {
+    if (auto result = m_values.find("id"); result != m_values.cend()) {
         return result->second;
     }
 
     return {};
 }
+
+std::optional<nlohmann::json> module_interface_description::lookup_other_value(const std::string &id) const {
+    if (auto result = m_other_values.find("id"); result != m_other_values.cend()) {
+        return std::optional<nlohmann::json>(result->second);
+    }
+
+    return {};
+}
+
+module_interface::module_interface(const std::string &id, const module_interface_description &description)
+    : m_id(id), m_description(description) {}
 
 const module_interface_description &module_interface::description() const { return m_description; }
 

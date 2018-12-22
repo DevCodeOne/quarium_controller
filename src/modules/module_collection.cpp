@@ -14,6 +14,12 @@ bool module_collection::add_module(const module_id &id, std::shared_ptr<module_i
     return m_modules.try_emplace(id, module).second;
 }
 
-const std::map<module_id, std::shared_ptr<module_interface>> module_collection::get_modules() const {
-    return m_modules;
+std::map<module_id, std::shared_ptr<module_interface>> module_collection::get_modules() const { return m_modules; }
+
+std::shared_ptr<module_interface> module_collection::get_module(const std::string &id) const {
+    if (auto result = m_modules.find(id); result != m_modules.cend()) {
+        return result->second;
+    }
+
+    return nullptr;
 }

@@ -30,6 +30,7 @@ set (SOURCE_FILES
     src/gui/manual_control_view.cpp
     src/gui/manual_control_view_controller.cpp
     src/gui/module_view.cpp
+    src/gui/module_view_controller.cpp
     src/modules/module_collection.cpp
     src/modules/module_interface.cpp
     src/modules/remote_function.cpp
