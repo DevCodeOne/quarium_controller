@@ -16,19 +16,10 @@
 #include "schedule/schedule.h"
 #include "signal_handler.h"
 
-std::shared_ptr<main_view> main_view::instance() {
-    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
-
-    if (_instance) {
-        return _instance;
-    }
-
-    _instance = std::shared_ptr<main_view>(new main_view);
-    return _instance;
-}
+std::shared_ptr<main_view> main_view::instance() { return singleton<main_view>::instance(); }
 
 void main_view::open_view() {
-    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
+    auto lock_guard = singleton<main_view>::retrieve_instance_lock();
 
     if (m_is_started) {
         return;
@@ -39,7 +30,7 @@ void main_view::open_view() {
 }
 
 void main_view::close_view() {
-    std::lock_guard<std::recursive_mutex> _instance_guard(_instance_mutex);
+    auto lock_guard = singleton<main_view>::retrieve_instance_lock();
 
     if (!m_is_started) {
         return;

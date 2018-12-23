@@ -191,7 +191,7 @@ const std::map<std::string, nlohmann::json> &module_interface_description::other
 }
 
 std::optional<module_value> module_interface_description::lookup_value(const std::string &id) const {
-    if (auto result = m_values.find("id"); result != m_values.cend()) {
+    if (auto result = m_values.find(id); result != m_values.cend()) {
         return result->second;
     }
 
@@ -199,7 +199,7 @@ std::optional<module_value> module_interface_description::lookup_value(const std
 }
 
 std::optional<nlohmann::json> module_interface_description::lookup_other_value(const std::string &id) const {
-    if (auto result = m_other_values.find("id"); result != m_other_values.cend()) {
+    if (auto result = m_other_values.find(id); result != m_other_values.cend()) {
         return std::optional<nlohmann::json>(result->second);
     }
 
@@ -210,6 +210,8 @@ module_interface::module_interface(const std::string &id, const module_interface
     : m_id(id), m_description(description) {}
 
 const module_interface_description &module_interface::description() const { return m_description; }
+
+module_interface_description &module_interface::description() { return m_description; }
 
 const std::string &module_interface::id() const { return m_id; }
 

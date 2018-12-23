@@ -35,37 +35,60 @@ bool remote_function::update_values() {
     boost::asio::ip::tcp::resolver resolver{context};
     boost::asio::ip::tcp::socket socket{context};
 
-    auto url_entry = description().lookup_value("url");
+    auto url_entry = description().lookup_other_value("url");
 
-    if (!url_entry.has_value()) {
+    if (!url_entry.has_value() || !url_entry->is_string()) {
         return false;
     }
 
-    auto url = (*url_entry).value<std::string>();
+    auto url = (*url_entry).get<std::string>();
+    // Check if valid url
     auto port_start = url.find_last_of(":");
-    auto port_end = url.find_first_not_of("0123456789", port_start);
-    auto host = url.substr(0, port_start - 1);
-    std::string port = port_start != std::string::npos ? url.substr(port_start + 1, port_end - 1).substr() : "80";
+    auto port_end = url.find_first_not_of("0123456789", port_start + 1);
+
+    std::string host = url.substr(0, port_start);
+    std::string port = "80";
+    std::string function = "";
+
+    if (port_start != std::string::npos) {
+        port = url.substr(port_start + 1, port_end - (port_start + 1));
+        function = url.substr(port_end);
+    }
 
     try {
         auto const results = resolver.resolve(host, port);
 
-        logger::instance()->info("Connection to {}:{}/{}", host, port, url.substr(port_end + 1));
+        std::ostringstream remote_function;
 
-        // boost::asio::connect(socket, results.begin(), results.end());
+        remote_function << function;
+        for (auto &[id, value] : description().values()) {
+            if (value.what_type() == module_value_type::integer) {
+                remote_function << "?" << id << "=" << value.value<int>();
+            } else {
+                logger::instance()->info("Values of other type than int are not supported right now");
+            }
+        }
 
-        // http::request<http::empty_body> req(http::verb::get, url.substr(port_end), 10);
-        // req.set(http::field::host, host);
+        boost::asio::connect(socket, results.begin(), results.end());
 
-        // http::write(socket, req);
+        http::request<http::empty_body> req(http::verb::get, remote_function.str(), 10);
+        req.set(http::field::host, "localhost");
 
-        // boost::beast::error_code ec;
-        // socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+        http::write(socket, req);
+        logger::instance()->info("{}", req.target().data());
 
-        // if (ec && ec != boost::beast::errc::not_connected) {
-        //     return false;
-        // }
+        boost::beast::error_code ec;
+        socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+
+        if (ec && ec != boost::beast::errc::not_connected) {
+            logger::instance()->info("An error occured when trying to connect to the module : {}", id());
+            return false;
+        }
+    } catch (std::exception e) {
+        logger::instance()->info("{}", e.what());
+        return false;
     } catch (...) {
+        logger::instance()->info("An exception occured when trying to connect to the module", id());
         return false;
     }
 

@@ -54,7 +54,7 @@ module_value::module_value(const std::string &name, T min, T max, T value)
 // TODO add type check for strings
 template<typename T>
 bool module_value::value(const T &new_value) {
-    if (new_value < m_min || new_value > m_max) {
+    if (new_value < min<T>() || new_value > max<T>()) {
         return false;
     }
 
@@ -94,6 +94,10 @@ class module_interface_description {
     static std::optional<module_interface_description> deserialize(const nlohmann::json &description);
     ~module_interface_description() = default;
 
+    template<typename T>
+    bool set_value(const std::string &id, const T &new_value);
+    bool set_other_value(const std::string &id, nlohmann::json &new_value);
+
     const std::map<std::string, module_value> &values() const;
     const std::map<std::string, nlohmann::json> &other_values() const;
 
@@ -108,6 +112,15 @@ class module_interface_description {
     std::map<std::string, nlohmann::json> m_other_values;
 };
 
+template<typename T>
+bool module_interface_description::set_value(const std::string &id, const T &new_value) {
+    if (auto result = m_values.find(id); result != m_values.cend()) {
+        return result->second.value(new_value);
+    }
+
+    return false;
+}
+
 // TODO define methods here to build a gui and handle all the stuff so that T only has to implement the module specific
 // stuff
 class module_interface {
@@ -117,6 +130,7 @@ class module_interface {
 
     virtual bool update_values() = 0;
 
+    virtual module_interface_description &description();
     virtual const module_interface_description &description() const;
     virtual const std::string &id() const;
 

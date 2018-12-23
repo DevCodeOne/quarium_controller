@@ -12,6 +12,7 @@
 #include "gui/manual_control_view.h"
 #include "gui/module_view.h"
 #include "gui/page_interface.h"
+#include "pattern_templates/singleton.h"
 #include "ring_buffer.h"
 
 class main_view {
@@ -67,9 +68,6 @@ class main_view {
     lv_disp_drv_t m_display_driver;
     lv_indev_drv_t m_input_driver;
 
-    static inline std::shared_ptr<main_view> _instance{nullptr};
-    static inline std::recursive_mutex _instance_mutex{};
-
     static inline constexpr unsigned int screen_width = 320;
     static inline constexpr unsigned int screen_height = 480;
     static inline constexpr unsigned int navigation_buttons_height = 40;
@@ -79,4 +77,5 @@ class main_view {
                                                                                  "Logs", "Modules"};
 
     friend class view_controller;
+    friend class singleton<main_view>;
 };

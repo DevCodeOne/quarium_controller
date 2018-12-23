@@ -13,15 +13,7 @@
 #include "schedule/schedule_handler.h"
 #include "signal_handler.h"
 
-std::shared_ptr<schedule_handler> schedule_handler::instance() {
-    std::lock_guard<std::mutex> instance_guard{_instance_mutex};
-
-    if (!_instance) {
-        _instance = std::shared_ptr<schedule_handler>(new schedule_handler);
-    }
-
-    return _instance;
-}
+std::shared_ptr<schedule_handler> schedule_handler::instance() { return singleton<schedule_handler>::instance(); }
 
 void schedule_handler::start_event_handler() {
     if (m_is_started) {
@@ -69,7 +61,7 @@ bool schedule_handler::add_schedule(schedule sched) {
     }
 
     {
-        std::lock_guard<std::recursive_mutex> instance_guard(m_schedules_list_mutex);
+        auto lock = singleton<schedule_handler>::retrieve_instance_lock();
         logger::instance()->info("Added schedule {} to the list of schedules", sched.title());
         m_inactive_schedules.emplace_back(std::move(sched));
     }
@@ -85,7 +77,7 @@ void schedule_handler::event_handler() {
 
     while (!handler_instance->m_should_exit) {
         {
-            std::lock_guard<std::recursive_mutex> instance_guard(handler_instance->m_schedules_list_mutex);
+            auto lock = singleton<schedule_handler>::retrieve_instance_lock();
 
             std::chrono::minutes minutes_since_today =
                 duration_since_epoch<std::chrono::minutes>() - duration_since_epoch<days>();
@@ -201,8 +193,8 @@ http::response<http::dynamic_body> schedule_handler::handle_request(const http::
     std::regex schedule_id_regex(R"([1-9][0-9]*|[0-9])", std::regex_constants::extended);
 
     if (std::regex_match(resource_path_string, list_schedules_regex) && request.method() == http::verb::get) {
+        auto lock = singleton<schedule_handler>::retrieve_instance_lock();
         auto instance = schedule_handler::instance();
-        std::lock_guard<std::mutex> instance_guard{instance->_instance_mutex};
 
         nlohmann::json schedules;
 
@@ -235,8 +227,8 @@ http::response<http::dynamic_body> schedule_handler::handle_request(const http::
             return std::move(response);
         }
 
+        auto lock = singleton<schedule_handler>::retrieve_instance_lock();
         auto instance = schedule_handler::instance();
-        std::lock_guard<std::mutex> instance_guard{instance->_instance_mutex};
 
         nlohmann::json specific_schedule;
 

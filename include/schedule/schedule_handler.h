@@ -9,6 +9,7 @@
 #include "chrono_time.h"
 #include "gpio/gpio_chip.h"
 #include "network/network_interface.h"
+#include "pattern_templates/singleton.h"
 #include "schedule.h"
 
 class schedule_handler {
@@ -33,6 +34,5 @@ class schedule_handler {
     bool m_is_started = false;
     std::atomic_bool m_should_exit = false;
 
-    static inline std::mutex _instance_mutex;
-    static inline std::shared_ptr<schedule_handler> _instance;
+    friend class singleton<schedule_handler>;
 };
