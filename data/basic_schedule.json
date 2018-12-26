@@ -40,8 +40,28 @@
             "pin" : 17,
             "default" : "off"
         }
-
-
+    ],
+    "outputs" : [
+        {
+            "id" : "wabikusa_light#1",
+            "type" : "switch",
+            "connection" : "gpio",
+            "connection_description" : {
+                "pin" : 19,
+                "inverted" : "true"
+            },
+            "default" : "off"
+        }
+    ],
+    "inputs" : [
+        {
+            "id" : "temperature",
+            "type" : "dsxxx",
+            "connection" : "i2c",
+            "connection_description" : {
+                "port" : "2x3"
+            }
+        }
     ],
     "actions": [
         {
@@ -53,6 +73,18 @@
             "id" : "lights_off",
             "gpios" : ["light#1", "light#2", "co2"],
             "gpio_actions" : ["off", "off", "off"]
+        }
+    ],
+    "manual_actions" : [
+        {
+            "id" : "maintenance aquarium#1",
+            "gpios" : ["light#1", "filter#1", "heater#1"],
+            "gpio_actions" : ["on", "off", "off"]
+        },
+        {
+            "id" : "maintenance aquarium#1",
+            "gpios" : ["light#1", "filter#1", "heater#1"],
+            "gpio_actions" : ["on", "off", "off"]
         }
     ],
     "schedule" : {
