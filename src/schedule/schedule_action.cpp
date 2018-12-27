@@ -38,7 +38,7 @@ bool schedule_action::add_action(json &schedule_action_description) {
         return false;
     }
 
-    std::vector<schedule_gpio_id> created_gpios;
+    std::vector<schedule_output_id> created_gpios;
     bool created_all_gpios_successfully =
         std::all_of(gpios_entry.begin(), gpios_entry.end(), [&created_gpios](auto &current_gpio_entry) {
             if (!current_gpio_entry.is_string()) {
@@ -46,12 +46,12 @@ bool schedule_action::add_action(json &schedule_action_description) {
             }
 
             std::string id = current_gpio_entry.template get<std::string>();
-            if (!schedule_gpio::is_valid_id(id)) {
+            if (!schedule_output::is_valid_id(id)) {
                 logger::instance()->critical("A gpio with the id {} doesn't exist", id);
                 return false;
             }
 
-            created_gpios.emplace_back(schedule_gpio_id(id));
+            created_gpios.emplace_back(schedule_output_id(id));
             return true;
         });
 
@@ -131,7 +131,7 @@ bool schedule_action::execute_action(const schedule_action_id &id) {
 bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
-    std::map<schedule_gpio_id, gpio_pin::action> actions;
+    std::map<schedule_output_id, gpio_pin::action> actions;
     bool result = true;
 
     for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
@@ -158,7 +158,7 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
     }
 
     for (auto &[current_pin_id, current_action] : actions) {
-        result &= schedule_gpio::control_pin(current_pin_id, current_action);
+        result &= schedule_output::control_pin(current_pin_id, current_action);
     }
 
     return result;
@@ -182,7 +182,7 @@ schedule_action &schedule_action::id(const schedule_action_id &new_id) {
     return *this;
 }
 
-schedule_action &schedule_action::add_pin(const std::pair<schedule_gpio_id, gpio_pin::action> &new_pin) {
+schedule_action &schedule_action::add_pin(const std::pair<schedule_output_id, gpio_pin::action> &new_pin) {
     m_pins.emplace_back(new_pin);
     return *this;
 }
@@ -191,11 +191,11 @@ bool schedule_action::operator()() {
     bool result = true;
 
     for (auto [current_pin, current_action] : m_pins) {
-        result &= schedule_gpio::control_pin(current_pin, current_action);
+        result &= schedule_output::control_pin(current_pin, current_action);
     }
     return result;
 }
 
 const schedule_action_id &schedule_action::id() const { return m_id; }
 
-const std::vector<std::pair<schedule_gpio_id, gpio_pin::action>> &schedule_action::pins() const { return m_pins; }
+const std::vector<std::pair<schedule_output_id, gpio_pin::action>> &schedule_action::pins() const { return m_pins; }

@@ -23,7 +23,7 @@ set (SOURCE_FILES
     src/schedule/schedule.cpp
     src/schedule/schedule_action.cpp
     src/schedule/schedule_event.cpp
-    src/schedule/schedule_gpio.cpp
+    src/schedule/schedule_output.cpp
     src/schedule/schedule_handler.cpp
     src/gui/main_view.cpp
     src/gui/main_view_controller.cpp
@@ -75,7 +75,7 @@ if (BUILD_TESTS)
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
-        src/schedule/schedule_gpio.cpp
+        src/schedule/schedule_output.cpp
         src/modules/module_collection.cpp
         src/modules/module_interface.cpp
         src/modules/remote_function.cpp

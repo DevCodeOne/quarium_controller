@@ -1,8 +1,9 @@
+#include <cstring>
 #include <sstream>
 
 #include "gui/manual_control_view.h"
 #include "gui/manual_control_view_controller.h"
-#include "schedule/schedule_gpio.h"
+#include "schedule/schedule_output.h"
 
 manual_control_view::gpio_override_element::gpio_override_element(lv_obj_t *parent, const std::string &id,
                                                                   const std::string &override_text)
@@ -52,7 +53,7 @@ void manual_control_view::update_override_elements() {
     recreate_override_elements();
 
     for (auto &current_override_element : m_manual_overrides) {
-        auto is_overriden = schedule_gpio::is_overriden(current_override_element.id());
+        auto is_overriden = schedule_output::is_overriden(current_override_element.id());
 
         lv_obj_set_hidden(current_override_element.override_switch(), !is_overriden);
 
@@ -73,7 +74,7 @@ void manual_control_view::update_override_elements() {
     }
 }
 void manual_control_view::recreate_override_elements() {
-    auto gpio_id_list = schedule_gpio::get_ids();
+    auto gpio_id_list = schedule_output::get_ids();
 
     if (gpio_id_list.size() == 0) {
         return;

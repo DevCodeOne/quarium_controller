@@ -4,7 +4,6 @@
 #include "gui/main_view.h"
 #include "gui/main_view_controller.h"
 #include "logger.h"
-#include "schedule/schedule_gpio.h"
 
 lv_res_t view_controller::front_button_event(lv_obj_t *obj) {
     auto inst = main_view::instance();

@@ -29,7 +29,7 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
     }
 
     bool successfully_parsed_all_gpios = std::all_of(gpios.begin(), gpios.end(), [](auto &current_action_description) {
-        return schedule_gpio::add_gpio(current_action_description);
+        return schedule_output::add_gpio(current_action_description);
     });
 
     if (!successfully_parsed_all_gpios) {

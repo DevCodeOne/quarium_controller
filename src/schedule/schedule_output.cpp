@@ -1,7 +1,7 @@
-#include "schedule/schedule_gpio.h"
+#include "schedule/schedule_output.h"
 #include "logger.h"
 
-bool schedule_gpio::add_gpio(json &gpio_description) {
+bool schedule_output::add_gpio(json &gpio_description) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     json id_entry = gpio_description["id"];
@@ -64,17 +64,17 @@ bool schedule_gpio::add_gpio(json &gpio_description) {
         return false;
     }
 
-    _gpios.emplace_back(std::make_unique<schedule_gpio>(id, pin_inst, default_state));
+    _gpios.emplace_back(std::make_unique<schedule_output>(id, pin_inst, default_state));
     return true;
 }
 
-bool schedule_gpio::is_valid_id(const schedule_gpio_id &id) {
+bool schedule_output::is_valid_id(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
     return std::find_if(_gpios.cbegin(), _gpios.cend(),
                         [&id](const auto &current_action) { return current_action->id() == id; }) != _gpios.cend();
 }
 
-bool schedule_gpio::control_pin(const schedule_gpio_id &id, const gpio_pin::action &action) {
+bool schedule_output::control_pin(const schedule_output_id &id, const gpio_pin::action &action) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
@@ -91,7 +91,7 @@ bool schedule_gpio::control_pin(const schedule_gpio_id &id, const gpio_pin::acti
     return (*gpio)->pin()->control(action);
 }
 
-std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_id &id) {
+std::optional<gpio_pin::action> schedule_output::is_overriden(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
@@ -108,7 +108,7 @@ std::optional<gpio_pin::action> schedule_gpio::is_overriden(const schedule_gpio_
     return (*gpio)->pin()->is_overriden();
 }
 
-bool schedule_gpio::override_with(const schedule_gpio_id &id, const gpio_pin::action &action) {
+bool schedule_output::override_with(const schedule_output_id &id, const gpio_pin::action &action) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
@@ -125,7 +125,7 @@ bool schedule_gpio::override_with(const schedule_gpio_id &id, const gpio_pin::ac
     return (*gpio)->pin()->override_with(action);
 }
 
-bool schedule_gpio::restore_control(const schedule_gpio_id &id) {
+bool schedule_output::restore_control(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
@@ -142,7 +142,7 @@ bool schedule_gpio::restore_control(const schedule_gpio_id &id) {
     return (*gpio)->pin()->restore_control();
 }
 
-std::optional<gpio_pin::action> schedule_gpio::current_state(const schedule_gpio_id &id) {
+std::optional<gpio_pin::action> schedule_output::current_state(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto gpio = std::find_if(_gpios.cbegin(), _gpios.cend(),
@@ -159,10 +159,10 @@ std::optional<gpio_pin::action> schedule_gpio::current_state(const schedule_gpio
     return (*gpio)->pin()->current_state();
 }
 
-std::vector<schedule_gpio_id> schedule_gpio::get_ids() {
+std::vector<schedule_output_id> schedule_output::get_ids() {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    std::vector<schedule_gpio_id> ids;
+    std::vector<schedule_output_id> ids;
     ids.reserve(_gpios.size());
 
     for (auto &current_gpio : _gpios) {
@@ -172,20 +172,20 @@ std::vector<schedule_gpio_id> schedule_gpio::get_ids() {
     return ids;
 }
 
-schedule_gpio::schedule_gpio(const schedule_gpio_id &id, std::shared_ptr<gpio_pin> pin,
-                             const gpio_pin::action &default_state)
+schedule_output::schedule_output(const schedule_output_id &id, std::shared_ptr<gpio_pin> pin,
+                                 const gpio_pin::action &default_state)
     : m_id(id), m_pin(pin), m_default_state(default_state) {}
 
-schedule_gpio::schedule_gpio(schedule_gpio &&other)
+schedule_output::schedule_output(schedule_output &&other)
     : m_id(std::move(other.m_id)), m_pin(std::move(other.m_pin)), m_default_state(std::move(other.m_default_state)) {}
 
-schedule_gpio &schedule_gpio::default_state(gpio_pin::action &new_default_state) {
+schedule_output &schedule_output::default_state(gpio_pin::action &new_default_state) {
     m_default_state = new_default_state;
     return *this;
 }
 
-const schedule_gpio_id &schedule_gpio::id() const { return m_id; }
+const schedule_output_id &schedule_output::id() const { return m_id; }
 
-const gpio_pin::action &schedule_gpio::default_state() const { return m_default_state; }
+const gpio_pin::action &schedule_output::default_state() const { return m_default_state; }
 
-std::shared_ptr<gpio_pin> schedule_gpio::pin() { return m_pin; }
+std::shared_ptr<gpio_pin> schedule_output::pin() { return m_pin; }

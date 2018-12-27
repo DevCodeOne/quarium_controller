@@ -2,7 +2,7 @@
 
 #include "gui/main_view.h"
 #include "gui/manual_control_view_controller.h"
-#include "schedule/schedule_gpio.h"
+#include "schedule/schedule_output.h"
 
 lv_res_t manual_control_view_controller::toggle_switch(lv_obj_t *sw) {
     auto view_instance = main_view::instance();
@@ -27,11 +27,11 @@ lv_res_t manual_control_view_controller::toggle_switch(lv_obj_t *sw) {
 
     auto gpio_id = override_element->id();
 
-    if (!schedule_gpio::is_valid_id(gpio_id)) {
+    if (!schedule_output::is_valid_id(gpio_id)) {
         return LV_RES_OK;
     }
 
-    schedule_gpio::override_with(gpio_id, lv_sw_get_state(sw) ? gpio_pin::action::on : gpio_pin::action::off);
+    schedule_output::override_with(gpio_id, lv_sw_get_state(sw) ? gpio_pin::action::on : gpio_pin::action::off);
 
     return LV_RES_OK;
 }
@@ -61,7 +61,7 @@ lv_res_t manual_control_view_controller::check_override_schedule(lv_obj_t *check
 
     auto gpio_id = override_element->id();
 
-    if (!schedule_gpio::is_valid_id(gpio_id)) {
+    if (!schedule_output::is_valid_id(gpio_id)) {
         return LV_RES_OK;
     }
 
@@ -71,7 +71,7 @@ lv_res_t manual_control_view_controller::check_override_schedule(lv_obj_t *check
     if (is_checked) {
 
         // TODO somehow remove this element, because its id is not valid
-        auto current_state = schedule_gpio::current_state(gpio_id);
+        auto current_state = schedule_output::current_state(gpio_id);
         if (!current_state.has_value()) {
             return LV_RES_OK;
         }
@@ -85,9 +85,9 @@ lv_res_t manual_control_view_controller::check_override_schedule(lv_obj_t *check
                 break;
         }
 
-        schedule_gpio::override_with(gpio_id, current_state.value());
+        schedule_output::override_with(gpio_id, current_state.value());
     } else {
-        schedule_gpio::restore_control(gpio_id);
+        schedule_output::restore_control(gpio_id);
     }
 
     return LV_RES_OK;
