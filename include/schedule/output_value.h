@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <variant>
 
 enum struct switch_output { off = 0, on = 1, toggle = 2 };
@@ -16,3 +17,11 @@ class output_value {
     std::variant<switch_output> m_value;
 };
 
+template<typename T>
+std::optional<T> output_value::get() const {
+    if (std::holds_alternative<T>(m_value)) {
+        return std::get<T>(m_value);
+    }
+
+    return {};
+}

@@ -32,7 +32,7 @@ class gpio_chip final : public rest_resource<gpio_chip> {
 
     nlohmann::json serialize() const;
     // TODO implement this
-    static std::optional<gpio_chip> deserialize(nlohmann::json &description);
+    static std::optional<gpio_chip> deserialize(const nlohmann::json &description);
 
    private:
     static std::optional<gpio_chip> open(const std::filesystem::path &gpio_chip_path);

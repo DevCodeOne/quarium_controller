@@ -1,8 +1,11 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
+
+#include "nlohmann/json.hpp"
 
 #include "pattern_templates/singleton.h"
 #include "schedule/output_value.h"
@@ -28,10 +31,25 @@ class output_interface {
 class output_factory : public singleton<output_factory> {
    public:
     using factory_func = std::function<std::unique_ptr<output_interface>(const json &description)>;
+
+    static std::shared_ptr<output_factory> instance();
     static std::unique_ptr<output_interface> deserialize(const std::string &type, const json &description);
-    static bool register_interface(const std::string &type, factory_func func);
+    template<typename T>
+    static bool register_interface(const std::string &type, T func);
 
    private:
     std::map<std::string, factory_func> m_factories;
 };
+
+template<typename T>
+bool output_factory::register_interface(const std::string &type, T func) {
+    auto lock = retrieve_instance_lock();
+    auto factory_instance = instance();
+
+    if (!factory_instance) {
+        return false;
+    }
+
+    return factory_instance->m_factories.try_emplace(type, func).second;
+}
 

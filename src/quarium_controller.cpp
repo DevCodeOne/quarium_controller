@@ -66,6 +66,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // Register output interfaces
+    output_factory::register_interface("gpio", &gpio_pin::create_for_interface);
+
     auto schedule_file_paths = conf->find("schedule_list");
 
     if (schedule_file_paths.size() == 0) {

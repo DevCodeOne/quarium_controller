@@ -21,16 +21,16 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
-    auto gpios = schedule_file["gpios"];
+    auto outputs = schedule_file["outputs"];
 
-    if (gpios.is_null()) {
-        logger::instance()->critical("No gpios are defined in the file {}", schedule_file_path.c_str());
+    if (outputs.is_null()) {
+        logger::instance()->critical("No outputs are defined in the file {}", schedule_file_path.c_str());
         return {};
     }
 
-    bool successfully_parsed_all_gpios = std::all_of(gpios.begin(), gpios.end(), [](auto &current_action_description) {
-        return schedule_output::add_gpio(current_action_description);
-    });
+    bool successfully_parsed_all_gpios = std::all_of(
+        outputs.begin(), outputs.end(),
+        [](auto &current_output_description) { return schedule_output::add_output(current_output_description); });
 
     if (!successfully_parsed_all_gpios) {
         logger::instance()->critical("Description of one or more gpios contain errors");

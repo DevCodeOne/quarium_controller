@@ -23,7 +23,7 @@ class schedule_output {
     static std::vector<schedule_output_id> get_ids();
 
    private:
-    static bool add_gpio(json &gpio_description);
+    static bool add_output(json &gpio_description);
 
     static inline std::map<schedule_output_id, std::unique_ptr<output_interface>> _outputs;
     static inline std::recursive_mutex _list_mutex;

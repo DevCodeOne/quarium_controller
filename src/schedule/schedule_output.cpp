@@ -1,7 +1,7 @@
 #include "schedule/schedule_output.h"
 #include "logger.h"
 
-bool schedule_output::add_gpio(json &gpio_description) {
+bool schedule_output::add_output(json &gpio_description) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     json id_entry = gpio_description["id"];
@@ -43,7 +43,8 @@ bool schedule_output::add_gpio(json &gpio_description) {
     auto created_output = output_factory::deserialize(type_entry.get<std::string>(), description_entry);
 
     if (!created_output) {
-        logger::instance()->critical("The output with the id {} couldn't be created");
+        logger::instance()->critical("The output with the id {} couldn't be created", id);
+        return false;
     }
 
     _outputs.emplace(std::make_pair(id, std::move(created_output)));

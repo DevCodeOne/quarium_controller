@@ -161,6 +161,51 @@ nlohmann::json gpio_pin::serialize() const {
     return std::move(serialized);
 }
 
+std::unique_ptr<output_interface> gpio_pin::create_for_interface(const nlohmann::json &description) {
+    if (!description.is_object()) {
+        return nullptr;
+    }
+
+    nlohmann::json pin_entry = description["pin"];
+    nlohmann::json default_entry = description["default"];
+
+    if (pin_entry.is_null() || !pin_entry.is_number_unsigned()) {
+        return nullptr;
+    }
+
+    if (default_entry.is_null()) {
+        default_entry = "on";
+    }
+
+    if (!default_entry.is_string()) {
+        return nullptr;
+    }
+
+    auto pin_number = pin_entry.get<unsigned int>();
+    auto default_as_string = default_entry.get<std::string>();
+    switch_output default_value = switch_output::off;
+
+    if (default_as_string == "on") {
+        default_value = switch_output::on;
+    }
+
+    auto gpio_chip_instance = gpio_chip::instance();
+
+    if (!gpio_chip_instance) {
+        return nullptr;
+    }
+
+    gpio_pin_id pin_id(pin_number, gpio_chip_instance);
+
+    auto created_pin = gpio_pin::open(pin_id);
+
+    if (!created_pin.has_value()) {
+        return nullptr;
+    }
+
+    return std::unique_ptr<output_interface>(new gpio_pin(std::move(*created_pin)));
+}
+
 // TODO test these
 bool operator<(const gpio_pin_id &lhs, const gpio_pin_id &rhs) { return lhs.id() < rhs.id(); }
 

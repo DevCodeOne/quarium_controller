@@ -53,8 +53,8 @@ class gpio_pin final : public rest_resource<gpio_pin>, public output_interface {
     unsigned int gpio_id() const;
 
     nlohmann::json serialize() const;
-    // TODO implement this
-    static std::optional<gpio_pin> deserialize(nlohmann::json &description);
+    static std::optional<gpio_pin> deserialize(const nlohmann::json &description);
+    static std::unique_ptr<output_interface> create_for_interface(const nlohmann::json &description);
 
    private:
     static std::optional<gpio_pin> open(gpio_pin_id id);
