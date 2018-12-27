@@ -1,56 +1,75 @@
 {
-    "gpios": [
+    "outputs" : [
         {
             "id" : "light#1",
-            "pin" : 26,
-            "default" : "off"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 26,
+                "default" : "off"
+            }
         },
         {
             "id" : "filter#1",
-            "pin" : 19,
-            "default" : "on"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 19,
+                "default" : "on"
+            }
         },
         {
             "id" : "heater#1",
-            "pin" : 6,
-            "default" : "on"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 6,
+                "default" : "on"
+            }
         },
         {
             "id" : "skim#1",
-            "pin" : 5,
-            "default" : "off"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 5,
+                "default" : "off"
+            }
         },
         {
             "id" : "light#2",
-            "pin" : 27,
-            "default" : "off"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 27,
+                "default" : "off"
+            }
         },
         {
             "id" : "filter#2",
-            "pin" : 13,
-            "default" : "on"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 13,
+                "default" : "on"
+            }
         },
         {
             "id" : "heater#2",
-            "pin" : 22,
-            "default" : "on"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 22,
+                "default" : "on"
+            }
         },
         {
             "id" : "co2",
-            "pin" : 17,
-            "default" : "off"
-        }
-    ],
-    "outputs" : [
+            "type" : "gpio",
+            "description" : {
+                "pin" : 17,
+                "default" : "on"
+            }
+        },
         {
             "id" : "wabikusa_light#1",
-            "type" : "switch",
-            "connection" : "gpio",
-            "connection_description" : {
-                "pin" : 19,
-                "inverted" : "true"
+            "type" : "remote_gpio",
+            "description" : {
             },
-            "default" : "off"
+            "default" : "on"
         }
     ],
     "inputs" : [

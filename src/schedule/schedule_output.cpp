@@ -5,13 +5,13 @@ bool schedule_output::add_gpio(json &gpio_description) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     json id_entry = gpio_description["id"];
-    json pin_entry = gpio_description["pin"];
-    json default_entry = gpio_description["default"];
+    json type_entry = gpio_description["type"];
+    json description_entry = gpio_description["description"];
 
-    if (id_entry.is_null() || pin_entry.is_null() || default_entry.is_null()) {
-        logger::instance()->critical("A needed entry in a gpio entry was missing {} {} {}",
-                                     id_entry.is_null() ? "id" : "", pin_entry.is_null() ? "pin" : "",
-                                     default_entry.is_null() ? "default_entry" : "");
+    if (id_entry.is_null() || type_entry.is_null() || description_entry.is_null()) {
+        logger::instance()->critical("A needed entry in a output entry was missing {} {} {}",
+                                     id_entry.is_null() ? "id" : "", type_entry.is_null() ? "type" : "",
+                                     description_entry.is_null() ? "description" : "");
         if (!id_entry.is_null() && id_entry.is_string()) {
             logger::instance()->critical("The issue was in the gpio entry with the id {}", id_entry.get<std::string>());
         }
@@ -30,162 +30,106 @@ bool schedule_output::add_gpio(json &gpio_description) {
         return false;
     }
 
-    if (!pin_entry.is_number_unsigned()) {
-        logger::instance()->critical("The pin entry of the gpio entry {} is not an unsigned number", id);
+    if (!type_entry.is_string()) {
+        logger::instance()->critical("The type entry of the output entry {} is not a string", id);
         return false;
     }
 
-    unsigned int pin = pin_entry.get<unsigned int>();
-
-    if (!default_entry.is_string()) {
-        logger::instance()->critical("The default value for the gpio entry with the id {} is not a string", id);
+    if (!description_entry.is_object()) {
+        logger::instance()->critical("The description entry for the output entry with the id {} is not an object", id);
         return false;
     }
 
-    std::string default_value = default_entry.get<std::string>();
-    gpio_pin::action default_state = gpio_pin::action::off;
+    auto created_output = output_factory::deserialize(type_entry.get<std::string>(), description_entry);
 
-    if (default_value == "on") {
-        default_state = gpio_pin::action::on;
-    } else if (default_value == "off") {
-        default_state = gpio_pin::action::off;
-    } else {
-        logger::instance()->critical(
-            "The default value for the gpio entry with the id {} is not valid it has to be \"on\" or \"off\"", id);
-        return false;
+    if (!created_output) {
+        logger::instance()->critical("The output with the id {} couldn't be created");
     }
 
-    gpio_pin_id pin_id{pin, gpio_chip::instance()};
-    std::shared_ptr<gpio_pin> pin_inst{pin_id.open_pin()};
-
-    if (pin_inst && pin_inst->control(default_state) == false) {
-        logger::instance()->critical("The gpio {} on gpiochip {} is not accessable", id,
-                                     pin_id.gpio_chip_path().c_str());
-        return false;
-    }
-
-    _gpios.emplace_back(std::make_unique<schedule_output>(id, pin_inst, default_state));
+    _outputs.emplace(std::make_pair(id, std::move(created_output)));
     return true;
 }
 
 bool schedule_output::is_valid_id(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
-    return std::find_if(_gpios.cbegin(), _gpios.cend(),
-                        [&id](const auto &current_action) { return current_action->id() == id; }) != _gpios.cend();
+    return std::find_if(_outputs.cbegin(), _outputs.cend(),
+                        [&id](const auto &current_output) { return current_output.first == id; }) != _outputs.cend();
 }
 
-bool schedule_output::control_pin(const schedule_output_id &id, const gpio_pin::action &action) {
+bool schedule_output::control_pin(const schedule_output_id &id, const output_value &value) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
-                             [&id](const auto &current_action) { return current_action->id() == id; });
+    auto output = std::find_if(_outputs.begin(), _outputs.end(),
+                               [&id](const auto &current_output) { return current_output.first == id; });
 
-    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+    if (output == _outputs.cend() || (*output).second == nullptr) {
         return false;
     }
 
-    if ((*gpio)->pin() == nullptr) {
-        return false;
-    }
-
-    return (*gpio)->pin()->control(action);
+    return ((*output).second)->control_output(value);
 }
 
-std::optional<gpio_pin::action> schedule_output::is_overriden(const schedule_output_id &id) {
+std::optional<output_value> schedule_output::is_overriden(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
-                             [&id](const auto &current_action) { return current_action->id() == id; });
+    auto output = std::find_if(_outputs.begin(), _outputs.end(),
+                               [&id](const auto &current_output) { return current_output.first == id; });
 
-    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+    if (output == _outputs.cend() || (*output).second == nullptr) {
         return {};
     }
 
-    if ((*gpio)->pin() == nullptr) {
-        return {};
-    }
-
-    return (*gpio)->pin()->is_overriden();
+    return ((*output).second)->is_overriden();
 }
 
-bool schedule_output::override_with(const schedule_output_id &id, const gpio_pin::action &action) {
+bool schedule_output::override_with(const schedule_output_id &id, const output_value &value) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
-                             [&id](const auto &current_action) { return current_action->id() == id; });
+    auto output = std::find_if(_outputs.begin(), _outputs.end(),
+                               [&id](const auto &current_output) { return current_output.first == id; });
 
-    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+    if (output == _outputs.cend() || (*output).second == nullptr) {
         return false;
     }
 
-    if ((*gpio)->pin() == nullptr) {
-        return false;
-    }
-
-    return (*gpio)->pin()->override_with(action);
+    return ((*output).second)->override_with(value);
 }
 
 bool schedule_output::restore_control(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto gpio = std::find_if(_gpios.begin(), _gpios.end(),
-                             [&id](const auto &current_action) { return current_action->id() == id; });
+    auto output = std::find_if(_outputs.begin(), _outputs.end(),
+                               [&id](const auto &current_output) { return current_output.first == id; });
 
-    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+    if (output == _outputs.cend() || (*output).second == nullptr) {
         return false;
     }
 
-    if ((*gpio)->pin() == nullptr) {
-        return false;
-    }
-
-    return (*gpio)->pin()->restore_control();
+    return ((*output).second)->restore_control();
 }
 
-std::optional<gpio_pin::action> schedule_output::current_state(const schedule_output_id &id) {
+std::optional<output_value> schedule_output::current_state(const schedule_output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto gpio = std::find_if(_gpios.cbegin(), _gpios.cend(),
-                             [&id](const auto &current_action) { return current_action->id() == id; });
+    auto output = std::find_if(_outputs.cbegin(), _outputs.cend(),
+                               [&id](const auto &current_output) { return current_output.first == id; });
 
-    if (gpio == _gpios.cend() || (*gpio) == nullptr) {
+    if (output == _outputs.cend() || (*output).second == nullptr) {
         return {};
     }
 
-    if ((*gpio)->pin() == nullptr) {
-        return {};
-    }
-
-    return (*gpio)->pin()->current_state();
+    return ((*output).second)->current_state();
 }
 
 std::vector<schedule_output_id> schedule_output::get_ids() {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     std::vector<schedule_output_id> ids;
-    ids.reserve(_gpios.size());
+    ids.reserve(_outputs.size());
 
-    for (auto &current_gpio : _gpios) {
-        ids.emplace_back(current_gpio->id());
+    for (auto &[id, iterator] : _outputs) {
+        ids.emplace_back(id);
     }
 
     return ids;
 }
-
-schedule_output::schedule_output(const schedule_output_id &id, std::shared_ptr<gpio_pin> pin,
-                                 const gpio_pin::action &default_state)
-    : m_id(id), m_pin(pin), m_default_state(default_state) {}
-
-schedule_output::schedule_output(schedule_output &&other)
-    : m_id(std::move(other.m_id)), m_pin(std::move(other.m_pin)), m_default_state(std::move(other.m_default_state)) {}
-
-schedule_output &schedule_output::default_state(gpio_pin::action &new_default_state) {
-    m_default_state = new_default_state;
-    return *this;
-}
-
-const schedule_output_id &schedule_output::id() const { return m_id; }
-
-const gpio_pin::action &schedule_output::default_state() const { return m_default_state; }
-
-std::shared_ptr<gpio_pin> schedule_output::pin() { return m_pin; }

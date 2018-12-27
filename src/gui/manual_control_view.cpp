@@ -57,11 +57,17 @@ void manual_control_view::update_override_elements() {
 
         lv_obj_set_hidden(current_override_element.override_switch(), !is_overriden);
 
-        if (!is_overriden) {
+        if (!is_overriden.has_value() || !is_overriden->get<gpio_pin::action>().has_value()) {
             continue;
         }
 
-        switch (*is_overriden) {
+        auto action_value = is_overriden->get<gpio_pin::action>();
+
+        if (!action_value.has_value()) {
+            continue;
+        }
+
+        switch (*action_value) {
             case gpio_pin::action::off:
                 lv_sw_off(current_override_element.override_switch());
                 break;
