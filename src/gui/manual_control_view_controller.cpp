@@ -31,7 +31,7 @@ lv_res_t manual_control_view_controller::toggle_switch(lv_obj_t *sw) {
         return LV_RES_OK;
     }
 
-    schedule_output::override_with(gpio_id, lv_sw_get_state(sw) ? gpio_pin::action::on : gpio_pin::action::off);
+    schedule_output::override_with(gpio_id, lv_sw_get_state(sw) ? switch_output::on : switch_output::off);
 
     return LV_RES_OK;
 }
@@ -69,15 +69,20 @@ lv_res_t manual_control_view_controller::check_override_schedule(lv_obj_t *check
     lv_obj_set_hidden(override_element->override_switch(), !is_checked);
 
     if (is_checked) {
-
         // TODO somehow remove this element, because its id is not valid
         auto current_state = schedule_output::current_state(gpio_id);
         if (!current_state.has_value()) {
             return LV_RES_OK;
         }
 
-        switch (current_state.value()) {
-            case gpio_pin::action::on:
+        auto contained_value = current_state->get<switch_output>();
+
+        if (!contained_value.has_value()) {
+            return LV_RES_OK;
+        }
+
+        switch (*contained_value) {
+            case switch_output::on:
                 lv_sw_on(override_element->override_switch());
                 break;
             default:

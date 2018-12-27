@@ -6,6 +6,8 @@
 
 #include "gpio/gpiod_wrapper.h"
 #include "network/rest_resource.h"
+#include "schedule/output_interface.h"
+#include "schedule/output_value.h"
 
 class gpio_chip;
 class gpio_pin;
@@ -33,10 +35,8 @@ bool operator<=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator==(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 bool operator!=(const gpio_pin_id &lhs, const gpio_pin_id &rhs);
 
-class gpio_pin final : public rest_resource<gpio_pin> {
+class gpio_pin final : public rest_resource<gpio_pin>, public output_interface {
    public:
-    enum struct action { off = 0, on = 1, toggle = 2 };
-
     gpio_pin(gpio_pin &other) = delete;
     gpio_pin(gpio_pin &&other);
     ~gpio_pin() = default;
@@ -44,17 +44,17 @@ class gpio_pin final : public rest_resource<gpio_pin> {
     gpio_pin &operator=(gpio_pin &other) = delete;
     gpio_pin &operator=(gpio_pin &&other);
 
-    bool control(const action &act);
-    bool override_with(const action &act);
-    bool restore_control();
+    virtual bool control_output(const output_value &value);
+    virtual bool override_with(const output_value &value);
+    virtual bool restore_control();
+    virtual std::optional<output_value> is_overriden() const;
+    virtual output_value current_state() const;
 
     unsigned int gpio_id() const;
-    std::optional<gpio_pin::action> is_overriden() const;
-    gpio_pin::action current_state() const;
 
     nlohmann::json serialize() const;
     // TODO implement this
-    static std::optional<gpio_chip> deserialize(nlohmann::json &description);
+    static std::optional<gpio_pin> deserialize(nlohmann::json &description);
 
    private:
     static std::optional<gpio_pin> open(gpio_pin_id id);
@@ -64,8 +64,8 @@ class gpio_pin final : public rest_resource<gpio_pin> {
     gpio_pin(gpio_pin_id id, gpiod::gpiod_line line);
 
     gpiod::gpiod_line m_line;
-    gpio_pin::action m_controlled_action;
-    std::optional<gpio_pin::action> m_overriden_action;
+    switch_output m_controlled_value;
+    std::optional<switch_output> m_overriden_value;
     const gpio_pin_id m_id;
 
     friend class gpio_chip;

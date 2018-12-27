@@ -4,48 +4,13 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <variant>
 
 #include "nlohmann/json.hpp"
 
-#include "gpio/gpio_chip.h"
-#include "pattern_templates/singleton.h"
-
-using schedule_output_id = std::string;
+#include "schedule/output_interface.h"
 
 using json = nlohmann::json;
-
-// variant with all possible values for now implicit convertible
-class output_value {
-   public:
-    output_value(const gpio_pin::action &action);
-
-    template<typename T>
-    std::optional<T> get();
-};
-
-class output_interface {
-   public:
-    output_interface() = default;
-    virtual ~output_interface() = default;
-
-    virtual bool control_output(const output_value &value) = 0;
-    virtual output_value is_overriden() = 0;
-    virtual bool override_with(const output_value &value) = 0;
-    virtual bool restore_control() = 0;
-    virtual output_value current_state() = 0;
-
-   private:
-};
-
-class output_factory : public singleton<output_factory> {
-   public:
-    using factory_func = std::function<std::unique_ptr<output_interface>(const json &description)>;
-    static std::unique_ptr<output_interface> deserialize(const std::string &type, const json &description);
-    static bool register_interface(const std::string &type, factory_func func);
-
-   private:
-    std::map<std::string, factory_func> m_factories;
-};
 
 class schedule_output {
    public:

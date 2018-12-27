@@ -65,7 +65,8 @@ bool schedule_action::add_action(json &schedule_action_description) {
         return false;
     }
 
-    std::vector<gpio_pin::action> created_gpio_actions;
+    std::vector<output_value> created_gpio_actions;
+    // TODO adjust in the future for different output_values it would be best to parse this with output_values
     bool created_all_gpio_actions_successfully = std::all_of(
         gpio_actions_entry.begin(), gpio_actions_entry.end(), [&created_gpio_actions](auto &current_gpio_entry) {
             if (!current_gpio_entry.is_string()) {
@@ -74,14 +75,14 @@ bool schedule_action::add_action(json &schedule_action_description) {
 
             std::string value = current_gpio_entry.template get<std::string>();
 
-            gpio_pin::action act;
+            switch_output act;
 
             if (value == "on") {
-                act = gpio_pin::action::on;
+                act = switch_output::on;
             } else if (value == "off") {
-                act = gpio_pin::action::off;
+                act = switch_output::off;
             } else if (value == "toggle") {
-                act = gpio_pin::action::toggle;
+                act = switch_output::toggle;
             } else {
                 logger::instance()->critical("One entry in gpio_actions is not on, off or toggle");
             }
@@ -131,7 +132,7 @@ bool schedule_action::execute_action(const schedule_action_id &id) {
 bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
-    std::map<schedule_output_id, gpio_pin::action> actions;
+    std::map<schedule_output_id, output_value> actions;
     bool result = true;
 
     for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
@@ -148,7 +149,7 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
         }
 
         // Do this manually to prevent setting the same pins multiple times
-        for (auto &[current_pin, current_action] : (*action)->m_pins) {
+        for (auto &[current_pin, current_action] : (*action)->m_outputs) {
             auto result = actions.emplace(current_pin, current_action);
 
             if (!result.second) {
@@ -165,7 +166,7 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
 }
 
 schedule_action::schedule_action(schedule_action &&other)
-    : m_id(std::move(other.m_id)), m_pins(std::move(other.m_pins)) {
+    : m_id(std::move(other.m_id)), m_outputs(std::move(other.m_outputs)) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
     if (is_valid_id(m_id)) {
@@ -182,15 +183,15 @@ schedule_action &schedule_action::id(const schedule_action_id &new_id) {
     return *this;
 }
 
-schedule_action &schedule_action::add_pin(const std::pair<schedule_output_id, gpio_pin::action> &new_pin) {
-    m_pins.emplace_back(new_pin);
+schedule_action &schedule_action::add_pin(const std::pair<schedule_output_id, output_value> &new_pin) {
+    m_outputs.emplace_back(new_pin);
     return *this;
 }
 
 bool schedule_action::operator()() {
     bool result = true;
 
-    for (auto [current_pin, current_action] : m_pins) {
+    for (auto [current_pin, current_action] : m_outputs) {
         result &= schedule_output::control_pin(current_pin, current_action);
     }
     return result;
@@ -198,4 +199,4 @@ bool schedule_action::operator()() {
 
 const schedule_action_id &schedule_action::id() const { return m_id; }
 
-const std::vector<std::pair<schedule_output_id, gpio_pin::action>> &schedule_action::pins() const { return m_pins; }
+const std::vector<std::pair<schedule_output_id, output_value>> &schedule_action::pins() const { return m_outputs; }
