@@ -5,9 +5,9 @@
 #include <optional>
 
 #include "gpio/gpiod_wrapper.h"
+#include "io/output_interface.h"
+#include "io/output_value.h"
 #include "network/rest_resource.h"
-#include "schedule/output_interface.h"
-#include "schedule/output_value.h"
 
 class gpio_chip;
 class gpio_pin;

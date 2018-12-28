@@ -7,8 +7,8 @@
 
 #include "nlohmann/json.hpp"
 
-#include "output_value.h"
-#include "schedule_output.h"
+#include "io/output_value.h"
+#include "schedule/schedule_output.h"
 
 using json = nlohmann::json;
 

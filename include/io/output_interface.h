@@ -8,7 +8,7 @@
 #include "nlohmann/json.hpp"
 
 #include "pattern_templates/singleton.h"
-#include "schedule/output_value.h"
+#include "io/output_value.h"
 
 using schedule_output_id = std::string;
 
