@@ -1,6 +1,6 @@
-#include "gpio/gpio_pin.h"
+#include "io/gpio/gpio_pin.h"
 #include "config.h"
-#include "gpio/gpio_chip.h"
+#include "io/gpio/gpio_chip.h"
 #include "logger.h"
 
 gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip)

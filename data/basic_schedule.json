@@ -63,6 +63,34 @@
                 "pin" : 17,
                 "default" : "on"
             }
+        },
+        {
+            "id" : "lamp_module",
+            "type" : "remote_function",
+            "description" : {
+                "url" : "aquarium-lights:9980/lamp",
+                "values" : [
+                    {
+                        "name" : "brightness",
+                        "type" : "int",
+                        "range" : [0, 255]
+                    }
+                ]
+            }
+        },
+        {
+            "id" : "lamp_module#2",
+            "type" : "remote_function",
+            "description" : {
+                "url" : "ESP-5B6619:9980/lamp",
+                "values" : [
+                    {
+                        "name" : "brightness",
+                        "type" : "int",
+                        "range" : [0, 255]
+                    }
+                ]
+            }
         }
     ],
     "inputs" : [
@@ -85,9 +113,7 @@
             "id" : "lights_off",
             "gpios" : ["light#1", "light#2", "co2"],
             "gpio_actions" : ["off", "off", "off"]
-        }
-    ],
-    "manual_actions" : [
+        },
         {
             "id" : "maintenance aquarium#1",
             "gpios" : ["light#1", "filter#1", "heater#1"],
@@ -130,35 +156,5 @@
         "period_in_days" : 1,
         "start_at" : "17.10.2018",
         "title" : "aquariums"
-    },
-    "modules": [
-        {
-            "id" : "lamp_module",
-            "type" : "remote_function",
-            "description" : {
-                "url" : "aquarium-lights:9980/lamp",
-                "values" : [
-                    {
-                        "name" : "brightness",
-                        "type" : "int",
-                        "range" : [0, 255]
-                    }
-                ]
-            }
-        },
-        {
-            "id" : "lamp_module#2",
-            "type" : "remote_function",
-            "description" : {
-                "url" : "ESP-5B6619:9980/lamp",
-                "values" : [
-                    {
-                        "name" : "brightness",
-                        "type" : "int",
-                        "range" : [0, 255]
-                    }
-                ]
-            }
-        }
-    ]
+    }
 }

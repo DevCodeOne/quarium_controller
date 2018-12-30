@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "chrono_time.h"
-#include "gpio/gpio_chip.h"
 #include "network/network_interface.h"
 #include "pattern_templates/singleton.h"
 #include "schedule.h"

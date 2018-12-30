@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "gui/main_view.h"
+#include "io/gpio/gpio_chip.h"
 #include "logger.h"
 #include "modules/module_collection.h"
 #include "network/network_interface.h"

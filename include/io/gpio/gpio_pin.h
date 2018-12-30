@@ -4,7 +4,7 @@
 #include <memory>
 #include <optional>
 
-#include "gpio/gpiod_wrapper.h"
+#include "io/gpio/gpiod_wrapper.h"
 #include "io/output_interface.h"
 #include "io/output_value.h"
 #include "network/rest_resource.h"

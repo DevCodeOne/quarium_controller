@@ -16,8 +16,6 @@ set (SOURCE_FILES
     src/logger.cpp
     src/signal_handler.cpp
     src/run_configuration.cpp
-    src/gpio/gpio_chip.cpp
-    src/gpio/gpio_pin.cpp
     src/network/network_interface.cpp
     src/network/web_application.cpp
     src/schedule/schedule.cpp
@@ -27,6 +25,8 @@ set (SOURCE_FILES
     src/schedule/schedule_handler.cpp
     src/io/output_interface.cpp
     src/io/output_value.cpp
+    src/io/gpio/gpio_chip.cpp
+    src/io/gpio/gpio_pin.cpp
     src/gui/main_view.cpp
     src/gui/main_view_controller.cpp
     src/gui/manual_control_view.cpp
@@ -72,14 +72,14 @@ if (BUILD_TESTS)
         src/config.cpp
         src/logger.cpp
         src/signal_handler.cpp
-        src/gpio/gpio_chip.cpp
-        src/gpio/gpio_pin.cpp
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
         src/schedule/schedule_output.cpp
         src/io/output_interface.cpp
         src/io/output_value.cpp
+        src/io/gpio/gpio_chip.cpp
+        src/io/gpio/gpio_pin.cpp
         src/modules/module_collection.cpp
         src/modules/module_interface.cpp
         src/modules/remote_function.cpp
