@@ -115,7 +115,7 @@ void main_view::create_pages() {
     }
     switch_page(page_index::front);
 
-    std::array<lv_obj_t *, front_button_titles.size()> front_buttons{nullptr, nullptr, nullptr, nullptr, nullptr};
+    std::array<lv_obj_t *, front_button_titles.size()> front_buttons{nullptr, nullptr, nullptr, nullptr};
     int button_width = (lv_obj_get_width(m_container[(uint8_t)page_index::front]) / 2) - 15;
     int button_height = (lv_obj_get_height(m_container[(uint8_t)page_index::front]) / 3) - 15;
 

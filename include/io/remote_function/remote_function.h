@@ -1,0 +1,31 @@
+#pragma once
+
+#include <initializer_list>
+#include <memory>
+
+#include "io/output_interface.h"
+#include "io/output_value.h"
+
+// TODO create own datatype so multiple values can be manipulated (with json objects)
+class remote_function final : public output_interface {
+   public:
+    virtual ~remote_function() = default;
+
+    static std::unique_ptr<output_interface> create_for_interface(const nlohmann::json &description);
+
+    virtual bool control_output(const output_value &value) override;
+    virtual bool override_with(const output_value &value) override;
+    virtual bool restore_control() override;
+    virtual std::optional<output_value> is_overriden() const override;
+    virtual output_value current_state() const override;
+
+   private:
+    remote_function(const std::string &url, const std::string &value_id, const output_value &value);
+
+    bool update_values();
+
+    output_value m_value;
+    std::optional<output_value> m_overriden_value;
+    const std::string m_value_id;
+    const std::string m_url;
+};
