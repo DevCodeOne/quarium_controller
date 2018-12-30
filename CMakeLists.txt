@@ -25,17 +25,13 @@ set (SOURCE_FILES
     src/schedule/schedule_handler.cpp
     src/io/output_interface.cpp
     src/io/output_value.cpp
+    src/io/remote_function/remote_function.cpp
     src/io/gpio/gpio_chip.cpp
     src/io/gpio/gpio_pin.cpp
     src/gui/main_view.cpp
     src/gui/main_view_controller.cpp
     src/gui/manual_control_view.cpp
     src/gui/manual_control_view_controller.cpp
-    src/gui/module_view.cpp
-    src/gui/module_view_controller.cpp
-    src/modules/module_collection.cpp
-    src/modules/module_interface.cpp
-    src/modules/remote_function.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)
@@ -78,11 +74,9 @@ if (BUILD_TESTS)
         src/schedule/schedule_output.cpp
         src/io/output_interface.cpp
         src/io/output_value.cpp
+        src/io/remote_function/remote_function.cpp
         src/io/gpio/gpio_chip.cpp
         src/io/gpio/gpio_pin.cpp
-        src/modules/module_collection.cpp
-        src/modules/module_interface.cpp
-        src/modules/remote_function.cpp
         src/run_configuration.cpp
         src/chrono_time.cpp)
 

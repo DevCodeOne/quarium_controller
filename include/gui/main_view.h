@@ -10,7 +10,6 @@
 #include "lvgl.h"
 
 #include "gui/manual_control_view.h"
-#include "gui/module_view.h"
 #include "gui/page_interface.h"
 #include "pattern_templates/singleton.h"
 #include "ring_buffer.h"
@@ -22,9 +21,8 @@ class main_view {
         manual_control = 1,
         stats = 2,
         logs = 3,
-        module = 4,
-        configuration = 5,
-        front = 6,
+        configuration = 4,
+        front = 5,
     };
 
     static std::shared_ptr<main_view> instance();
@@ -32,9 +30,7 @@ class main_view {
     void close_view();
 
     std::shared_ptr<manual_control_view> manual_control_view_instance();
-    std::shared_ptr<module_view> module_view_instance();
     std::shared_ptr<const manual_control_view> manual_control_view_instance() const;
-    std::shared_ptr<const module_view> module_view_instance() const;
     std::shared_ptr<page_interface> view_instance(page_index index);
     std::shared_ptr<const page_interface> view_instance(page_index index) const;
 

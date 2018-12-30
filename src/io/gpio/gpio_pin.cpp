@@ -19,9 +19,14 @@ std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() {
 
 const std::filesystem::path &gpio_pin_id::gpio_chip_path() const { return m_gpiochip_path; }
 
-std::optional<output_value> gpio_pin::is_overriden() const { return m_overriden_value; }
+std::optional<output_value> gpio_pin::is_overriden() const {
+    if (m_overriden_value.has_value()) {
+        return std::optional<output_value>{output_value(*m_overriden_value)};
+    }
 
-// TODO remove code duplication in gpio_pin::update_gpio
+    return {};
+}
+
 output_value gpio_pin::current_state() const {
     switch_output controlled_state = m_controlled_value;
     if (m_overriden_value.has_value()) {

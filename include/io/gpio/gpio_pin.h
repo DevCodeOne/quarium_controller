@@ -44,11 +44,11 @@ class gpio_pin final : public rest_resource<gpio_pin>, public output_interface {
     gpio_pin &operator=(gpio_pin &other) = delete;
     gpio_pin &operator=(gpio_pin &&other);
 
-    virtual bool control_output(const output_value &value);
-    virtual bool override_with(const output_value &value);
-    virtual bool restore_control();
-    virtual std::optional<output_value> is_overriden() const;
-    virtual output_value current_state() const;
+    virtual bool control_output(const output_value &value) override;
+    virtual bool override_with(const output_value &value) override;
+    virtual bool restore_control() override;
+    virtual std::optional<output_value> is_overriden() const override;
+    virtual output_value current_state() const override;
 
     unsigned int gpio_id() const;
 

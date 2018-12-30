@@ -1,7 +1,6 @@
 #include "schedule/schedule.h"
 #include "config.h"
 #include "logger.h"
-#include "modules/module_collection.h"
 
 std::optional<schedule> schedule::create_from_file(const std::filesystem::path &schedule_file_path) {
     std::ifstream file_as_stream(schedule_file_path);
@@ -51,40 +50,6 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
     if (!successfully_parsed_all_actions) {
         logger::instance()->critical("Description of one or more actions contain errors");
         return {};
-    }
-
-    auto modules = schedule_file["modules"];
-
-    if (!modules.is_null()) {
-        bool successfully_parsed_all_modules =
-            std::all_of(modules.cbegin(), modules.cend(), [](auto &current_module_description) {
-                auto ptr = create_module(current_module_description);
-
-                if (ptr == nullptr) {
-                    logger::instance()->critical("Couldn't create module");
-                    return false;
-                }
-
-                auto module_collection_instance = module_collection::instance();
-
-                if (module_collection_instance == nullptr) {
-                    logger::instance()->critical("module_collection has no valid instance");
-                    return false;
-                }
-
-                bool result = module_collection_instance->add_module(ptr->id(), ptr);
-
-                if (!result) {
-                    logger::instance()->critical("Failed to add module {} to the module collection", ptr->id());
-                }
-
-                return result;
-            });
-
-        if (!successfully_parsed_all_modules) {
-            logger::instance()->critical("Description of one or more modules contains errors");
-            return {};
-        }
     }
 
     auto schedule = schedule_file["schedule"];

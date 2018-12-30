@@ -66,28 +66,15 @@ bool schedule_action::add_action(json &schedule_action_description) {
     }
 
     std::vector<output_value> created_gpio_actions;
-    // TODO adjust in the future for different output_values it would be best to parse this with output_values
     bool created_all_gpio_actions_successfully = std::all_of(
         gpio_actions_entry.begin(), gpio_actions_entry.end(), [&created_gpio_actions](auto &current_gpio_entry) {
-            if (!current_gpio_entry.is_string()) {
+            auto value = output_value::deserialize(current_gpio_entry);
+
+            if (!value.has_value()) {
                 return false;
             }
 
-            std::string value = current_gpio_entry.template get<std::string>();
-
-            switch_output act;
-
-            if (value == "on") {
-                act = switch_output::on;
-            } else if (value == "off") {
-                act = switch_output::off;
-            } else if (value == "toggle") {
-                act = switch_output::toggle;
-            } else {
-                logger::instance()->critical("One entry in gpio_actions is not on, off or toggle");
-            }
-
-            created_gpio_actions.emplace_back(act);
+            created_gpio_actions.emplace_back(*value);
             return true;
         });
 

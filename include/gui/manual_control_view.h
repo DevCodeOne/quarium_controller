@@ -23,13 +23,13 @@ class manual_control_view final : public page_interface {
 
    private:
     // TODO put everything in one container so it can be easier aligned
-    class gpio_override_element {
+    class output_override_element {
        public:
-        gpio_override_element(lv_obj_t *parent, const std::string &id,
-                              const std::string &override_text = "Placeholder Text");
-        gpio_override_element(const gpio_override_element &) = delete;
-        gpio_override_element(gpio_override_element &&) = default;
-        ~gpio_override_element() = default;
+        output_override_element(lv_obj_t *parent, const std::string &id,
+                                const std::string &override_text = "Placeholder Text");
+        output_override_element(const output_override_element &) = delete;
+        output_override_element(output_override_element &&) = default;
+        ~output_override_element() = default;
         void text(const std::string &data);
 
         lv_obj_t *override_checkbox();
@@ -52,7 +52,7 @@ class manual_control_view final : public page_interface {
     void update_override_elements();
 
     lv_obj_t *m_container = nullptr;
-    std::vector<gpio_override_element> m_manual_overrides;
+    std::vector<output_override_element> m_manual_overrides;
     lv_obj_t *m_page = nullptr;
 
     friend class manual_control_view_controller;

@@ -136,8 +136,6 @@ void main_view::create_pages() {
 
     m_pages.emplace(std::make_pair(page_index::manual_control, std::make_shared<manual_control_view>(
                                                                    m_container[(uint8_t)page_index::manual_control])));
-    m_pages.emplace(
-        std::make_pair(page_index::module, std::make_shared<module_view>(m_container[(uint8_t)page_index::module])));
 }
 
 void main_view::switch_page(const page_index &new_index) {
@@ -184,14 +182,6 @@ std::shared_ptr<manual_control_view> main_view::manual_control_view_instance() {
 
 std::shared_ptr<const manual_control_view> main_view::manual_control_view_instance() const {
     return std::dynamic_pointer_cast<const manual_control_view>(view_instance(page_index::manual_control));
-}
-
-std::shared_ptr<module_view> main_view::module_view_instance() {
-    return std::dynamic_pointer_cast<module_view>(view_instance(page_index::module));
-}
-
-std::shared_ptr<const module_view> main_view::module_view_instance() const {
-    return std::dynamic_pointer_cast<const module_view>(view_instance(page_index::module));
 }
 
 std::shared_ptr<page_interface> main_view::view_instance(page_index index) {

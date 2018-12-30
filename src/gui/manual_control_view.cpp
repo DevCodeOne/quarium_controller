@@ -5,8 +5,8 @@
 #include "gui/manual_control_view_controller.h"
 #include "schedule/schedule_output.h"
 
-manual_control_view::gpio_override_element::gpio_override_element(lv_obj_t *parent, const std::string &id,
-                                                                  const std::string &override_text)
+manual_control_view::output_override_element::output_override_element(lv_obj_t *parent, const std::string &id,
+                                                                      const std::string &override_text)
     : m_id(id),
       m_override_checkbox(lv_cb_create(parent, nullptr)),
       m_override_switch(lv_sw_create(parent, nullptr)),
@@ -15,17 +15,17 @@ manual_control_view::gpio_override_element::gpio_override_element(lv_obj_t *pare
     lv_cb_set_text(m_override_checkbox, m_override_text.get());
 }
 
-lv_obj_t *manual_control_view::gpio_override_element::override_switch() { return m_override_switch; }
+lv_obj_t *manual_control_view::output_override_element::override_switch() { return m_override_switch; }
 
-lv_obj_t *manual_control_view::gpio_override_element::override_checkbox() { return m_override_checkbox; }
+lv_obj_t *manual_control_view::output_override_element::override_checkbox() { return m_override_checkbox; }
 
-const lv_obj_t *manual_control_view::gpio_override_element::override_switch() const { return m_override_switch; }
+const lv_obj_t *manual_control_view::output_override_element::override_switch() const { return m_override_switch; }
 
-const lv_obj_t *manual_control_view::gpio_override_element::override_checkbox() const { return m_override_checkbox; }
+const lv_obj_t *manual_control_view::output_override_element::override_checkbox() const { return m_override_checkbox; }
 
-const char *manual_control_view::gpio_override_element::text() const { return (const char *)m_override_text.get(); }
+const char *manual_control_view::output_override_element::text() const { return (const char *)m_override_text.get(); }
 
-const std::string &manual_control_view::gpio_override_element::id() const { return m_id; }
+const std::string &manual_control_view::output_override_element::id() const { return m_id; }
 
 manual_control_view::manual_control_view(lv_obj_t *container) : m_container(container), m_manual_overrides() {
     create_gui();
@@ -108,7 +108,7 @@ void manual_control_view::recreate_override_elements() {
     std::ostringstream override_text_stream;
     override_text_stream << "Override " << *gpio_id_list.cbegin();
 
-    gpio_override_element current_override_element(m_page, *gpio_id_list.cbegin(), override_text_stream.str());
+    output_override_element current_override_element(m_page, *gpio_id_list.cbegin(), override_text_stream.str());
     lv_obj_set_height(current_override_element.override_switch(),
                       lv_obj_get_height(current_override_element.override_checkbox()));
     lv_obj_align(current_override_element.override_checkbox(), m_page, LV_ALIGN_IN_TOP_LEFT, 10, 10);
@@ -125,7 +125,7 @@ void manual_control_view::recreate_override_elements() {
     for (auto current_gpio_id = gpio_id_list.cbegin() + 1; current_gpio_id != gpio_id_list.cend(); ++current_gpio_id) {
         override_text_stream << "Override " << *current_gpio_id;
 
-        gpio_override_element current_override_element(m_page, *current_gpio_id, override_text_stream.str());
+        output_override_element current_override_element(m_page, *current_gpio_id, override_text_stream.str());
         lv_obj_set_height(current_override_element.override_switch(),
                           lv_obj_get_height(current_override_element.override_checkbox()));
 

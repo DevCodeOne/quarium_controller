@@ -69,13 +69,13 @@
             "type" : "remote_function",
             "description" : {
                 "url" : "aquarium-lights:9980/lamp",
-                "values" : [
-                    {
-                        "name" : "brightness",
+                "value" : {
+                    "name" : "brightness",
+                    "description" : {
                         "type" : "int",
                         "range" : [0, 255]
                     }
-                ]
+                }
             }
         },
         {
@@ -83,13 +83,13 @@
             "type" : "remote_function",
             "description" : {
                 "url" : "ESP-5B6619:9980/lamp",
-                "values" : [
-                    {
-                        "name" : "brightness",
+                "value" : {
+                    "name" : "brightness",
+                    "description" : {
                         "type" : "int",
                         "range" : [0, 255]
                     }
-                ]
+                }
             }
         }
     ],
@@ -120,8 +120,8 @@
             "gpio_actions" : ["on", "off", "off"]
         },
         {
-            "id" : "maintenance aquarium#1",
-            "gpios" : ["light#1", "filter#1", "heater#1"],
+            "id" : "maintenance aquarium#2",
+            "gpios" : ["light#2", "filter#2", "heater#2"],
             "gpio_actions" : ["on", "off", "off"]
         }
     ],
