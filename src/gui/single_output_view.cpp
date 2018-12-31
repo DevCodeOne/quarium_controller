@@ -26,6 +26,7 @@ void single_output_view::create_gui(lv_obj_t *parent) {
         lv_sw_set_action(m_override_value, single_output_view_controller::override_value_action);
         lv_cont_set_layout(m_container, LV_LAYOUT_ROW_T);
     } else if (stored_value->holds_type<int>() || stored_value->holds_type<unsigned int>()) {
+        // TODO set max and min values
         m_override_value = lv_slider_create(m_container, nullptr);
         lv_slider_set_action(m_override_value, single_output_view_controller::override_value_action);
         lv_cont_set_layout(m_container, LV_LAYOUT_COL_L);

@@ -9,7 +9,6 @@
 #include "io/remote_function/remote_function.h"
 #include "logger.h"
 
-// TODO implement
 std::unique_ptr<output_interface> remote_function::create_for_interface(const nlohmann::json &description_parameter) {
     nlohmann::json description = description_parameter;
     if (!description.is_object()) {
@@ -106,8 +105,9 @@ bool remote_function::update_values() {
         std::ostringstream remote_function;
 
         remote_function << function;
-        if (m_value.holds_type<int>()) {
-            remote_function << "?" << m_value_id << "=" << *m_value.get<int>();
+        auto value = current_state();
+        if (value.holds_type<int>()) {
+            remote_function << "?" << m_value_id << "=" << *value.get<int>();
         } else {
             logger::instance()->info("Values of other type than int are not supported right now");
         }
