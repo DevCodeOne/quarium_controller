@@ -132,7 +132,6 @@ void main_view::create_pages() {
     lv_obj_align(front_buttons[1], front_buttons[0], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_obj_align(front_buttons[2], front_buttons[0], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
     lv_obj_align(front_buttons[3], front_buttons[2], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
-    lv_obj_align(front_buttons[4], front_buttons[2], LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
     m_pages.emplace(std::make_pair(page_index::manual_control, std::make_shared<manual_control_view>(
                                                                    m_container[(uint8_t)page_index::manual_control])));

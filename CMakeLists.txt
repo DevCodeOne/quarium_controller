@@ -31,7 +31,8 @@ set (SOURCE_FILES
     src/gui/main_view.cpp
     src/gui/main_view_controller.cpp
     src/gui/manual_control_view.cpp
-    src/gui/manual_control_view_controller.cpp
+    src/gui/single_output_view.cpp
+    src/gui/single_output_view_controller.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)
