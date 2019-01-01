@@ -1,7 +1,7 @@
 #include "gui/single_output_view_controller.h"
 #include "gui/single_output_view.h"
 #include "io/output_value.h"
-#include "schedule/schedule_output.h"
+#include "io/outputs.h"
 #include "value_storage.h"
 
 #include "logger.h"
@@ -52,13 +52,15 @@ lv_res_t single_output_view_controller::override_value_action(lv_obj_t *override
     if (obj_type_string == "lv_sw") {
         value_to_write = output_value{(::lv_sw_get_state(override_value) ? switch_output::on : switch_output::off)};
     } else if (obj_type_string == "lv_slider") {
+        int slider_value = lv_slider_get_value(override_value);  // is from zero to 100 scale to match min max
+
         value_to_write = output_value{(int)lv_slider_get_value(override_value)};
     } else {
         return LV_RES_OK;
     }
 
     if (value_to_write.has_value()) {
-        schedule_output::override_with(value->m_output_id, *value_to_write);
+        outputs::override_with(value->m_output_id, *value_to_write);
     }
 
     return LV_RES_OK;

@@ -82,7 +82,7 @@
             "id" : "lamp_module#2",
             "type" : "remote_function",
             "description" : {
-                "url" : "ESP-5B6619:9980/lamp",
+                "url" : "aquarium-lights-two:9980/lamp",
                 "value" : {
                     "name" : "brightness",
                     "description" : {

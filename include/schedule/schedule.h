@@ -10,7 +10,7 @@
 
 #include "chrono_time.h"
 #include "network/rest_resource.h"
-#include "schedule_event.h"
+#include "schedule/schedule_event.h"
 
 using json = nlohmann::json;
 

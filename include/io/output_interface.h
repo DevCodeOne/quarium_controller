@@ -10,8 +10,6 @@
 #include "pattern_templates/singleton.h"
 #include "io/output_value.h"
 
-using schedule_output_id = std::string;
-
 using json = nlohmann::json;
 
 class output_interface {

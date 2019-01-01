@@ -109,7 +109,7 @@ bool remote_function::update_values() {
         if (value.holds_type<int>()) {
             remote_function << "?" << m_value_id << "=" << *value.get<int>();
         } else {
-            logger::instance()->info("Values of other type than int are not supported right now");
+            logger::instance()->info("Values with a type different than int are not supported right now");
         }
 
         boost::asio::connect(socket, results.begin(), results.end());

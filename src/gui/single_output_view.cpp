@@ -1,6 +1,6 @@
 #include "gui/single_output_view.h"
 #include "gui/single_output_view_controller.h"
-#include "schedule/schedule_output.h"
+#include "io/outputs.h"
 
 single_output_view::single_output_view(lv_obj_t *parent, const std::string &output_id)
     : m_container(lv_cont_create(parent, nullptr)),
@@ -16,7 +16,7 @@ single_output_view::single_output_view(lv_obj_t *parent, const std::string &outp
 }
 
 void single_output_view::create_gui(lv_obj_t *parent) {
-    auto stored_value = schedule_output::current_state(m_output_id);
+    auto stored_value = outputs::current_state(m_output_id);
     if (!stored_value.has_value()) {
         return;
     }

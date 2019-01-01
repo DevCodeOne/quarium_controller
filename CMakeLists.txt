@@ -21,8 +21,8 @@ set (SOURCE_FILES
     src/schedule/schedule.cpp
     src/schedule/schedule_action.cpp
     src/schedule/schedule_event.cpp
-    src/schedule/schedule_output.cpp
     src/schedule/schedule_handler.cpp
+    src/io/outputs.cpp
     src/io/output_interface.cpp
     src/io/output_value.cpp
     src/io/remote_function/remote_function.cpp
@@ -72,7 +72,7 @@ if (BUILD_TESTS)
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
-        src/schedule/schedule_output.cpp
+        src/io/outputs.cpp
         src/io/output_interface.cpp
         src/io/output_value.cpp
         src/io/remote_function/remote_function.cpp

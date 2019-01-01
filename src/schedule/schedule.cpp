@@ -27,9 +27,9 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
         return {};
     }
 
-    bool successfully_parsed_all_gpios = std::all_of(
-        outputs.begin(), outputs.end(),
-        [](auto &current_output_description) { return schedule_output::add_output(current_output_description); });
+    bool successfully_parsed_all_gpios =
+        std::all_of(outputs.begin(), outputs.end(),
+                    [](auto &current_output_description) { return outputs::add_output(current_output_description); });
 
     if (!successfully_parsed_all_gpios) {
         logger::instance()->critical("Description of one or more gpios contain errors");

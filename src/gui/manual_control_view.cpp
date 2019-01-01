@@ -2,7 +2,7 @@
 #include <sstream>
 
 #include "gui/manual_control_view.h"
-#include "schedule/schedule_output.h"
+#include "io/outputs.h"
 
 #include "logger.h"
 
@@ -17,7 +17,7 @@ void manual_control_view::create_gui() {
     lv_page_set_sb_mode(m_page, LV_SB_MODE_AUTO);
     lv_page_set_scrl_layout(m_page, LV_LAYOUT_COL_L);
 
-    for (auto current_id : schedule_output::get_ids()) {
+    for (auto current_id : outputs::get_ids()) {
         m_manual_overrides.emplace_back(m_page, current_id);
         lv_page_glue_obj(m_manual_overrides.back().container(), true);
     }

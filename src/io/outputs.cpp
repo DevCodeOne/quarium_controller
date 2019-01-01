@@ -1,7 +1,7 @@
-#include "schedule/schedule_output.h"
+#include "io/outputs.h"
 #include "logger.h"
 
-bool schedule_output::add_output(json &gpio_description) {
+bool outputs::add_output(nlohmann::json &gpio_description) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     json id_entry = gpio_description["id"];
@@ -51,13 +51,13 @@ bool schedule_output::add_output(json &gpio_description) {
     return true;
 }
 
-bool schedule_output::is_valid_id(const schedule_output_id &id) {
+bool outputs::is_valid_id(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
     return std::find_if(_outputs.cbegin(), _outputs.cend(),
                         [&id](const auto &current_output) { return current_output.first == id; }) != _outputs.cend();
 }
 
-bool schedule_output::control_pin(const schedule_output_id &id, const output_value &value) {
+bool outputs::control_output(const output_id &id, const output_value &value) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto output = std::find_if(_outputs.begin(), _outputs.end(),
@@ -70,7 +70,7 @@ bool schedule_output::control_pin(const schedule_output_id &id, const output_val
     return ((*output).second)->control_output(value);
 }
 
-std::optional<output_value> schedule_output::is_overriden(const schedule_output_id &id) {
+std::optional<output_value> outputs::is_overriden(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto output = std::find_if(_outputs.begin(), _outputs.end(),
@@ -83,7 +83,7 @@ std::optional<output_value> schedule_output::is_overriden(const schedule_output_
     return ((*output).second)->is_overriden();
 }
 
-bool schedule_output::override_with(const schedule_output_id &id, const output_value &value) {
+bool outputs::override_with(const output_id &id, const output_value &value) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto output = std::find_if(_outputs.begin(), _outputs.end(),
@@ -96,7 +96,7 @@ bool schedule_output::override_with(const schedule_output_id &id, const output_v
     return ((*output).second)->override_with(value);
 }
 
-bool schedule_output::restore_control(const schedule_output_id &id) {
+bool outputs::restore_control(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto output = std::find_if(_outputs.begin(), _outputs.end(),
@@ -109,7 +109,7 @@ bool schedule_output::restore_control(const schedule_output_id &id) {
     return ((*output).second)->restore_control();
 }
 
-std::optional<output_value> schedule_output::current_state(const schedule_output_id &id) {
+std::optional<output_value> outputs::current_state(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
     auto output = std::find_if(_outputs.cbegin(), _outputs.cend(),
@@ -122,10 +122,10 @@ std::optional<output_value> schedule_output::current_state(const schedule_output
     return ((*output).second)->current_state();
 }
 
-std::vector<schedule_output_id> schedule_output::get_ids() {
+std::vector<output_id> outputs::get_ids() {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    std::vector<schedule_output_id> ids;
+    std::vector<output_id> ids;
     ids.reserve(_outputs.size());
 
     for (auto &[id, iterator] : _outputs) {
