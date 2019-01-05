@@ -94,11 +94,14 @@ void main_view::view_loop() {
     inst->create_pages();
 
     while (!inst->m_should_exit) {
+        using namespace std::chrono_literals;
+        auto start_update = std::chrono::steady_clock::now();
         inst->update_contents(inst->m_current_page);
         lv_task_handler();
         lv_tick_inc(15);
-        // TODO add correct way to sleep, so that one iteration takes 15 ms
-        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+        auto update_time =
+            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_update);
+        std::this_thread::sleep_for(update_time < 15ms ? 15ms - update_time : 0ms);
     }
 
     lv_obj_del(inst->m_screen);
