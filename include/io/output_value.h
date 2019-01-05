@@ -21,6 +21,10 @@ class output_value {
 
     template<typename T>
     std::optional<T> get() const;
+    template<typename T>
+    std::optional<T> min() const;
+    template<typename T>
+    std::optional<T> max() const;
 
     template<typename T>
     bool holds_type() const;
@@ -37,6 +41,24 @@ template<typename T>
 std::optional<T> output_value::get() const {
     if (std::holds_alternative<T>(m_value)) {
         return std::get<T>(m_value);
+    }
+
+    return {};
+}
+
+template<typename T>
+std::optional<T> output_value::min() const {
+    if (m_min.has_value() && std::holds_alternative<T>(*m_min)) {
+        return std::get<T>(*m_min);
+    }
+
+    return {};
+}
+
+template<typename T>
+std::optional<T> output_value::max() const {
+    if (m_max.has_value() && std::holds_alternative<T>(*m_max)) {
+        return std::get<T>(*m_max);
     }
 
     return {};

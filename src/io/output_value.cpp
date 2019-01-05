@@ -75,6 +75,8 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         }
 
         if (range_entry.is_null()) {
+            logger::instance()->warn(
+                "The description of the value doesn't specify a valid range this is probably not what you want");
             return output_value(*default_value);
         }
 
@@ -94,13 +96,13 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
 
         std::optional<output_value::variant_type> lower_range_entry;
         std::optional<output_value::variant_type> higher_range_entry;
-        if (type == output_value_types::number && first_entry.is_number_integer()) {
+        if (type == output_value_types::number && first_entry.is_number()) {
             auto left = std::min(first_entry.get<int>(), second_entry.get<int>());
             auto right = std::max(first_entry.get<int>(), second_entry.get<int>());
 
             lower_range_entry = left;
             higher_range_entry = right;
-        } else if (type == output_value_types::number_unsigned && first_entry.is_number_unsigned()) {
+        } else if (type == output_value_types::number_unsigned && first_entry.is_number()) {
             auto left = std::min(first_entry.get<unsigned int>(), second_entry.get<unsigned int>());
             auto right = std::max(first_entry.get<unsigned int>(), second_entry.get<unsigned int>());
 
