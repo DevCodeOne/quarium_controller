@@ -7,13 +7,13 @@ bool schedule_action::add_action(json &schedule_action_description) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
     json id_entry = schedule_action_description["id"];
-    json gpios_entry = schedule_action_description["gpios"];
-    json gpio_actions_entry = schedule_action_description["gpio_actions"];
+    json output_entry = schedule_action_description["outputs"];
+    json output_actions_entry = schedule_action_description["output_actions"];
 
-    if (id_entry.is_null() || gpios_entry.is_null() || gpio_actions_entry.is_null()) {
+    if (id_entry.is_null() || output_entry.is_null() || output_actions_entry.is_null()) {
         logger::instance()->critical("A needed entry in an action was missing : {} {} {}",
-                                     id_entry.is_null() ? "id" : "", gpios_entry.is_null() ? "gpios" : "",
-                                     gpio_actions_entry.is_null() ? "gpio_actions" : "");
+                                     id_entry.is_null() ? "id" : "", output_entry.is_null() ? "outputs" : "",
+                                     output_actions_entry.is_null() ? "output_actions" : "");
         if (!id_entry.is_null() && id_entry.is_string()) {
             logger::instance()->critical("The issue was in the action with the id {}", id_entry.get<std::string>());
         }
@@ -33,64 +33,75 @@ bool schedule_action::add_action(json &schedule_action_description) {
         return false;
     }
 
-    if (!gpios_entry.is_array()) {
-        logger::instance()->critical("The entry gpios in action {} isn't an array", id);
+    if (!output_entry.is_array()) {
+        logger::instance()->critical("The entry outputs in action {} isn't an array", id);
         return false;
     }
 
-    std::vector<output_id> created_gpios;
-    bool created_all_gpios_successfully =
-        std::all_of(gpios_entry.begin(), gpios_entry.end(), [&created_gpios](auto &current_gpio_entry) {
-            if (!current_gpio_entry.is_string()) {
+    std::vector<output_id> created_outputs;
+    bool created_all_outputs_successfully =
+        std::all_of(output_entry.begin(), output_entry.end(), [&created_outputs](auto &current_output_entry) {
+            if (!current_output_entry.is_string()) {
                 return false;
             }
 
-            std::string id = current_gpio_entry.template get<std::string>();
+            std::string id = current_output_entry.template get<std::string>();
             if (!outputs::is_valid_id(id)) {
-                logger::instance()->critical("A gpio with the id {} doesn't exist", id);
+                logger::instance()->critical("An output with the id {} doesn't exist", id);
                 return false;
             }
 
-            created_gpios.emplace_back(output_id(id));
+            created_outputs.emplace_back(output_id(id));
             return true;
         });
 
-    if (!created_all_gpios_successfully) {
-        logger::instance()->critical("The entry gpios in action {} isn't valid", id);
+    if (!created_all_outputs_successfully) {
+        logger::instance()->critical("The entry outputs in action {} isn't valid", id);
         return false;
     }
 
-    if (!gpio_actions_entry.is_array()) {
-        logger::instance()->critical("The entry gpio_actions in action {} isn't an array", id);
+    if (!output_actions_entry.is_array()) {
+        logger::instance()->critical("The entry output_actions in action {} isn't an array", id);
         return false;
     }
 
-    std::vector<output_value> created_gpio_actions;
-    bool created_all_gpio_actions_successfully = std::all_of(
-        gpio_actions_entry.begin(), gpio_actions_entry.end(), [&created_gpio_actions](auto &current_gpio_entry) {
-            auto value = output_value::deserialize(current_gpio_entry);
+    std::vector<output_value> created_output_actions;
+    bool created_all_output_actions_successfully =
+        std::all_of(output_actions_entry.begin(), output_actions_entry.end(),
+                    [&created_outputs, &created_output_actions](auto &current_output_entry) {
+                        std::optional<output_value> value;
+                        if (created_outputs.size() < created_output_actions.size()) {
+                            return false;
+                        }
 
-            if (!value.has_value()) {
-                return false;
-            }
+                        auto current_value = outputs::current_state(created_outputs[created_output_actions.size()]);
+                        if (current_value.has_value()) {
+                            value = output_value::deserialize(current_output_entry, current_value->current_type());
+                        } else {
+                            value = output_value::deserialize(current_output_entry);
+                        }
 
-            created_gpio_actions.emplace_back(*value);
-            return true;
-        });
+                        if (!value.has_value()) {
+                            return false;
+                        }
 
-    if (!created_all_gpio_actions_successfully) {
-        logger::instance()->critical("The entry gpio_actions in action {} isn't valid", id);
+                        created_output_actions.emplace_back(*value);
+                        return true;
+                    });
+
+    if (!created_all_output_actions_successfully) {
+        logger::instance()->critical("The entry output_actions in action {} isn't valid", id);
     }
 
-    if (created_gpios.size() != created_gpio_actions.size()) {
+    if (created_outputs.size() != created_output_actions.size()) {
         logger::instance()->critical(
-            "There are not the same number of entries in the gpio specific arrays in action {}", id);
+            "There are not the same number of entries in the output specific arrays in action {}", id);
         return false;
     }
 
     created_action.id(id);
-    for (unsigned int i = 0; i < created_gpios.size(); ++i) {
-        created_action.add_pin(std::make_pair(created_gpios[i], created_gpio_actions[i]));
+    for (unsigned int i = 0; i < created_outputs.size(); ++i) {
+        created_action.add_pin(std::make_pair(created_outputs[i], created_output_actions[i]));
     }
 
     _actions.emplace_back(std::make_unique<schedule_action>(std::move(created_action)));

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <initializer_list>
 #include <memory>
+#include <vector>
 
 #include "io/output_interface.h"
 #include "io/output_value.h"

@@ -38,6 +38,6 @@ class single_output_view final {
     const std::string m_output_id;
     const int m_value_storage_id = 0;
 
-    static inline constexpr const char override_text[] = "Control ";
+    static inline constexpr const char override_text[] = "Ctrl ";
     static inline std::atomic_int id = 0;
 };

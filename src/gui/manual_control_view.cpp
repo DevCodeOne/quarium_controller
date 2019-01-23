@@ -38,10 +38,10 @@ void manual_control_view::update_override_elements() {
     }
 
     if (m_manual_overrides.size() >= 1) {
-        lv_obj_align(m_manual_overrides.begin()->container(), m_page, LV_ALIGN_IN_TOP_LEFT, 10, 10);
+        lv_obj_align(m_manual_overrides.begin()->container(), m_page, LV_ALIGN_IN_TOP_LEFT, 0, 5);
 
         for (auto it = m_manual_overrides.begin() + 1; it != m_manual_overrides.cend(); ++it) {
-            lv_obj_align(it->container(), (it - 1)->container(), LV_ALIGN_OUT_LEFT_BOTTOM, 0, 10);
+            lv_obj_align(it->container(), (it - 1)->container(), LV_ALIGN_OUT_LEFT_BOTTOM, 0, 5);
         }
     }
 }

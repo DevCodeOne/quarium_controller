@@ -1,20 +1,57 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <variant>
 
 #include "nlohmann/json.hpp"
 
 enum struct switch_output { off = 0, on = 1, toggle = 2 };
+std::ostream &operator<<(std::ostream &os, const switch_output &output);
 
-enum struct output_value_types { number, number_unsigned, switch_output };
+enum struct tasmota_power_command { off = 0, on = 1, toggle = 2 };
+std::ostream &operator<<(std::ostream &os, const tasmota_power_command &power_command);
 
+enum struct output_value_types { number, number_unsigned, switch_output, value_collection, tasmota_power_command };
+
+// Map of values
+class value_collection {
+   public:
+    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned, int>;
+
+    value_collection() = default;
+    ~value_collection() = default;
+
+    template<typename T>
+    std::optional<T> get(const std::string &id) const;
+    template<typename T>
+    std::optional<T> min(const std::string &id) const;
+    template<typename T>
+    std::optional<T> max(const std::string &id) const;
+
+    template<typename T>
+    bool holds_type(const std::string &id) const;
+
+    std::size_t type_index(const std::string &id) const;
+
+   private:
+    std::map<std::string, variant_type> m_values;
+};
+
+std::ostream &operator<<(std::ostream &os, const value_collection &collection);
+
+// TODO Maybe change output_value to be a special value_collection with only one item in it
 class output_value {
    public:
-    using variant_type = std::variant<switch_output, int, unsigned int>;
+    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned int, value_collection>;
 
-    static std::optional<output_value> deserialize(const nlohmann::json &description);
+    static std::optional<output_value> deserialize(
+        const nlohmann::json &description,
+        std::optional<output_value_types> type = std::optional<output_value_types>{});
+
+    template<typename T>
+    std::optional<T> serialize();
 
     template<typename T>
     output_value(T value, std::optional<T> min = {}, std::optional<T> max = {});
@@ -29,13 +66,24 @@ class output_value {
     template<typename T>
     bool holds_type() const;
 
-    std::size_t type_index() const;
+    output_value_types current_type() const;
 
    private:
     variant_type m_value;
     std::optional<variant_type> m_min;
     std::optional<variant_type> m_max;
 };
+
+template<>
+inline std::optional<std::string> output_value::serialize() {
+    auto serialize_value = [](auto &current_value) -> std::string {
+        std::ostringstream os;
+        os << current_value;
+        return os.str();
+    };
+
+    return std::visit(serialize_value, m_value);
+}
 
 template<typename T>
 std::optional<T> output_value::get() const {

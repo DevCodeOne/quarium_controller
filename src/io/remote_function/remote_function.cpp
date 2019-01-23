@@ -90,13 +90,18 @@ bool remote_function::update_values() {
     auto port_start = m_url.find_last_of(":");
     auto port_end = m_url.find_first_not_of("0123456789", port_start + 1);
 
-    std::string host = m_url.substr(0, port_start);
+    std::string host = m_url;
     std::string port = "80";
     std::string function = "";
 
     if (port_start != std::string::npos) {
+        host = m_url.substr(0, port_start);
         port = m_url.substr(port_start + 1, port_end - (port_start + 1));
         function = m_url.substr(port_end);
+    } else {
+        auto function_pos = m_url.find_last_of("/");
+        host = m_url.substr(0, function_pos);
+        function = m_url.substr(function_pos);
     }
 
     try {
@@ -106,19 +111,23 @@ bool remote_function::update_values() {
 
         remote_function << function;
         auto value = current_state();
-        if (value.holds_type<int>()) {
-            remote_function << "?" << m_value_id << "=" << *value.get<int>();
+        if (auto serialized_value = value.serialize<std::string>(); serialized_value) {
+            remote_function << "?" << m_value_id << "=" << *serialized_value;
         } else {
-            logger::instance()->info("Values with a type different than int are not supported right now");
+            logger::instance()->info("The value of this type couldn't be serialized");
         }
 
         boost::asio::connect(socket, results.begin(), results.end());
 
-        http::request<http::empty_body> req(http::verb::get, remote_function.str(), 10);
+        http::request<http::empty_body> req(http::verb::get, remote_function.str(), 11);
         req.set(http::field::host, "localhost");
 
         http::write(socket, req);
-        logger::instance()->info("{}", req.target().data());
+        logger::instance()->info("{}:{}{}", host, port, req.target().data());
+
+        boost::beast::flat_buffer response_buffer;
+        http::response<http::dynamic_body> response;
+        http::read(socket, response_buffer, response);
 
         boost::beast::error_code ec;
         socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
@@ -127,8 +136,8 @@ bool remote_function::update_values() {
             logger::instance()->info("An error occured when trying to connect to : {}", m_url);
             return false;
         }
-    } catch (std::exception e) {
-        logger::instance()->info("{}", e.what());
+    } catch (const std::exception &e) {
+        logger::instance()->info("Error when trying to connect to {} : {}", host, e.what());
         return false;
     } catch (...) {
         logger::instance()->info("An exception occured when trying to connect to : {}", m_url);

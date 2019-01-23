@@ -91,6 +91,19 @@
                     }
                 }
             }
+        },
+        {
+            "id" : "lamp_module#3",
+            "type" : "remote_function",
+            "description" : {
+                "url": "aquarium-lights-three.fritz.box/cm",
+                "value" : {
+                    "name" : "cmnd",
+                    "description" : {
+                        "type" : "tasmota_power_command"
+                    }
+                }
+            }
         }
     ],
     "inputs" : [
@@ -106,23 +119,33 @@
     "actions": [
         {
             "id" : "lights_on",
-            "gpios" : ["light#1", "light#2", "co2"],
-            "gpio_actions" : ["on", "on", "on"]
+            "outputs" : ["light#1", "light#2", "co2"],
+            "output_actions" : ["on", "on", "on"]
         },
         {
             "id" : "lights_off",
-            "gpios" : ["light#1", "light#2", "co2"],
-            "gpio_actions" : ["off", "off", "off"]
+            "outputs" : ["light#1", "light#2", "co2"],
+            "output_actions" : ["off", "off", "off"]
+        },
+        {
+            "id" : "lights_on_new",
+            "outputs" : ["lamp_module#3"],
+            "output_actions" : ["on"]
+        },
+        {
+            "id" : "lights_off_new",
+            "outputs" : ["lamp_module#3"],
+            "output_actions" : ["off"]
         },
         {
             "id" : "maintenance aquarium#1",
-            "gpios" : ["light#1", "filter#1", "heater#1"],
-            "gpio_actions" : ["on", "off", "off"]
+            "outputs" : ["light#1", "filter#1", "heater#1"],
+            "output_actions" : ["on", "off", "off"]
         },
         {
             "id" : "maintenance aquarium#2",
-            "gpios" : ["light#2", "filter#2", "heater#2"],
-            "gpio_actions" : ["on", "off", "off"]
+            "outputs" : ["light#2", "filter#2", "heater#2"],
+            "output_actions" : ["on", "off", "off"]
         }
     ],
     "schedule" : {
@@ -150,7 +173,20 @@
                 "day" : 0,
                 "trigger_at" : "22:00",
                 "actions" : ["lights_off"]
+            },
+            {
+                "id" : "day_new_start",
+                "day" : 0,
+                "trigger_at" : "12:00",
+                "actions" : ["lights_on_new"]
+            },
+            {
+                "id" : "day_new_end",
+                "day" : 0,
+                "trigger_at" : "18:29",
+                "actions" : ["lights_off_new"]
             }
+
         ],
         "repeating" : true,
         "period_in_days" : 1,

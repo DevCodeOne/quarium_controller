@@ -21,8 +21,9 @@ class main_view {
         manual_control = 1,
         stats = 2,
         logs = 3,
-        configuration = 4,
-        front = 5,
+        actions = 4,
+        configuration = 5,
+        front = 6,
     };
 
     static std::shared_ptr<main_view> instance();
@@ -56,7 +57,7 @@ class main_view {
     lv_obj_t *m_status_bar = nullptr;
     lv_obj_t *m_clock = nullptr;
     lv_theme_t *m_theme = nullptr;
-    std::array<lv_obj_t *, (int)page_index::front + 1> m_container;
+    std::array<lv_obj_t *, (int)page_index::front> m_container;
     std::map<page_index, std::shared_ptr<page_interface>> m_pages;
     std::string m_time;
     ring_buffer<page_index, 20> m_visited_pages;
@@ -69,8 +70,8 @@ class main_view {
     static inline constexpr unsigned int navigation_buttons_height = 40;
     static inline constexpr unsigned int status_bar_height = 30;
 
-    static inline constexpr std::array<const char[32], 4> front_button_titles = {"Schedules", "Manual Control", "Stats",
-                                                                                 "Logs"};
+    static inline constexpr std::array<const char[32], (int)page_index::front - 1> front_button_titles = {
+        "Schedules", "Manual Control", "Stats", "Actions", "Logs"};
 
     friend class view_controller;
     friend class singleton<main_view>;

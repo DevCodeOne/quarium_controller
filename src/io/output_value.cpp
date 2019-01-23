@@ -4,7 +4,41 @@
 #include "io/output_value.h"
 #include "logger.h"
 
-std::optional<output_value> output_value::deserialize(const nlohmann::json &description_parameter) {
+std::ostream &operator<<(std::ostream &os, const switch_output &output) {
+    switch (output) {
+        case switch_output::on:
+            return os << "on";
+            break;
+        case switch_output::off:
+            return os << "off";
+            break;
+        case switch_output::toggle:
+            return os << "toggle";
+            break;
+    }
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const tasmota_power_command &power_command) {
+    switch (power_command) {
+        case tasmota_power_command::on:
+            return os << R"(Power%20On)";
+            break;
+        case tasmota_power_command::off:
+            return os << R"(Power%20Off)";
+            break;
+        case tasmota_power_command::toggle:
+            return os << R"(Power%20TOGGLE)";
+            break;
+    }
+    return os;
+}
+
+// TODO implement
+std::ostream &operator<<(std::ostream &os, const value_collection &collection) { return os; }
+
+std::optional<output_value> output_value::deserialize(const nlohmann::json &description_parameter,
+                                                      std::optional<output_value_types> type) {
     nlohmann::json description = description_parameter;
     if (description.is_null()) {
         logger::instance()->info("The description of one output_value was invalid");
@@ -35,6 +69,13 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
             type = output_value_types::number_unsigned;
         } else if (type_as_string == "switch_output") {
             type = output_value_types::switch_output;
+        } else if (type_as_string == "value_collection") {
+            type = output_value_types::value_collection;
+        } else if (type_as_string == "tasmota_power_command") {
+            type = output_value_types::tasmota_power_command;
+        } else {
+            logger::instance()->critical("Invalid value type in value description");
+            return {};
         }
 
         if (!default_entry.is_null()) {
@@ -65,6 +106,8 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                 default_value = 0u;
             } else if (type == output_value_types::switch_output) {
                 default_value = switch_output::off;
+            } else if (type == output_value_types::tasmota_power_command) {
+                default_value = tasmota_power_command::off;
             } else {
                 return {};
             }
@@ -75,8 +118,10 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         }
 
         if (range_entry.is_null()) {
-            logger::instance()->warn(
-                "The description of the value doesn't specify a valid range this is probably not what you want");
+            if (type == output_value_types::number || type == output_value_types::number_unsigned) {
+                logger::instance()->warn(
+                    "The description of the value doesn't specify a valid range this is probably not what you want");
+            }
             return output_value(*default_value);
         }
 
@@ -117,14 +162,43 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         if (description.is_string()) {
             auto value = description.get<std::string>();
 
-            const std::map<std::string, switch_output> switch_output_values = {
-                {"on", switch_output::on}, {"off", switch_output::off}, {"toggle", switch_output::toggle}};
+            if (type.has_value() && *type == output_value_types::switch_output) {
+                const std::map<std::string, switch_output> switch_output_values = {
+                    {"on", switch_output::on}, {"off", switch_output::off}, {"toggle", switch_output::toggle}};
 
-            if (auto result = switch_output_values.find(value); result != switch_output_values.cend()) {
-                return output_value{result->second};
+                if (auto result = switch_output_values.find(value); result != switch_output_values.cend()) {
+                    return output_value{result->second};
+                }
+            } else if (type.has_value() && *type == output_value_types::tasmota_power_command) {
+                const std::map<std::string, tasmota_power_command> tasmota_power_command_output_values = {
+                    {"on", tasmota_power_command::on},
+                    {"off", tasmota_power_command::off},
+                    {"toggle", tasmota_power_command::toggle}};
+
+                if (auto result = tasmota_power_command_output_values.find(value);
+                    result != tasmota_power_command_output_values.cend()) {
+                    return output_value{result->second};
+                }
             }
         }
     }
 
     return {};
+}
+
+output_value_types output_value::current_type() const {
+    if (holds_type<switch_output>()) {
+        return output_value_types::switch_output;
+    } else if (holds_type<tasmota_power_command>()) {
+        return output_value_types::tasmota_power_command;
+    } else if (holds_type<int>()) {
+        return output_value_types::number;
+    } else if (holds_type<unsigned int>()) {
+        return output_value_types::number_unsigned;
+    } else if (holds_type<value_collection>()) {
+        return output_value_types::value_collection;
+    }
+
+    // Should never actually happen
+    return output_value_types::number;
 }

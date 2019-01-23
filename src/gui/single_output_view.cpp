@@ -1,6 +1,7 @@
 #include "gui/single_output_view.h"
 #include "gui/single_output_view_controller.h"
 #include "io/outputs.h"
+#include "logger.h"
 
 single_output_view::single_output_view(lv_obj_t *parent, const std::string &output_id)
     : m_container(lv_cont_create(parent, nullptr)),
@@ -21,7 +22,7 @@ void single_output_view::create_gui(lv_obj_t *parent) {
         return;
     }
 
-    if (stored_value->holds_type<switch_output>()) {
+    if (stored_value->holds_type<switch_output>() || stored_value->holds_type<tasmota_power_command>()) {
         m_override_value = lv_sw_create(m_container, nullptr);
         lv_sw_set_action(m_override_value, single_output_view_controller::override_value_action);
         lv_cont_set_layout(m_container, LV_LAYOUT_ROW_T);
@@ -30,6 +31,8 @@ void single_output_view::create_gui(lv_obj_t *parent) {
         m_override_value = lv_slider_create(m_container, nullptr);
         lv_slider_set_action(m_override_value, single_output_view_controller::override_value_action);
         lv_cont_set_layout(m_container, LV_LAYOUT_COL_L);
+    } else {
+        logger::instance()->warn("Type is not supported by the gui");
     }
 
     m_container_style = std::make_unique<lv_style_t>();
@@ -43,8 +46,10 @@ void single_output_view::create_gui(lv_obj_t *parent) {
     lv_cb_set_text(m_override_checkbox, cb_text.c_str());
     lv_cb_set_action(m_override_checkbox, single_output_view_controller::override_checkbox_action);
     lv_obj_set_free_num(m_override_checkbox, m_value_storage_id);
-    lv_obj_set_free_num(m_override_value, m_value_storage_id);
-    lv_obj_set_hidden(m_override_value, true);
+    if (m_override_value) {
+        lv_obj_set_free_num(m_override_value, m_value_storage_id);
+        lv_obj_set_hidden(m_override_value, true);
+    }
 }
 
 void single_output_view::update_gui() {}
