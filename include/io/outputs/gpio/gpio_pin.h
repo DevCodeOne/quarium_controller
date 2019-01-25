@@ -4,9 +4,9 @@
 #include <memory>
 #include <optional>
 
-#include "io/gpio/gpiod_wrapper.h"
-#include "io/output_interface.h"
-#include "io/output_value.h"
+#include "io/outputs/gpio/gpiod_wrapper.h"
+#include "io/outputs/output_interface.h"
+#include "io/outputs/output_value.h"
 #include "network/rest_resource.h"
 
 class gpio_chip;

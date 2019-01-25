@@ -1,4 +1,4 @@
-#include "io/outputs.h"
+#include "io/outputs/outputs.h"
 #include "logger.h"
 
 bool outputs::add_output(nlohmann::json &gpio_description) {

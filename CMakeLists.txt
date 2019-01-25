@@ -22,12 +22,12 @@ set (SOURCE_FILES
     src/schedule/schedule_action.cpp
     src/schedule/schedule_event.cpp
     src/schedule/schedule_handler.cpp
-    src/io/outputs.cpp
-    src/io/output_interface.cpp
-    src/io/output_value.cpp
-    src/io/remote_function/remote_function.cpp
-    src/io/gpio/gpio_chip.cpp
-    src/io/gpio/gpio_pin.cpp
+    src/io/outputs/outputs.cpp
+    src/io/outputs/output_interface.cpp
+    src/io/outputs/output_value.cpp
+    src/io/outputs/remote_function/remote_function.cpp
+    src/io/outputs/gpio/gpio_chip.cpp
+    src/io/outputs/gpio/gpio_pin.cpp
     src/gui/main_view.cpp
     src/gui/main_view_controller.cpp
     src/gui/manual_control_view.cpp
@@ -72,12 +72,12 @@ if (BUILD_TESTS)
         src/schedule/schedule.cpp
         src/schedule/schedule_action.cpp
         src/schedule/schedule_event.cpp
-        src/io/outputs.cpp
-        src/io/output_interface.cpp
-        src/io/output_value.cpp
-        src/io/remote_function/remote_function.cpp
-        src/io/gpio/gpio_chip.cpp
-        src/io/gpio/gpio_pin.cpp
+        src/io/outputs/outputs.cpp
+        src/io/outputs/output_interface.cpp
+        src/io/outputs/output_value.cpp
+        src/io/outputs/remote_function/remote_function.cpp
+        src/io/outputs/gpio/gpio_chip.cpp
+        src/io/outputs/gpio/gpio_pin.cpp
         src/run_configuration.cpp
         src/chrono_time.cpp)
 

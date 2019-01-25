@@ -6,7 +6,7 @@
 #include "boost/beast/http.hpp"
 #include "boost/beast/version.hpp"
 
-#include "io/remote_function/remote_function.h"
+#include "io/outputs/remote_function/remote_function.h"
 #include "logger.h"
 
 std::unique_ptr<output_interface> remote_function::create_for_interface(const nlohmann::json &description_parameter) {

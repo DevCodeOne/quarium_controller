@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <map>
 
-#include "io/output_value.h"
+#include "io/outputs/output_value.h"
 #include "logger.h"
 
 std::ostream &operator<<(std::ostream &os, const switch_output &output) {

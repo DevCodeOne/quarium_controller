@@ -5,8 +5,8 @@
 
 #include "config.h"
 #include "gui/main_view.h"
-#include "io/gpio/gpio_chip.h"
-#include "io/remote_function/remote_function.h"
+#include "io/outputs/gpio/gpio_chip.h"
+#include "io/outputs/remote_function/remote_function.h"
 #include "logger.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"

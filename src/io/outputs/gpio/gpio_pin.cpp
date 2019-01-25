@@ -1,6 +1,6 @@
-#include "io/gpio/gpio_pin.h"
+#include "io/outputs/gpio/gpio_pin.h"
 #include "config.h"
-#include "io/gpio/gpio_chip.h"
+#include "io/outputs/gpio/gpio_chip.h"
 #include "logger.h"
 
 gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip)
@@ -209,7 +209,8 @@ std::unique_ptr<output_interface> gpio_pin::create_for_interface(const nlohmann:
     }
 
     // Setting the default value when creating the pin
-    // TODO consider doing this in a different place but the description gets parsed here so this place is not entirely wrong
+    // TODO consider doing this in a different place but the description gets parsed here so this place is not entirely
+    // wrong
     created_pin->control_output(default_value);
     return std::unique_ptr<output_interface>(new gpio_pin(std::move(*created_pin)));
 }

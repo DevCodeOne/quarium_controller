@@ -7,8 +7,8 @@
 
 #include "nlohmann/json.hpp"
 
-#include "io/output_value.h"
-#include "io/outputs.h"
+#include "io/outputs/output_value.h"
+#include "io/outputs/outputs.h"
 
 using json = nlohmann::json;
 

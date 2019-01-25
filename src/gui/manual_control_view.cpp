@@ -2,7 +2,7 @@
 #include <sstream>
 
 #include "gui/manual_control_view.h"
-#include "io/outputs.h"
+#include "io/outputs/outputs.h"
 
 #include "logger.h"
 

@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
-#include "io/output_interface.h"
-#include "io/output_value.h"
+#include "io/outputs/output_interface.h"
+#include "io/outputs/output_value.h"
 
 // TODO create own datatype so multiple values can be manipulated (with json objects)
 class remote_function final : public output_interface {

@@ -1,7 +1,7 @@
 #include "gui/single_output_view_controller.h"
 #include "gui/single_output_view.h"
-#include "io/output_value.h"
-#include "io/outputs.h"
+#include "io/outputs/output_value.h"
+#include "io/outputs/outputs.h"
 #include "value_storage.h"
 
 #include "logger.h"

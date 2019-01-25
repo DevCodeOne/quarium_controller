@@ -1,6 +1,6 @@
 #include "gui/single_output_view.h"
 #include "gui/single_output_view_controller.h"
-#include "io/outputs.h"
+#include "io/outputs/outputs.h"
 #include "logger.h"
 
 single_output_view::single_output_view(lv_obj_t *parent, const std::string &output_id)

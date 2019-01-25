@@ -2,7 +2,7 @@
 
 #include "lvgl.h"
 
-#include "io/output_value.h"
+#include "io/outputs/output_value.h"
 
 class single_output_view_controller {
    public:
