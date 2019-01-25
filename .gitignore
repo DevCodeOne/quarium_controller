@@ -1,4 +1,11 @@
-build/*
-compile_commands.json
-.ycm_extra_conf.py
-conan_ycm_flags.json
+# Ignore everything
+/*
+
+# Explicitly add everything which is really needed
+!src
+!include
+!conf
+!data
+!conan_profile
+!tests
+!webapp
