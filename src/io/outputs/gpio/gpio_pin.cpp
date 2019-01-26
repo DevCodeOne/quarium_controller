@@ -38,7 +38,11 @@ output_value gpio_pin::current_state() const {
 
 gpio_pin::gpio_pin(gpio_pin_id id, gpiod::gpiod_line line) : m_id(id), m_line(std::move(line)) {}
 
-gpio_pin::gpio_pin(gpio_pin &&other) : m_id(std::move(other.m_id)), m_line(std::move(other.m_line)) {}
+gpio_pin::gpio_pin(gpio_pin &&other)
+    : m_id(std::move(other.m_id)),
+      m_line(std::move(other.m_line)),
+      m_controlled_value(std::move(other.m_controlled_value)),
+      m_overriden_value(std::move(other.m_overriden_value)) {}
 
 std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
     auto chip_instance = gpio_chip::instance(id.gpio_chip_path());
@@ -73,14 +77,15 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
 }
 
 bool gpio_pin::control_output(const output_value &value) {
-    auto chip_instance = gpio_chip::instance(m_id.gpio_chip_path());
-    if (!m_line || !chip_instance) {
-        return false;
-    }
-
     auto contained_value = value.get<switch_output>();
 
     if (!contained_value.has_value()) {
+        return false;
+    }
+    m_controlled_value = *contained_value;
+
+    auto chip_instance = gpio_chip::instance(m_id.gpio_chip_path());
+    if (!m_line || !chip_instance) {
         return false;
     }
 
@@ -95,7 +100,6 @@ bool gpio_pin::control_output(const output_value &value) {
             break;
     }
 
-    m_controlled_value = *contained_value;
     return update_gpio();
 }
 
@@ -114,7 +118,8 @@ bool gpio_pin::override_with(const output_value &value) {
 
 bool gpio_pin::restore_control() {
     m_overriden_value = {};
-    logger::instance()->info("Restore gpio {} to be controlled by the schedule again", m_id.id());
+    logger::instance()->info("Restore gpio {} to be controlled by the schedule again : it is now {}", m_id.id(),
+                             m_controlled_value == switch_output::on ? "on" : "off");
     return update_gpio();
 }
 
