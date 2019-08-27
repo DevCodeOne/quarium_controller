@@ -151,39 +151,33 @@
     "schedule" : {
         "events" : [
             {
-                "id" : "day start",
+                "name" : "day start",
                 "day" : 0,
                 "trigger_at" : "10:00",
                 "actions" : ["lights_on"]
             },
             {
-                "id" : "midday break start",
+                "name" : "midday break start",
                 "day" : 0,
                 "trigger_at" : "14:00",
                 "actions" : ["lights_off"]
             },
             {
-                "id" : "midday break end",
+                "name" : "midday break end",
                 "day" : 0,
                 "trigger_at" : "18:00",
                 "actions" : ["lights_on"]
             },
             {
-                "id" : "day end",
+                "name" : "day end",
                 "day" : 0,
                 "trigger_at" : "22:00",
                 "actions" : ["lights_off"]
             },
             {
-                "id" : "day_new_start",
+                "name" : "test",
                 "day" : 0,
-                "trigger_at" : "12:00",
-                "actions" : ["lights_on_new"]
-            },
-            {
-                "id" : "day_new_end",
-                "day" : 0,
-                "trigger_at" : "18:29",
+                "trigger_at" : "22:16",
                 "actions" : ["lights_off_new"]
             }
 

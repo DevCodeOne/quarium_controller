@@ -81,11 +81,6 @@ output_value remote_function::current_state() const {
 }
 
 bool remote_function::update_values() {
-    boost::asio::io_context context;
-
-    boost::asio::ip::tcp::resolver resolver{context};
-    boost::asio::ip::tcp::socket socket{context};
-
     // Check if it is a valid url
     auto port_start = m_url.find_last_of(":");
     auto port_end = m_url.find_first_not_of("0123456789", port_start + 1);
@@ -104,45 +99,38 @@ bool remote_function::update_values() {
         function = m_url.substr(function_pos);
     }
 
-    try {
-        auto const results = resolver.resolve(host, port);
+    std::ostringstream remote_function;
 
-        std::ostringstream remote_function;
+    remote_function << function;
+    auto value = current_state();
+    if (auto serialized_value = value.serialize<std::string>(); serialized_value) {
+        remote_function << "?" << m_value_id << "=" << *serialized_value;
+    } else {
+        logger::instance()->info("The value of this type couldn't be serialized");
+    }
 
-        remote_function << function;
-        auto value = current_state();
-        if (auto serialized_value = value.serialize<std::string>(); serialized_value) {
-            remote_function << "?" << m_value_id << "=" << *serialized_value;
-        } else {
-            logger::instance()->info("The value of this type couldn't be serialized");
-        }
+    m_curl_instance.reset(curl_easy_init());
 
-        boost::asio::connect(socket, results.begin(), results.end());
-
-        http::request<http::empty_body> req(http::verb::get, remote_function.str(), 11);
-        req.set(http::field::host, "localhost");
-
-        http::write(socket, req);
-        logger::instance()->info("{}:{}{}", host, port, req.target().data());
-
-        boost::beast::flat_buffer response_buffer;
-        http::response<http::dynamic_body> response;
-        http::read(socket, response_buffer, response);
-
-        boost::beast::error_code ec;
-        socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-
-        if (ec && ec != boost::beast::errc::not_connected) {
-            logger::instance()->info("An error occured when trying to connect to : {}", m_url);
-            return false;
-        }
-    } catch (const std::exception &e) {
-        logger::instance()->info("Error when trying to connect to {} : {}", host, e.what());
-        return false;
-    } catch (...) {
-        logger::instance()->info("An exception occured when trying to connect to : {}", m_url);
+    if (!m_curl_instance) {
+        logger::instance()->critical("Couldn't initialize curl");
         return false;
     }
 
-    return true;
+    using namespace std::literals;
+
+    auto complete_url = host + ":"s + port + remote_function.str();
+    logger::instance()->info("{}", complete_url);
+
+    curl_easy_setopt(m_curl_instance.get(), CURLOPT_URL, complete_url.c_str());
+    curl_easy_setopt(m_curl_instance.get(), CURLOPT_NOSIGNAL, true);
+    curl_easy_setopt(m_curl_instance.get(), CURLOPT_TIMEOUT, 5);
+    auto res = curl_easy_perform(m_curl_instance.get());
+
+    if (res != CURLE_OK) {
+        logger::instance()->critical("Couldn't connect to the host");
+    }
+
+    m_curl_instance.reset();
+
+    return res == CURLE_OK;
 }

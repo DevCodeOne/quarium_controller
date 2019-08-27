@@ -72,6 +72,10 @@ bool schedule_handler::add_schedule(schedule sched) {
 void schedule_handler::event_handler() {
     signal_handler::disable_for_current_thread();
     std::vector<schedule_action_id> actions_to_execute;
+    std::vector<bool> execution_results;
+    std::multimap<schedule_action_id,
+                  std::decay_t<decltype(std::declval<rest_resource_id<schedule_event>>().as_number())>>
+        actions_to_event_mapping;
 
     auto handler_instance = instance();
 
@@ -84,7 +88,11 @@ void schedule_handler::event_handler() {
 
             days current_day = duration_since_epoch<days>();
 
-            for (auto &current_schedule : handler_instance->m_active_schedules) {
+            for (const auto &current_schedule : handler_instance->m_active_schedules) {
+                actions_to_execute.clear();
+                execution_results.clear();
+                actions_to_event_mapping.clear();
+
                 logger::instance()->info("Checking events of schedule {}", current_schedule.title());
 
                 if (!current_schedule.start_at().has_value()) {
@@ -95,26 +103,65 @@ void schedule_handler::event_handler() {
 
                 for (const auto &current_event : current_schedule.events()) {
                     if ((current_event.day() > day_in_schedule) ||
-                        (current_event.trigger_time() > minutes_since_today) || current_event.is_marked()) {
+                        (current_event.trigger_time() > minutes_since_today) || current_event.is_processed()) {
                         continue;
                     }
 
-                    std::copy(current_event.actions().cbegin(), current_event.actions().cend(),
-                              std::back_inserter(actions_to_execute));
+                    std::cout << "Adding actions of : " << current_event.name()
+                              << " id: " << current_event.id().as_number() << std::endl;
 
-                    current_event.mark();
+                    for (auto &current_action_id : current_event.actions()) {
+                        actions_to_execute.emplace_back(current_action_id);
+                        actions_to_event_mapping.insert({current_action_id, current_event.id().as_number()});
+                    }
+
+                    current_event.mark_as_processed();
                 }
 
                 if (actions_to_execute.size() == 0) {
                     continue;
                 }
 
-                bool result = schedule_action::execute_actions(actions_to_execute);
-                actions_to_execute.clear();
+                // Actions are in order, because the events are in order (sorted by event time on a per day basis)
+                bool result = schedule_action::execute_actions(actions_to_execute, execution_results);
 
                 if (!result) {
-                    logger::instance()->critical("Failed to execute actions of schedule {}", current_schedule.title());
-                    signal_handler::terminate_program();
+                    std::cout << std::boolalpha;
+                    for (auto current_result : execution_results) {
+                        std::cout << current_result << std::endl;
+                    }
+                    // Find the corresponding events to the failed actions and remove their processed mark
+
+                    std::vector<std::decay_t<decltype(std::declval<rest_resource_id<schedule_event>>().as_number())>>
+                        failed_events;
+                    for (decltype(execution_results)::size_type i = 0; i < execution_results.size(); ++i) {
+                        if (execution_results[i]) {
+                            // This action didn't result in an error, so continue to the next result
+                            continue;
+                        }
+
+                        auto failed_events_of_action = actions_to_event_mapping.equal_range(actions_to_execute[i]);
+
+                        for (auto it = failed_events_of_action.first; it != failed_events_of_action.second; ++it) {
+                            failed_events.emplace_back(it->second);
+                        }
+                    }
+
+                    for (auto const &current_event : current_schedule.events()) {
+                        auto current_event_id = current_event.id().as_number();
+                        if (std::any_of(
+                                failed_events.cbegin(), failed_events.cend(),
+                                [current_event_id](auto &current_id) { return current_id == current_event_id; })) {
+                            // Some actions or all the actions of this event were unsuccesfull unmark as processed, so
+                            // the are actions can be tried again
+                            current_event.unmark_as_processed();
+                            logger::instance()->critical("One or more actions of the event {} resulted in errors",
+                                                         current_event.name());
+                        }
+                    }
+
+                    logger::instance()->critical("Failed to execute some actions of schedule {}",
+                                                 current_schedule.title());
                 }
             }
 
@@ -132,7 +179,7 @@ void schedule_handler::event_handler() {
                 auto created_schedule(*current_schedule);
 
                 for (const auto &current_event : created_schedule.events()) {
-                    current_event.unmark();
+                    current_event.unmark_as_processed();
                 }
 
                 if (current_schedule->end_at() < current_day &&

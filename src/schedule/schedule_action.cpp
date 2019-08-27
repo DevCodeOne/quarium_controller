@@ -101,7 +101,7 @@ bool schedule_action::add_action(json &schedule_action_description) {
 
     created_action.id(id);
     for (unsigned int i = 0; i < created_outputs.size(); ++i) {
-        created_action.add_pin(std::make_pair(created_outputs[i], created_output_actions[i]));
+        created_action.attach_output(std::make_pair(created_outputs[i], created_output_actions[i]));
     }
 
     _actions.emplace_back(std::make_unique<schedule_action>(std::move(created_action)));
@@ -115,25 +115,19 @@ bool schedule_action::is_valid_id(const schedule_action_id &id) {
                         [&id](const auto &current_action) { return current_action->id() == id; }) != _actions.cend();
 }
 
-bool schedule_action::execute_action(const schedule_action_id &id) {
+// Actions will be executed in order, actions that will cancel each other will be optimized -> first action turns on
+// second action turns off, then only the second one will be executed
+bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids, std::vector<bool> &results) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
-    if (!is_valid_id(id)) {
-        return false;
-    }
+    results.resize(ids.size());
 
-    auto action = std::find_if(_actions.begin(), _actions.end(),
-                               [&id](const auto &current_action) { return current_action->id() == id; });
-
-    return (**action)();
-}
-
-bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids) {
-    std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
-
-    std::map<output_id, output_value> actions;
+    // TODO: improve mapping
+    std::map<output_id, schedule_action_execution_order> actions;
     bool result = true;
 
+    size_t index = ids.size(); /* ids.size() because we are iterating backwards it is plus one because we then can reduce index at the front of the loop */
     for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
+        --index;
         if (!is_valid_id(*current_id)) {
             logger::instance()->warn("{} is not a valid id for an action", *current_id);
             return false;
@@ -146,18 +140,23 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
             continue;
         }
 
-        // Do this manually to prevent setting the same pins multiple times
-        for (auto &[current_pin, current_action] : (*action)->m_outputs) {
-            auto result = actions.emplace(current_pin, current_action);
+        // Check for actions which set the same outputs to set them only once instead of multiple times
+        for (auto &[current_output, current_action] : (*action)->m_outputs) {
+            auto result = actions.emplace(current_output, schedule_action_execution_order{index, current_action});
 
             if (!result.second) {
-                logger::instance()->info("Skip setting {}", current_pin);
+                logger::instance()->info("Skip setting {}", current_output);
+                results[index] = true;
             }
         }
     }
 
-    for (auto &[current_pin_id, current_action] : actions) {
-        result &= outputs::control_output(current_pin_id, current_action);
+    for (auto &[current_pin_id, current_execution_order] : actions) {
+        // TODO: launch thread to prevent lockups and wait for the results
+        bool singular_result = outputs::control_output(current_pin_id, current_execution_order.m_value);
+        result &= singular_result;
+
+        results[current_execution_order.m_execution_index] = singular_result;
     }
 
     return result;
@@ -181,20 +180,11 @@ schedule_action &schedule_action::id(const schedule_action_id &new_id) {
     return *this;
 }
 
-schedule_action &schedule_action::add_pin(const std::pair<output_id, output_value> &new_pin) {
-    m_outputs.emplace_back(new_pin);
+schedule_action &schedule_action::attach_output(const std::pair<output_id, output_value> &new_output) {
+    m_outputs.emplace_back(new_output);
     return *this;
-}
-
-bool schedule_action::operator()() {
-    bool result = true;
-
-    for (auto [current_pin, current_action] : m_outputs) {
-        result &= outputs::control_output(current_pin, current_action);
-    }
-    return result;
 }
 
 const schedule_action_id &schedule_action::id() const { return m_id; }
 
-const std::vector<std::pair<output_id, output_value>> &schedule_action::pins() const { return m_outputs; }
+const std::vector<std::pair<output_id, output_value>> &schedule_action::outputs() const { return m_outputs; }

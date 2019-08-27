@@ -255,10 +255,11 @@ schedule &schedule::schedule_mode(const mode &new_mode) {
 
 bool schedule::add_event(const schedule_event &event) {
     if (std::any_of(m_events.cbegin(), m_events.cend(),
-                    [event](auto &current_event) { return event.id() == current_event.id(); })) {
-        logger::instance()->critical("Duplicate event id {}", event.id());
+                    [event](auto &current_event) { return event.name() == current_event.name(); })) {
+        logger::instance()->critical("Duplicate event name {}", event.name());
         return false;
     }
+    // TODO: consider inserting at the right place to prevent having to sort again
     m_events.emplace_back(event);
     std::sort(m_events.begin(), m_events.end(), is_earlier);
     recalculate_period();

@@ -31,7 +31,7 @@ TEST_CASE("Correct schedule testing") {
     auto sched_inst2(sched_inst);
 
     REQUIRE(events.size() > 0);
-    REQUIRE(events.begin()->id() == schedule_description["schedule"]["events"][0]["id"].get<std::string>());
+    REQUIRE(events.begin()->name() == schedule_description["schedule"]["events"][0]["name"].get<std::string>());
     REQUIRE(events.begin()->day() == days(schedule_description["schedule"]["events"][0]["day"].get<unsigned int>()));
     REQUIRE(*events.begin()->actions().begin() ==
             schedule_description["schedule"]["events"][0]["actions"][0].get<std::string>());
@@ -57,7 +57,7 @@ TEST_CASE("Correct schedule testing") {
 
     schedule_description["schedule"]["end_at"] = "13.01.1970";
     schedule_description["schedule"]["events"].push_back(R"({
-                "id" : "light_off",
+                "name" : "light_off",
                 "day" : 3,
                 "trigger_at" : "12:00",
                 "actions" : ["light_off"]
@@ -84,8 +84,8 @@ TEST_CASE("Schedule event sorting") {
     auto events = sched->events();
 
     REQUIRE(events.size() == 4);
-    REQUIRE(events[0].id() == "light_on");
-    REQUIRE(events[1].id() == "light_off#3");
-    REQUIRE(events[2].id() == "light_on#2");
-    REQUIRE(events[3].id() == "light_off#2");
+    REQUIRE(events[0].name() == "light_on");
+    REQUIRE(events[1].name() == "light_off#3");
+    REQUIRE(events[2].name() == "light_on#2");
+    REQUIRE(events[3].name() == "light_off#2");
 }

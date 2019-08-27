@@ -3,6 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include "curl/curl.h"
+
 #include "io/outputs/output_interface.h"
 #include "io/outputs/output_value.h"
 
@@ -26,6 +28,7 @@ class remote_function final : public output_interface {
 
     output_value m_value;
     std::optional<output_value> m_overriden_value;
+    std::unique_ptr<CURL, decltype(curl_easy_cleanup)*> m_curl_instance{nullptr, curl_easy_cleanup};
     const std::string m_value_id;
     const std::string m_url;
 };

@@ -4,8 +4,3 @@
 # Explicitly add everything which is really needed
 !src
 !include
-!conf
-!data
-!conan_profile
-!tests
-!webapp

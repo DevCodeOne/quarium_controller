@@ -2,30 +2,30 @@
 #include "logger.h"
 
 std::optional<schedule_event> schedule_event::deserialize(json &schedule_event_description) {
-    json id_entry = schedule_event_description["id"];
+    json name_entry = schedule_event_description["name"];
     json day_entry = schedule_event_description["day"];
     json trigger_at_entry = schedule_event_description["trigger_at"];
     json actions_entry = schedule_event_description["actions"];
 
     schedule_event created_event;
 
-    if (id_entry.is_null() || day_entry.is_null() || trigger_at_entry.is_null() || actions_entry.is_null()) {
+    if (name_entry.is_null() || day_entry.is_null() || trigger_at_entry.is_null() || actions_entry.is_null()) {
         logger::instance()->critical("A needed entry in a event was missing : {} {} {} {}",
-                                     id_entry.is_null() ? "id" : "", day_entry.is_null() ? "day" : "",
+                                     name_entry.is_null() ? "id" : "", day_entry.is_null() ? "day" : "",
                                      trigger_at_entry.is_null() ? "trigger_at" : "",
                                      actions_entry.is_null() ? "actions_entry" : "");
-        if (!id_entry.is_null() && id_entry.is_string()) {
-            logger::instance()->critical("The issue was in the event with the id {}", id_entry.get<std::string>());
+        if (!name_entry.is_null() && name_entry.is_string()) {
+            logger::instance()->critical("The issue was in the event with the id {}", name_entry.get<std::string>());
         }
         return {};
     }
 
-    if (!id_entry.is_string()) {
+    if (!name_entry.is_string()) {
         logger::instance()->critical("The id of an event is not a string");
         return {};
     }
 
-    created_event.id(id_entry.get<std::string>());
+    created_event.name(name_entry.get<std::string>());
 
     if (!day_entry.is_number_unsigned()) {
         logger::instance()->critical("The day offset of the entry is not an unsigned number");
@@ -77,8 +77,8 @@ std::optional<schedule_event> schedule_event::deserialize(json &schedule_event_d
     return created_event;
 }
 
-schedule_event &schedule_event::id(const std::string &new_id) {
-    m_id = new_id;
+schedule_event &schedule_event::name(const std::string &new_name) {
+    m_name = new_name;
     return *this;
 }
 
@@ -97,7 +97,7 @@ schedule_event &schedule_event::add_action(const schedule_action_id &action_id) 
     return *this;
 }
 
-const std::string &schedule_event::id() const { return m_id; }
+const std::string &schedule_event::name() const { return m_name; }
 
 std::chrono::minutes schedule_event::trigger_time() const { return m_trigger_time; }
 
@@ -105,11 +105,11 @@ days schedule_event::day() const { return m_day; }
 
 const std::vector<schedule_action_id> &schedule_event::actions() const { return m_actions; }
 
-bool schedule_event::is_marked() const { return m_marker; }
+bool schedule_event::is_processed() const { return m_marker; }
 
-void schedule_event::unmark() const { m_marker = false; }
+void schedule_event::unmark_as_processed() const { m_marker = false; }
 
-void schedule_event::mark() const { m_marker = true; }
+void schedule_event::mark_as_processed() const { m_marker = true; }
 
 bool is_earlier(const schedule_event &lhs, const schedule_event &rhs) {
     return (lhs.day() < rhs.day()) || (lhs.day() == rhs.day() && lhs.trigger_time() < rhs.trigger_time());
@@ -119,7 +119,7 @@ bool is_earlier(const schedule_event &lhs, const schedule_event &rhs) {
 nlohmann::json schedule_event::serialize() const {
     nlohmann::json serialized;
 
-    serialized["id"] = m_id;
+    serialized["name"] = m_name;
     serialized["day"] = m_day.count();
     serialized["trigger_at"] = m_trigger_time.count();
 
