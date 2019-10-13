@@ -36,22 +36,23 @@ IF (GPIOD_STUB)
 ENDIF()
 
 IF (WITH_GUI)
-    list(APPEND SOURCE_FILES 
+    list(APPEND SOURCE_FILES
         src/gui/main_view.cpp
         src/gui/main_view_controller.cpp
         src/gui/manual_control_view.cpp
         src/gui/single_output_view.cpp
         src/gui/single_output_view_controller.cpp)
+
+    IF (NOT USE_SDL)
+        list (APPEND SOURCE_FILES src/gui/fb_lvgl_driver.cpp)
+    ELSE()
+        find_package(SDL2 REQUIRED)
+        list (APPEND SOURCE_FILES src/gui/sdl_lvgl_driver.cpp)
+        add_definitions(-DUSE_SDL)
+    ENDIF()
+
 ELSE()
     add_definitions(-DNO_GUI)
-ENDIF()
-
-IF (NOT USE_SDL)
-    list (APPEND SOURCE_FILES src/gui/fb_lvgl_driver.cpp)
-ELSE()
-    find_package(SDL2 REQUIRED)
-    list (APPEND SOURCE_FILES src/gui/sdl_lvgl_driver.cpp)
-    add_definitions(-DUSE_SDL)
 ENDIF()
 
 add_executable(quarium_controller

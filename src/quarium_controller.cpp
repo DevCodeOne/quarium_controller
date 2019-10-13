@@ -3,8 +3,11 @@
 
 #include "clara.hpp"
 
-#include "config.h"
+#ifdef WITH_GUI
 #include "gui/main_view.h"
+#endif
+
+#include "config.h"
 #include "io/outputs/gpio/gpio_chip.h"
 #include "io/outputs/remote_function/remote_function.h"
 #include "logger.h"
@@ -87,7 +90,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-#ifdef NO_GUI
+#ifdef WITH_GUI
     auto inst = main_view::instance();
 
     if (inst) {
@@ -126,7 +129,7 @@ int main(int argc, char *argv[]) {
     logger::instance()->info("Shutting down server, schedule handler and gui");
     schedule_handler::instance()->stop_event_handler();
 
-#ifdef NO_GUI
+#ifdef WITH_GUI
     if (inst) {
         inst->close_view();
     }

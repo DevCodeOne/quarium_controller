@@ -10,8 +10,7 @@ class QuariumController(ConanFile):
             "clara/1.1.4@bincrafters/stable", \
             "boost_beast/1.66.0@bincrafters/stable", \
             "libcurl/7.64.1@bincrafters/stable", \
-            "libgpiod/1.1.1-3@user/stable", \
-            "lvgl_cmake/5.1.1-3@user/stable"
+            "libgpiod/1.1.1-3@user/stable"
     options = { "build_tests" : [True, False],
             "use_sdl" : [True, False],
             "with_gui" : [True, False],
@@ -27,21 +26,23 @@ class QuariumController(ConanFile):
     generators = "cmake", "ycm"
 
     def configure(self):
-        if self.options.use_sdl:
-            self.requires("sdl2/2.0.9@bincrafters/stable")
-            self.options["sdl2"].jack = False
-            self.options["sdl2"].alsa = False
-            self.options["sdl2"].pulse = False
-            self.options["sdl2"].nas = False
-        else:
-            self.requires("tslib/1.18-1@user/stable")
+        if self.options.with_gui:
+            self.requires("lvgl_cmake/5.1.1-3@user/stable")
+            if self.options.use_sdl:
+                self.requires("sdl2/2.0.9@bincrafters/stable")
+                self.options["sdl2"].jack = False
+                self.options["sdl2"].alsa = False
+                self.options["sdl2"].pulse = False
+                self.options["sdl2"].nas = False
+            else:
+                self.requires("tslib/1.18-1@user/stable")
 
     def build(self):
         cmake = CMake(self)
         cmake.definitions["WITH_GUI"] = 1 if self.options.with_gui else 0
         cmake.definitions["BUILD_TESTS"] = 1 if self.options.build_tests else 0
         cmake.definitions["GPIOD_STUB"] = 1 if self.options.use_gpiod_stub else 0
-        cmake.definitions["USE_SDL"] = 1 if self.options.use_sdl else 0
+        cmake.definitions["USE_SDL"] = 1 if self.options.use_sdl and self.options.with_gui else 0
         cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = 1
         cmake.configure()
         cmake.build()
