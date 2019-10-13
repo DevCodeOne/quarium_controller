@@ -18,7 +18,7 @@ enum struct output_value_types { number, number_unsigned, switch_output, value_c
 // Map of values
 class value_collection {
    public:
-    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned, int>;
+    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned int>;
 
     value_collection() = default;
     ~value_collection() = default;
@@ -53,8 +53,14 @@ class output_value {
     template<typename T>
     std::optional<T> serialize();
 
-    template<typename T>
+    template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int> = 0>
     output_value(T value, std::optional<T> min = {}, std::optional<T> max = {});
+    output_value(const output_value &other) = default;
+    output_value(output_value &&other) = default;
+    ~output_value() = default;
+
+    output_value &operator=(const output_value &other) = default;
+    output_value &operator=(output_value &&other) = default;
 
     template<typename T>
     std::optional<T> get() const;
@@ -112,7 +118,7 @@ std::optional<T> output_value::max() const {
     return {};
 }
 
-template<typename T>
+template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int> = 0>
 output_value::output_value(T value, std::optional<T> min, std::optional<T> max) : m_value(value) {
     if (min.has_value()) {
         m_min = *min;

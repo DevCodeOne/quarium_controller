@@ -30,6 +30,7 @@ set (SOURCE_FILES
     src/io/outputs/gpio/gpio_chip.cpp
     src/io/outputs/gpio/gpio_pin.cpp
     src/io/outputs/can/can.cpp
+    src/io/outputs/can/can_output.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)

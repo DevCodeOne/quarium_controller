@@ -7,6 +7,10 @@
 
 #include "io/outputs/output_interface.h"
 
+enum struct can_object_identifier : uint16_t {};
+
+enum struct can_error_code { ok = 0, send_error = 1, receive_error };
+
 class can final {
    public:
     static inline constexpr char default_can_path[] = "/dev/can0";
@@ -21,6 +25,10 @@ class can final {
     can &operator=(can &&other) = default;
 
     const std::filesystem::path &path_to_file() const;
+
+    // TODO: Allow different packet size
+    can_error_code send(const can_object_identifier &identifier, uint64_t data);
+    can_error_code receive(const can_object_identifier &identifier, uint64_t *data);
 
    private:
     static inline std::shared_ptr<can> _instance = nullptr;

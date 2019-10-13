@@ -10,6 +10,7 @@
 #include "config.h"
 #include "io/outputs/gpio/gpio_chip.h"
 #include "io/outputs/remote_function/remote_function.h"
+#include "io/outputs/can/can_output.h"
 #include "logger.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"
@@ -73,6 +74,7 @@ int main(int argc, char *argv[]) {
     // Register output interfaces
     output_factory::register_interface("gpio", &gpio_pin::create_for_interface);
     output_factory::register_interface("remote_function", &remote_function::create_for_interface);
+    output_factory::register_interface("can", &can_output::create_for_interface);
 
     auto schedule_file_paths = conf->find("schedule_list");
 

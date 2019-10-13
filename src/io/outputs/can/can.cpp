@@ -4,6 +4,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <climits>
 
 #include <cstring>
 
@@ -41,3 +42,15 @@ std::shared_ptr<can> can::instance(const std::filesystem::path &can_path) {
 }
 
 can::can(socket_handle_ptr_type &&socket_handle) : m_socket_handle(std::move(socket_handle)) {}
+
+can_error_code can::send(const can_object_identifier &identifier, uint64_t data) {
+    canfd_frame frame;
+    std::memset((char *)&frame, 0, sizeof(frame));
+
+    frame.can_id = (canid_t)identifier;
+    frame.len = sizeof(data) / CHAR_BIT;
+    std::memcpy(frame.data, (char *)&data, sizeof(data));
+
+    return write(*m_socket_handle, &frame, sizeof(frame)) < sizeof(frame) ? can_error_code::ok
+                                                                          : can_error_code::send_error;
+}

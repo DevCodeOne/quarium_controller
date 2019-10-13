@@ -1,16 +1,10 @@
+#include <cstdint>
+#include <memory>
 #include <filesystem>
 
 #include "io/outputs/can/can.h"
-
-class can_id {
-   public:
-    can_id(unsigned int id, std::shared_ptr<can> can_instance);
-
-    unsigned int id() const;
-    const std::filesystem::path &can_interface_path() const;
-
-   private:
-};
+#include "io/outputs/output_interface.h"
+#include "io/outputs/output_value.h"
 
 class can_output final : public output_interface {
    public:
@@ -27,8 +21,15 @@ class can_output final : public output_interface {
     virtual std::optional<output_value> is_overriden() const override;
     virtual output_value current_state() const override;
 
+    static std::unique_ptr<can_output> create_for_interface(const nlohmann::json &description);
+
    private:
-    output_value m_controlled_value;
-    std::optional<output_value> m_overriden_value;
-    can_id m_can_id;
+    can_output(std::shared_ptr<can> can_instance, can_object_identifier identifier, const output_value &initial_value);
+
+    can_error_code update_value();
+
+    output_value m_value;
+    std::optional<output_value> m_overriden_value{};
+    can_object_identifier m_object_identifier;
+    std::shared_ptr<can> m_can_instance;
 };
