@@ -19,12 +19,11 @@ class gpio_pin_id final {
     gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip);
 
     unsigned int id() const;
-    const std::filesystem::path &gpio_chip_path() const;
 
     std::shared_ptr<gpio_pin> open_pin();
 
    private:
-    const std::filesystem::path m_gpiochip_path = "";
+    std::weak_ptr<gpio_chip> m_gpiochip_instance;
     unsigned int m_id;
 };
 
@@ -57,15 +56,16 @@ class gpio_pin final : public rest_resource<gpio_pin>, public output_interface {
     static std::unique_ptr<output_interface> create_for_interface(const nlohmann::json &description);
 
    private:
-    static std::optional<gpio_pin> open(gpio_pin_id id);
+    static std::optional<gpio_pin> open(std::shared_ptr<gpio_chip> chip_instance, gpio_pin_id id);
 
     bool update_gpio();
 
-    gpio_pin(gpio_pin_id id, gpiod::gpiod_line line);
+    gpio_pin(std::weak_ptr<gpio_chip> chip_instance, gpio_pin_id id, gpiod::gpiod_line line);
 
     gpiod::gpiod_line m_line;
     switch_output m_controlled_value;
     std::optional<switch_output> m_overriden_value;
+    std::weak_ptr<gpio_chip> m_gpiochip_instance;
     const gpio_pin_id m_id;
 
     friend class gpio_chip;

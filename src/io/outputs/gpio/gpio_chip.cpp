@@ -134,12 +134,12 @@ std::shared_ptr<gpio_pin> gpio_chip::open_pin(const gpio_pin_id &id) {
         return result->second;
     }
 
-    auto pin = gpio_pin::open(id);
+    auto pin = gpio_pin::open(shared_from_this(), id);
     if (!pin.has_value()) {
         return nullptr;
     }
 
-    // TODO FIX : Error is here remove all the code which adds elements to m_reserved_pins and the error is gone
+    // TODO: Error is here remove all the code which adds elements to m_reserved_pins and the error is gone
     auto [position, result] = m_reserved_pins.try_emplace(id, std::make_shared<gpio_pin>(std::move(*pin)));
     return position->second;
 }

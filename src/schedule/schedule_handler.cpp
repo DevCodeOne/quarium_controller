@@ -35,13 +35,14 @@ void schedule_handler::stop_event_handler() {
 }
 
 bool schedule_handler::add_schedule(schedule sched) {
+    auto logger_instance = logger::instance();
     if (!sched) {
-        logger::instance()->critical("Schedule is not valid");
+        logger_instance->critical("Schedule is not valid");
         return false;
     }
 
     if (is_conflicting_with_other_schedules(sched)) {
-        logger::instance()->critical("Schedule {} is conflicting with other schedules", sched.title());
+        logger_instance->critical("Schedule {} is conflicting with other schedules", sched.title());
         return false;
     }
 
@@ -56,13 +57,13 @@ bool schedule_handler::add_schedule(schedule sched) {
 
     if ((sched.schedule_mode() == schedule::mode::repeating) &&
         (!sched.start_at().has_value() || !sched.end_at().has_value())) {
-        logger::instance()->critical("Schedule {} is invalid", sched.title());
+        logger_instance->critical("Schedule {} is invalid", sched.title());
         return false;
     }
 
     {
         auto lock = singleton<schedule_handler>::retrieve_instance_lock();
-        logger::instance()->info("Added schedule {} to the list of schedules", sched.title());
+        logger_instance->info("Added schedule {} to the list of schedules", sched.title());
         m_inactive_schedules.emplace_back(std::move(sched));
     }
 
@@ -76,6 +77,7 @@ void schedule_handler::event_handler() {
     std::multimap<schedule_action_id,
                   std::decay_t<decltype(std::declval<rest_resource_id<schedule_event>>().as_number())>>
         actions_to_event_mapping;
+    auto logger_instance = logger::instance();
 
     auto handler_instance = instance();
 
@@ -93,7 +95,7 @@ void schedule_handler::event_handler() {
                 execution_results.clear();
                 actions_to_event_mapping.clear();
 
-                logger::instance()->info("Checking events of schedule {}", current_schedule.title());
+                logger_instance->info("Checking events of schedule {}", current_schedule.title());
 
                 if (!current_schedule.start_at().has_value()) {
                     continue;
@@ -107,8 +109,8 @@ void schedule_handler::event_handler() {
                         continue;
                     }
 
-                    std::cout << "Adding actions of : " << current_event.name()
-                              << " id: " << current_event.id().as_number() << std::endl;
+                    logger_instance->info("Adding actions of : {} id : {}", current_event.name(),
+                                             current_event.id().as_number());
 
                     for (auto &current_action_id : current_event.actions()) {
                         actions_to_execute.emplace_back(current_action_id);
@@ -155,12 +157,12 @@ void schedule_handler::event_handler() {
                             // Some actions or all the actions of this event were unsuccesfull unmark as processed, so
                             // the are actions can be tried again
                             current_event.unmark_as_processed();
-                            logger::instance()->critical("One or more actions of the event {} resulted in errors",
+                            logger_instance->critical("One or more actions of the event {} resulted in errors",
                                                          current_event.name());
                         }
                     }
 
-                    logger::instance()->critical("Failed to execute some actions of schedule {}",
+                    logger_instance->critical("Failed to execute some actions of schedule {}",
                                                  current_schedule.title());
                 }
             }
@@ -188,7 +190,7 @@ void schedule_handler::event_handler() {
                     created_schedule.end_at(created_schedule.start_at().value() + created_schedule.period() - days(1));
                 }
 
-                logger::instance()->info("Added Schedule {} to the list of active schedules", created_schedule.title());
+                logger_instance->info("Added Schedule {} to the list of active schedules", created_schedule.title());
                 handler_instance->m_active_schedules.emplace_back(std::move(created_schedule));
             }
 
@@ -203,7 +205,7 @@ void schedule_handler::event_handler() {
             if (to_be_removed != handler_instance->m_active_schedules.cend()) {
                 for (auto current_schedule = to_be_removed;
                      current_schedule != handler_instance->m_active_schedules.cend(); ++current_schedule) {
-                    logger::instance()->info("Remove schedule {} from the list of active schedules",
+                    logger_instance->info("Remove schedule {} from the list of active schedules",
                                              current_schedule->title());
                     handler_instance->m_inactive_schedules.emplace_back(std::move(*current_schedule));
                 }

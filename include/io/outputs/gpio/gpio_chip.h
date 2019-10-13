@@ -13,7 +13,7 @@
 #include "network/network_interface.h"
 #include "network/rest_resource.h"
 
-class gpio_chip final : public rest_resource<gpio_chip> {
+class gpio_chip final : public rest_resource<gpio_chip>, std::enable_shared_from_this<gpio_chip> {
    public:
     static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
 
@@ -22,7 +22,7 @@ class gpio_chip final : public rest_resource<gpio_chip> {
 
     gpio_chip(const gpio_chip &other) = delete;
     gpio_chip(gpio_chip &&other);
-    ~gpio_chip();
+    virtual ~gpio_chip();
 
     gpio_chip &operator=(const gpio_chip &other) = delete;
     gpio_chip &operator=(gpio_chip &&other);

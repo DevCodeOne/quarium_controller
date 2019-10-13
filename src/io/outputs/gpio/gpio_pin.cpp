@@ -3,21 +3,19 @@
 #include "io/outputs/gpio/gpio_chip.h"
 #include "logger.h"
 
-gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip)
-    : m_gpiochip_path(chip->path_to_file()), m_id(id) {}
+gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_gpiochip_instance(chip), m_id(id) {}
 
 unsigned int gpio_pin_id::id() const { return m_id; }
 
 std::shared_ptr<gpio_pin> gpio_pin_id::open_pin() {
-    auto chip_instance = gpio_chip::instance(m_gpiochip_path);
+    auto chip_instance = m_gpiochip_instance.lock();
+
     if (!chip_instance) {
         return nullptr;
     }
 
     return chip_instance->open_pin(*this);
 }
-
-const std::filesystem::path &gpio_pin_id::gpio_chip_path() const { return m_gpiochip_path; }
 
 std::optional<output_value> gpio_pin::is_overriden() const {
     if (m_overriden_value.has_value()) {
@@ -36,27 +34,27 @@ output_value gpio_pin::current_state() const {
     return controlled_state;
 }
 
-gpio_pin::gpio_pin(gpio_pin_id id, gpiod::gpiod_line line) : m_id(id), m_line(std::move(line)) {}
+gpio_pin::gpio_pin(std::weak_ptr<gpio_chip> chip_instance, gpio_pin_id id, gpiod::gpiod_line line)
+    : m_id(id), m_line(std::move(line)), m_gpiochip_instance(chip_instance) {}
 
 gpio_pin::gpio_pin(gpio_pin &&other)
     : m_id(std::move(other.m_id)),
       m_line(std::move(other.m_line)),
       m_controlled_value(std::move(other.m_controlled_value)),
-      m_overriden_value(std::move(other.m_overriden_value)) {}
+      m_overriden_value(std::move(other.m_overriden_value)),
+      m_gpiochip_instance(other.m_gpiochip_instance) {}
 
-std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
-    auto chip_instance = gpio_chip::instance(id.gpio_chip_path());
-
+std::optional<gpio_pin> gpio_pin::open(std::shared_ptr<gpio_chip> chip_instance, gpio_pin_id id) {
     if (!chip_instance) {
         logger::instance()->critical("Chip of the provided gpio_pin_id is not valid");
-        return {};
+        return std::nullopt;
     }
 
     gpiod::gpiod_line line = chip_instance->m_chip.get_line(id.id());
 
     if (!line) {
         logger::instance()->critical("Couldn't get line with id {}", id.id());
-        return {};
+        return std::nullopt;
     }
 
     auto invert_signal_entry = config::instance()->find("invert_output");
@@ -70,10 +68,10 @@ std::optional<gpio_pin> gpio_pin::open(gpio_pin_id id) {
 
     if (result == -1) {
         logger::instance()->critical("Couldn't request line with id {}", id.id());
-        return {};
+        return std::nullopt;
     }
 
-    return gpio_pin(std::move(id), std::move(line));
+    return gpio_pin(chip_instance, std::move(id), std::move(line));
 }
 
 bool gpio_pin::control_output(const output_value &value) {
@@ -84,7 +82,7 @@ bool gpio_pin::control_output(const output_value &value) {
     }
     m_controlled_value = *contained_value;
 
-    auto chip_instance = gpio_chip::instance(m_id.gpio_chip_path());
+    auto chip_instance = m_gpiochip_instance.lock();
     if (!m_line || !chip_instance) {
         return false;
     }
@@ -92,11 +90,11 @@ bool gpio_pin::control_output(const output_value &value) {
     switch (*contained_value) {
         case switch_output::on:
         case switch_output::off:
-            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), m_id.gpio_chip_path().c_str(),
+            logger::instance()->info("Turning gpio {} of chip {} {}", m_id.id(), chip_instance->path_to_file().c_str(),
                                      *contained_value == switch_output::on ? "on" : "off");
             break;
         case switch_output::toggle:
-            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), m_id.gpio_chip_path().c_str());
+            logger::instance()->info("Toggle gpio {} of chip {}", m_id.id(), chip_instance->path_to_file().c_str());
             break;
     }
 
@@ -199,6 +197,7 @@ std::unique_ptr<output_interface> gpio_pin::create_for_interface(const nlohmann:
         default_value = switch_output::on;
     }
 
+    // TODO: make path configurable
     auto gpio_chip_instance = gpio_chip::instance();
 
     if (!gpio_chip_instance) {
@@ -207,7 +206,7 @@ std::unique_ptr<output_interface> gpio_pin::create_for_interface(const nlohmann:
 
     gpio_pin_id pin_id(pin_number, gpio_chip_instance);
 
-    auto created_pin = gpio_pin::open(pin_id);
+    auto created_pin = gpio_pin::open(gpio_chip_instance, pin_id);
 
     if (!created_pin.has_value()) {
         return nullptr;

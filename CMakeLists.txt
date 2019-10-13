@@ -29,6 +29,7 @@ set (SOURCE_FILES
     src/io/outputs/remote_function/remote_function.cpp
     src/io/outputs/gpio/gpio_chip.cpp
     src/io/outputs/gpio/gpio_pin.cpp
+    src/io/outputs/can/can.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)
