@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+#ifdef NO_GUI
     auto inst = main_view::instance();
 
     if (inst) {
@@ -94,6 +95,7 @@ int main(int argc, char *argv[]) {
     } else {
         logger::instance()->warn("Couldn't open gui");
     }
+#endif
 
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));
     network_iface->add_route(std::regex("/api/v0/log", std::regex_constants::extended),
@@ -124,9 +126,11 @@ int main(int argc, char *argv[]) {
     logger::instance()->info("Shutting down server, schedule handler and gui");
     schedule_handler::instance()->stop_event_handler();
 
+#ifdef NO_GUI
     if (inst) {
         inst->close_view();
     }
+#endif
 
     network_iface->stop();
     return EXIT_SUCCESS;

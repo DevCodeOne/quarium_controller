@@ -76,8 +76,8 @@ class output_value {
 
 template<>
 inline std::optional<std::string> output_value::serialize() {
-    auto serialize_value = [](auto &current_value) -> std::string {
-        std::ostringstream os;
+    auto serialize_value = [](auto current_value) -> std::string {
+        std::ostringstream os("");
         os << current_value;
         return os.str();
     };

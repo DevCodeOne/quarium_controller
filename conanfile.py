@@ -8,11 +8,21 @@ class QuariumController(ConanFile):
             "catch2/2.3.0@bincrafters/stable", \
             "jsonformoderncpp/3.1.2@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
+            "boost_beast/1.66.0@bincrafters/stable", \
             "libcurl/7.64.1@bincrafters/stable", \
             "libgpiod/1.1.1-3@user/stable", \
             "lvgl_cmake/5.1.1-3@user/stable"
-    options = {"build_tests" : [True, False], "use_sdl" : [True, False], "use_gpiod_stub" : [True, False]}
-    default_options = {"build_tests" : True, "use_sdl" : True, "use_gpiod_stub" : True, "libcurl:with_openssl" : False}
+    options = { "build_tests" : [True, False],
+            "use_sdl" : [True, False],
+            "with_gui" : [True, False],
+            "use_gpiod_stub" : [True, False],
+            }
+    default_options = { "build_tests" : True, \
+            "use_sdl" : True, \
+            "use_gpiod_stub" : True, \
+            "with_gui" : True, \
+            "libcurl:with_openssl" : False \
+            }
     exports_sources = "tests*", "include*", "src*", "CMakeLists.txt"
     generators = "cmake", "ycm"
 
@@ -28,10 +38,11 @@ class QuariumController(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        cmake.definitions["BUILD_TESTS"] = "On" if self.options.build_tests else "Off"
-        cmake.definitions["GPIOD_STUB"] = "On" if self.options.use_gpiod_stub else "Off"
-        cmake.definitions["USE_SDL"] = "On" if self.options.use_sdl else "Off"
-        cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = "On"
+        cmake.definitions["WITH_GUI"] = 1 if self.options.with_gui else 0
+        cmake.definitions["BUILD_TESTS"] = 1 if self.options.build_tests else 0
+        cmake.definitions["GPIOD_STUB"] = 1 if self.options.use_gpiod_stub else 0
+        cmake.definitions["USE_SDL"] = 1 if self.options.use_sdl else 0
+        cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = 1
         cmake.configure()
         cmake.build()
 

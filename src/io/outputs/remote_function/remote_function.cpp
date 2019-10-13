@@ -99,7 +99,7 @@ bool remote_function::update_values() {
         function = m_url.substr(function_pos);
     }
 
-    std::ostringstream remote_function;
+    std::ostringstream remote_function("");
 
     remote_function << function;
     auto value = current_state();
@@ -119,7 +119,7 @@ bool remote_function::update_values() {
     using namespace std::literals;
 
     auto complete_url = host + ":"s + port + remote_function.str();
-    logger::instance()->info("{}", complete_url);
+    logger::instance()->info("Url to connect to {}", complete_url);
 
     curl_easy_setopt(m_curl_instance.get(), CURLOPT_URL, complete_url.c_str());
     curl_easy_setopt(m_curl_instance.get(), CURLOPT_NOSIGNAL, true);

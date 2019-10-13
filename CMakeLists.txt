@@ -6,6 +6,7 @@ add_definitions(-DDEFAULT_CONFIG_PATH="../conf/settings.json")
 option(USE_SDL "Use sdl for the gui instead of the framebuffer" OFF)
 option(GPIOD_STUB "Use stub gpiod wrapper to test the functionality without the need of a real gpio_chip" OFF)
 option(BUILD_TESTS "Build tests for quarium_controller" ON)
+option(WITH_GUI "Enable the gui" ON)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
@@ -28,22 +29,28 @@ set (SOURCE_FILES
     src/io/outputs/remote_function/remote_function.cpp
     src/io/outputs/gpio/gpio_chip.cpp
     src/io/outputs/gpio/gpio_pin.cpp
-    src/gui/main_view.cpp
-    src/gui/main_view_controller.cpp
-    src/gui/manual_control_view.cpp
-    src/gui/single_output_view.cpp
-    src/gui/single_output_view_controller.cpp
     src/chrono_time.cpp)
 
 IF (GPIOD_STUB)
     add_definitions(-DUSE_GPIOD_STUBS)
 ENDIF()
 
+IF (WITH_GUI)
+    list(APPEND SOURCE_FILES 
+        src/gui/main_view.cpp
+        src/gui/main_view_controller.cpp
+        src/gui/manual_control_view.cpp
+        src/gui/single_output_view.cpp
+        src/gui/single_output_view_controller.cpp)
+ELSE()
+    add_definitions(-DNO_GUI)
+ENDIF()
+
 IF (NOT USE_SDL)
-    set (SOURCE_FILES ${SOURCE_FILES} src/gui/fb_lvgl_driver.cpp)
+    list (APPEND SOURCE_FILES src/gui/fb_lvgl_driver.cpp)
 ELSE()
     find_package(SDL2 REQUIRED)
-    set (SOURCE_FILES ${SOURCE_FILES} src/gui/sdl_lvgl_driver.cpp)
+    list (APPEND SOURCE_FILES src/gui/sdl_lvgl_driver.cpp)
     add_definitions(-DUSE_SDL)
 ENDIF()
 
