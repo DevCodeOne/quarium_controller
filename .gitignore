@@ -4,3 +4,7 @@
 # Explicitly add everything which is really needed
 !src
 !include
+!conanfile.py
+!CMakeLists.txt
+!README.md
+!LICENSE
