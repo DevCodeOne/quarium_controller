@@ -38,7 +38,6 @@ class can final {
 
     static inline auto socket_deleter = [](int *socket_handle) {
         if (socket_handle && *socket_handle) {
-            logger::instance()->warn("Closing can socket");
             close(*socket_handle);
         }
     };
