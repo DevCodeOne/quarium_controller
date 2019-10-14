@@ -51,6 +51,5 @@ can_error_code can::send(const can_object_identifier &identifier, uint64_t data)
     frame.len = sizeof(data) / CHAR_BIT;
     std::memcpy(frame.data, (char *)&data, sizeof(data));
 
-    return write(*m_socket_handle, &frame, sizeof(frame)) < sizeof(frame) ? can_error_code::ok
-                                                                          : can_error_code::send_error;
+    return write(*m_socket_handle, &frame, CAN_MTU) == CAN_MTU ? can_error_code::ok : can_error_code::send_error;
 }

@@ -110,7 +110,7 @@ void schedule_handler::event_handler() {
                     }
 
                     logger_instance->info("Adding actions of : {} id : {}", current_event.name(),
-                                             current_event.id().as_number());
+                                          current_event.id().as_number());
 
                     for (auto &current_action_id : current_event.actions()) {
                         actions_to_execute.emplace_back(current_action_id);
@@ -128,10 +128,6 @@ void schedule_handler::event_handler() {
                 bool result = schedule_action::execute_actions(actions_to_execute, execution_results);
 
                 if (!result) {
-                    std::cout << std::boolalpha;
-                    for (auto current_result : execution_results) {
-                        std::cout << current_result << std::endl;
-                    }
                     // Find the corresponding events to the failed actions and remove their processed mark
 
                     std::vector<std::decay_t<decltype(std::declval<rest_resource_id<schedule_event>>().as_number())>>
@@ -158,12 +154,12 @@ void schedule_handler::event_handler() {
                             // the are actions can be tried again
                             current_event.unmark_as_processed();
                             logger_instance->critical("One or more actions of the event {} resulted in errors",
-                                                         current_event.name());
+                                                      current_event.name());
                         }
                     }
 
                     logger_instance->critical("Failed to execute some actions of schedule {}",
-                                                 current_schedule.title());
+                                              current_schedule.title());
                 }
             }
 
@@ -206,7 +202,7 @@ void schedule_handler::event_handler() {
                 for (auto current_schedule = to_be_removed;
                      current_schedule != handler_instance->m_active_schedules.cend(); ++current_schedule) {
                     logger_instance->info("Remove schedule {} from the list of active schedules",
-                                             current_schedule->title());
+                                          current_schedule->title());
                     handler_instance->m_inactive_schedules.emplace_back(std::move(*current_schedule));
                 }
                 handler_instance->m_active_schedules.erase(to_be_removed);

@@ -65,6 +65,15 @@
             }
         },
         {
+            "id" : "candev0",
+            "type" : "can",
+            "description" : {
+                "can_device" : "can0",
+                "object_identifier" : 5,
+                "default" : 0
+            }
+        },
+        {
             "id" : "lamp_module",
             "type" : "remote_function",
             "description" : {

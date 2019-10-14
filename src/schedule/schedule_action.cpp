@@ -5,17 +5,18 @@
 
 bool schedule_action::add_action(json &schedule_action_description) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
+    auto logger_instance = logger::instance();
 
     json id_entry = schedule_action_description["id"];
     json output_entry = schedule_action_description["outputs"];
     json output_actions_entry = schedule_action_description["output_actions"];
 
     if (id_entry.is_null() || output_entry.is_null() || output_actions_entry.is_null()) {
-        logger::instance()->critical("A needed entry in an action was missing : {} {} {}",
-                                     id_entry.is_null() ? "id" : "", output_entry.is_null() ? "outputs" : "",
-                                     output_actions_entry.is_null() ? "output_actions" : "");
+        logger_instance->critical("A needed entry in an action was missing : {} {} {}", id_entry.is_null() ? "id" : "",
+                                  output_entry.is_null() ? "outputs" : "",
+                                  output_actions_entry.is_null() ? "output_actions" : "");
         if (!id_entry.is_null() && id_entry.is_string()) {
-            logger::instance()->critical("The issue was in the action with the id {}", id_entry.get<std::string>());
+            logger_instance->critical("The issue was in the action with the id {}", id_entry.get<std::string>());
         }
         return false;
     }
@@ -23,31 +24,31 @@ bool schedule_action::add_action(json &schedule_action_description) {
     schedule_action created_action;
 
     if (!id_entry.is_string()) {
-        logger::instance()->critical("The id for an action is not a string");
+        logger_instance->critical("The id for an action is not a string");
     }
 
     const std::string id = id_entry.get<std::string>();
 
     if (is_valid_id(id)) {
-        logger::instance()->critical("The id for an action {} is already in use", id);
+        logger_instance->critical("The id for an action {} is already in use", id);
         return false;
     }
 
     if (!output_entry.is_array()) {
-        logger::instance()->critical("The entry outputs in action {} isn't an array", id);
+        logger_instance->critical("The entry outputs in action {} isn't an array", id);
         return false;
     }
 
     std::vector<output_id> created_outputs;
     bool created_all_outputs_successfully =
-        std::all_of(output_entry.begin(), output_entry.end(), [&created_outputs](auto &current_output_entry) {
+        std::all_of(output_entry.begin(), output_entry.end(), [&created_outputs, &logger_instance](auto &current_output_entry) {
             if (!current_output_entry.is_string()) {
                 return false;
             }
 
             std::string id = current_output_entry.template get<std::string>();
             if (!outputs::is_valid_id(id)) {
-                logger::instance()->critical("An output with the id {} doesn't exist", id);
+                logger_instance->critical("An output with the id {} doesn't exist", id);
                 return false;
             }
 
@@ -56,46 +57,48 @@ bool schedule_action::add_action(json &schedule_action_description) {
         });
 
     if (!created_all_outputs_successfully) {
-        logger::instance()->critical("The entry outputs in action {} isn't valid", id);
+        logger_instance->critical("The entry outputs in action {} isn't valid", id);
         return false;
     }
 
     if (!output_actions_entry.is_array()) {
-        logger::instance()->critical("The entry output_actions in action {} isn't an array", id);
+        logger_instance->critical("The entry output_actions in action {} isn't an array", id);
         return false;
     }
 
     std::vector<output_value> created_output_actions;
-    bool created_all_output_actions_successfully =
-        std::all_of(output_actions_entry.begin(), output_actions_entry.end(),
-                    [&created_outputs, &created_output_actions](auto &current_output_entry) {
-                        std::optional<output_value> value;
-                        if (created_outputs.size() < created_output_actions.size()) {
-                            return false;
-                        }
+    bool created_all_output_actions_successfully = std::all_of(
+        output_actions_entry.begin(), output_actions_entry.end(),
+        [&created_outputs, &created_output_actions, &logger_instance](auto &current_output_entry) {
+            std::optional<output_value> value;
+            if (created_outputs.size() < created_output_actions.size()) {
+                return false;
+            }
 
-                        auto current_value = outputs::current_state(created_outputs[created_output_actions.size()]);
-                        if (current_value.has_value()) {
-                            value = output_value::deserialize(current_output_entry, current_value->current_type());
-                        } else {
-                            value = output_value::deserialize(current_output_entry);
-                        }
+            auto current_value = outputs::current_state(created_outputs[created_output_actions.size()]);
+            if (current_value.has_value()) {
+                value = output_value::deserialize(current_output_entry, current_value->current_type());
+            } else {
+                logger_instance->warn(
+                    "Don't have valid type information from the default value, trying to figure out the type");
+                value = output_value::deserialize(current_output_entry);
+            }
 
-                        if (!value.has_value()) {
-                            return false;
-                        }
+            if (!value.has_value()) {
+                return false;
+            }
 
-                        created_output_actions.emplace_back(*value);
-                        return true;
-                    });
+            created_output_actions.emplace_back(*value);
+            return true;
+        });
 
     if (!created_all_output_actions_successfully) {
-        logger::instance()->critical("The entry output_actions in action {} isn't valid", id);
+        logger_instance->critical("The entry output_actions in action {} isn't valid", id);
     }
 
     if (created_outputs.size() != created_output_actions.size()) {
-        logger::instance()->critical(
-            "There are not the same number of entries in the output specific arrays in action {}", id);
+        logger_instance->critical("There are not the same number of entries in the output specific arrays in action {}",
+                                  id);
         return false;
     }
 
@@ -125,7 +128,8 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
     std::map<output_id, schedule_action_execution_order> actions;
     bool result = true;
 
-    size_t index = ids.size(); /* ids.size() because we are iterating backwards it is plus one because we then can reduce index at the front of the loop */
+    size_t index = ids.size(); /* ids.size() because we are iterating backwards it is plus one because we then can
+                                  reduce index at the front of the loop */
     for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
         --index;
         if (!is_valid_id(*current_id)) {

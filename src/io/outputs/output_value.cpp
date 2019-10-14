@@ -180,6 +180,12 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                     return output_value{result->second};
                 }
             }
+        } else if (description.is_number_unsigned() &&
+                   ((!type.has_value()) || (type.has_value() && *type == output_value_types::number_unsigned))) {
+            return output_value(description.get<unsigned int>());
+        } else if (description.is_number() &&
+                   ((!type.has_value()) || (type.has_value() && *type == output_value_types::number))) {
+            return output_value(description.get<int>());
         }
     }
 

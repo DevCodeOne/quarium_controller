@@ -6,11 +6,13 @@
 #include <mutex>
 
 #include "io/outputs/output_interface.h"
+#include "logger.h"
 
 enum struct can_object_identifier : uint16_t {};
 
 enum struct can_error_code { ok = 0, send_error = 1, receive_error };
 
+// TODO: map of can instances, since there can be multiple can devices simultaniously
 class can final {
    public:
     static inline constexpr char default_can_path[] = "/dev/can0";
@@ -36,6 +38,7 @@ class can final {
 
     static inline auto socket_deleter = [](int *socket_handle) {
         if (socket_handle && *socket_handle) {
+            logger::instance()->warn("Closing can socket");
             close(*socket_handle);
         }
     };

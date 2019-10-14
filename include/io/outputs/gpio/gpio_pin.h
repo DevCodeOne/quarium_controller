@@ -66,7 +66,7 @@ class gpio_pin final : public rest_resource<gpio_pin>, public output_interface {
     switch_output m_controlled_value;
     std::optional<switch_output> m_overriden_value;
     std::weak_ptr<gpio_chip> m_gpiochip_instance;
-    const gpio_pin_id m_id;
+    gpio_pin_id m_id;
 
     friend class gpio_chip;
 };
