@@ -8,7 +8,7 @@ class QuariumController(ConanFile):
             "catch2/2.3.0@bincrafters/stable", \
             "jsonformoderncpp/3.1.2@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
-            "boost_beast/1.66.0@bincrafters/stable", \
+            "boost_beast/1.69.0@bincrafters/stable", \
             "libcurl/7.64.1@bincrafters/stable", \
             "libgpiod/1.2.1@ecashptyltd/stable"
     options = { "build_tests" : [True, False],

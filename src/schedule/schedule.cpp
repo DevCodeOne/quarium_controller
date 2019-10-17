@@ -32,7 +32,7 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
                     [](auto &current_output_description) { return outputs::add_output(current_output_description); });
 
     if (!successfully_parsed_all_gpios) {
-        logger::instance()->critical("Description of one or more gpios contain errors");
+        logger::instance()->critical("One or more descriptions of outputs contain errors");
         return {};
     }
 
