@@ -1,7 +1,8 @@
+#include "schedule/schedule_action.h"
+
 #include <map>
 
 #include "logger.h"
-#include "schedule/schedule_action.h"
 
 bool schedule_action::add_action(json &schedule_action_description) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
@@ -40,8 +41,8 @@ bool schedule_action::add_action(json &schedule_action_description) {
     }
 
     std::vector<output_id> created_outputs;
-    bool created_all_outputs_successfully =
-        std::all_of(output_entry.begin(), output_entry.end(), [&created_outputs, &logger_instance](auto &current_output_entry) {
+    bool created_all_outputs_successfully = std::all_of(
+        output_entry.begin(), output_entry.end(), [&created_outputs, &logger_instance](auto &current_output_entry) {
             if (!current_output_entry.is_string()) {
                 return false;
             }
@@ -120,21 +121,29 @@ bool schedule_action::is_valid_id(const schedule_action_id &id) {
 
 // Actions will be executed in order, actions that will cancel each other will be optimized -> first action turns on
 // second action turns off, then only the second one will be executed
-bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids, std::vector<bool> &results) {
+std::vector<schedule_action_id> schedule_action::execute_actions(const std::vector<schedule_action_id> &ids) {
+    struct schedule_action_execution_order {
+        const std::vector<schedule_action_id>::const_reverse_iterator m_action_id;
+        const output_value m_value;
+    };
+
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
-    results.resize(ids.size());
+
+    std::vector<schedule_action_id> failed_actions;
+    if (ids.size() == 0) {
+        return failed_actions;
+    }
+
+    auto logger_instance = logger::instance();
 
     // TODO: improve mapping
-    std::map<output_id, schedule_action_execution_order> actions;
+    std::map<output_id, schedule_action_execution_order> actions_to_execute;
     bool result = true;
 
-    size_t index = ids.size(); /* ids.size() because we are iterating backwards it is plus one because we then can
-                                  reduce index at the front of the loop */
     for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
-        --index;
         if (!is_valid_id(*current_id)) {
-            logger::instance()->warn("{} is not a valid id for an action", *current_id);
-            return false;
+            logger_instance->warn("{} is not a valid id for an action", *current_id);
+            // return false;
         }
 
         auto action = std::find_if(_actions.begin(), _actions.end(),
@@ -145,25 +154,27 @@ bool schedule_action::execute_actions(const std::vector<schedule_action_id> &ids
         }
 
         // Check for actions which set the same outputs to set them only once instead of multiple times
-        for (auto &[current_output, current_action] : (*action)->m_outputs) {
-            auto result = actions.emplace(current_output, schedule_action_execution_order{index, current_action});
+        for (auto &[current_output, current_value_to_set] : (*action)->m_outputs) {
+            auto result = actions_to_execute.emplace(
+                current_output,
+                schedule_action_execution_order{.m_action_id = current_id, .m_value = current_value_to_set});
 
             if (!result.second) {
-                logger::instance()->info("Skip setting {}", current_output);
-                results[index] = true;
+                logger_instance->info("Skip setting {}", current_output);
             }
         }
     }
 
-    for (auto &[current_pin_id, current_execution_order] : actions) {
+    for (auto &[current_pin_id, current_execution_order] : actions_to_execute) {
         // TODO: launch thread to prevent lockups and wait for the results
-        bool singular_result = outputs::control_output(current_pin_id, current_execution_order.m_value);
-        result &= singular_result;
+        bool execution_result = outputs::control_output(current_pin_id, current_execution_order.m_value);
 
-        results[current_execution_order.m_execution_index] = singular_result;
+        if (!execution_result) {
+            failed_actions.emplace_back(*current_execution_order.m_action_id);
+        }
     }
 
-    return result;
+    return failed_actions;
 }
 
 schedule_action::schedule_action(schedule_action &&other)

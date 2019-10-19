@@ -14,15 +14,10 @@ using json = nlohmann::json;
 
 using schedule_action_id = std::string;
 
-struct schedule_action_execution_order {
-    size_t m_execution_index = 0;
-    output_value m_value;
-};
-
 class schedule_action {
    public:
     static bool is_valid_id(const schedule_action_id &id);
-    static bool execute_actions(const std::vector<schedule_action_id> &ids, std::vector<bool> &results);
+    static std::vector<schedule_action_id> execute_actions(const std::vector<schedule_action_id> &ids);
 
     schedule_action() = default;
     schedule_action(const schedule_action &other) = delete;

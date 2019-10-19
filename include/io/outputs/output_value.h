@@ -118,7 +118,7 @@ std::optional<T> output_value::max() const {
     return {};
 }
 
-template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int> = 0>
+template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int>>
 output_value::output_value(T value, std::optional<T> min, std::optional<T> max) : m_value(value) {
     if (min.has_value()) {
         m_min = *min;

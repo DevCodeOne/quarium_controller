@@ -1,4 +1,5 @@
 #include "io/outputs/gpio/gpio_pin.h"
+
 #include "config.h"
 #include "io/outputs/gpio/gpio_chip.h"
 #include "logger.h"
@@ -45,15 +46,16 @@ gpio_pin::gpio_pin(gpio_pin &&other)
       m_gpiochip_instance(other.m_gpiochip_instance) {}
 
 std::optional<gpio_pin> gpio_pin::open(std::shared_ptr<gpio_chip> chip_instance, gpio_pin_id id) {
+    auto logger_instance = logger::instance();
     if (!chip_instance) {
-        logger::instance()->critical("Chip of the provided gpio_pin_id is not valid");
+        logger_instance->critical("Chip of the provided gpio_pin_id is not valid");
         return std::nullopt;
     }
 
     gpiod::gpiod_line line = chip_instance->m_chip.get_line(id.id());
 
     if (!line) {
-        logger::instance()->critical("Couldn't get line with id {}", id.id());
+        logger_instance->critical("Couldn't get line with id {}", id.id());
         return std::nullopt;
     }
 
@@ -67,7 +69,7 @@ std::optional<gpio_pin> gpio_pin::open(std::shared_ptr<gpio_chip> chip_instance,
         line.request_output_flags("quarium_controller", invert_signal ? GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW : 0, 0);
 
     if (result == -1) {
-        logger::instance()->critical("Couldn't request line with id {}", id.id());
+        logger_instance->critical("Couldn't request line with id {}", id.id());
         return std::nullopt;
     }
 

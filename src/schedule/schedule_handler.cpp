@@ -1,16 +1,16 @@
+#include "schedule/schedule_handler.h"
+
 #include <algorithm>
 #include <charconv>
 #include <fstream>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <regex>
 #include <vector>
 
-#include "nlohmann/json.hpp"
-
 #include "chrono_time.h"
 #include "config.h"
 #include "logger.h"
-#include "schedule/schedule_handler.h"
 #include "signal_handler.h"
 
 std::shared_ptr<schedule_handler> schedule_handler::instance() { return singleton<schedule_handler>::instance(); }
@@ -85,10 +85,8 @@ void schedule_handler::event_handler() {
         {
             auto lock = singleton<schedule_handler>::retrieve_instance_lock();
 
-            std::chrono::minutes minutes_since_today =
-                duration_since_epoch<std::chrono::minutes>() - duration_since_epoch<days>();
-
-            days current_day = duration_since_epoch<days>();
+            auto minutes_since_today = duration_since_epoch<std::chrono::minutes>() - duration_since_epoch<days>();
+            auto current_day = duration_since_epoch<days>();
 
             for (const auto &current_schedule : handler_instance->m_active_schedules) {
                 actions_to_execute.clear();
@@ -103,13 +101,14 @@ void schedule_handler::event_handler() {
 
                 auto day_in_schedule = current_day - current_schedule.start_at().value();
 
+                // TODO: when the clock is set to an earlier timepoint this code won't behave correctly
                 for (const auto &current_event : current_schedule.events()) {
                     if ((current_event.day() > day_in_schedule) ||
                         (current_event.trigger_time() > minutes_since_today) || current_event.is_processed()) {
                         continue;
                     }
 
-                    logger_instance->info("Adding actions of : {} id : {}", current_event.name(),
+                    logger_instance->info("Scheduling actions of : {} id : {} for execution", current_event.name(),
                                           current_event.id().as_number());
 
                     for (auto &current_action_id : current_event.actions()) {
@@ -120,25 +119,16 @@ void schedule_handler::event_handler() {
                     current_event.mark_as_processed();
                 }
 
-                if (actions_to_execute.size() == 0) {
-                    continue;
-                }
-
                 // Actions are in order, because the events are in order (sorted by event time on a per day basis)
-                bool result = schedule_action::execute_actions(actions_to_execute, execution_results);
+                auto failed_actions = schedule_action::execute_actions(actions_to_execute);
 
-                if (!result) {
+                if (failed_actions.size() > 0) {
+                    logger_instance->warn("Some actions couldn't be executed");
                     // Find the corresponding events to the failed actions and remove their processed mark
-
                     std::vector<std::decay_t<decltype(std::declval<rest_resource_id<schedule_event>>().as_number())>>
                         failed_events;
-                    for (decltype(execution_results)::size_type i = 0; i < execution_results.size(); ++i) {
-                        if (execution_results[i]) {
-                            // This action didn't result in an error, so continue to the next result
-                            continue;
-                        }
-
-                        auto failed_events_of_action = actions_to_event_mapping.equal_range(actions_to_execute[i]);
+                    for (const auto &current_failed_action_id : failed_actions) {
+                        auto failed_events_of_action = actions_to_event_mapping.equal_range(current_failed_action_id);
 
                         for (auto it = failed_events_of_action.first; it != failed_events_of_action.second; ++it) {
                             failed_events.emplace_back(it->second);
@@ -166,7 +156,7 @@ void schedule_handler::event_handler() {
             std::vector<schedule> to_be_added_back;
 
             auto activate_schedules = std::remove_if(
-                handler_instance->m_inactive_schedules.begin(), handler_instance->m_inactive_schedules.end(),
+                handler_instance->m_inactive_schedules.cbegin(), handler_instance->m_inactive_schedules.cend(),
                 [&current_day](const auto &current_schedule) {
                     return current_schedule.schedule_mode() == schedule::mode::repeating ||
                            current_schedule.end_at() >= current_day;
@@ -213,6 +203,7 @@ void schedule_handler::event_handler() {
 }
 
 bool schedule_handler::is_conflicting_with_other_schedules(const schedule &sched) {
+    // TODO: maybe add a check if outputs overlapp ?
     auto is_conflicting = [&sched](const auto &current_sched) { return sched.title() == current_sched.title(); };
 
     auto result = std::find_if(m_active_schedules.cbegin(), m_active_schedules.cend(), is_conflicting);

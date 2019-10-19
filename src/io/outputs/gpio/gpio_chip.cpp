@@ -1,3 +1,6 @@
+#include <mutex>
+#include <filesystem>
+#include <memory>
 #include <charconv>
 #include <regex>
 
@@ -81,7 +84,7 @@ std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_
 
     if (!opened_chip) {
         logger::instance()->critical("Couldn't open gpiochip {}", gpio_chip_path.c_str());
-        return {};
+        return std::nullopt;
     }
 
     return gpio_chip(gpio_chip_path, std::move(opened_chip));
