@@ -156,7 +156,7 @@ void schedule_handler::event_handler() {
             std::vector<schedule> to_be_added_back;
 
             auto activate_schedules = std::remove_if(
-                handler_instance->m_inactive_schedules.cbegin(), handler_instance->m_inactive_schedules.cend(),
+                handler_instance->m_inactive_schedules.begin(), handler_instance->m_inactive_schedules.end(),
                 [&current_day](const auto &current_schedule) {
                     return current_schedule.schedule_mode() == schedule::mode::repeating ||
                            current_schedule.end_at() >= current_day;

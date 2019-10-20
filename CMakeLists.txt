@@ -26,6 +26,7 @@ set (SOURCE_FILES
     src/io/outputs/outputs.cpp
     src/io/outputs/output_interface.cpp
     src/io/outputs/output_value.cpp
+    src/io/outputs/output_scheduler.cpp
     src/io/outputs/remote_function/remote_function.cpp
     src/io/outputs/gpio/gpio_chip.cpp
     src/io/outputs/gpio/gpio_pin.cpp

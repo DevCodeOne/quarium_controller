@@ -1,14 +1,16 @@
+#include "io/outputs/can/can.h"
+
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <climits>
 
+#include <climits>
 #include <cstring>
 
-#include "io/outputs/can/can.h"
+#include "logger.h"
 
 std::shared_ptr<can> can::instance(const std::filesystem::path &can_path) {
     std::lock_guard<std::mutex> instance_guard{_instance_mutex};
@@ -17,13 +19,17 @@ std::shared_ptr<can> can::instance(const std::filesystem::path &can_path) {
         return _instance;
     }
 
+    auto logger_instance = logger::instance();
+
     ifreq ifr;
     std::strncpy(ifr.ifr_name, can_path.c_str(), IFNAMSIZ - 1);
-    // Definitly set terminating null character
+    // Definetly set terminating null character, so if the string is too big the terminating \0 is set, to prevent
+    // overflows
     ifr.ifr_name[IFNAMSIZ - 1] = '\0';
     ifr.ifr_ifindex = if_nametoindex(ifr.ifr_name);
 
     if (!ifr.ifr_ifindex) {
+        logger_instance->critical("Couldn't find the can bus device {}", can_path.c_str());
         return nullptr;
     }
 
@@ -31,10 +37,12 @@ std::shared_ptr<can> can::instance(const std::filesystem::path &can_path) {
     sockaddr_can addr{.can_family = AF_CAN, .can_ifindex = ifr.ifr_ifindex};
 
     if (*socket_handle == 0) {
+        logger_instance->critical("Couldn't open a socket for the can device {}", can_path.c_str());
         return nullptr;
     }
 
     if (bind(*socket_handle, (sockaddr *)&addr, sizeof(addr)) < 0) {
+        logger_instance->critical("Couldn't bind the socket for the can device {}", can_path.c_str());
         return nullptr;
     }
 
