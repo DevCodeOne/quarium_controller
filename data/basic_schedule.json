@@ -104,6 +104,19 @@
                     }
                 }
             }
+        },
+        {
+            "id" : "invalid_module",
+            "type" : "remote_function",
+            "description" : {
+                "url": "garbage-url.fritz.box",
+                "value" : {
+                    "name" : "cmnd",
+                    "description" : {
+                        "type" : "tasmota_power_command"
+                    }
+                }
+            }
         }
     ],
     "inputs" : [
@@ -129,8 +142,8 @@
         },
         {
             "id" : "lights_on_new",
-            "outputs" : ["lamp_module#3"],
-            "output_actions" : ["on"]
+            "outputs" : ["lamp_module#3", "invalid_module"],
+            "output_actions" : ["on", "on"]
         },
         {
             "id" : "lights_off_new",
@@ -154,7 +167,7 @@
                 "name" : "day start",
                 "day" : 0,
                 "trigger_at" : "10:00",
-                "actions" : ["lights_on"]
+                "actions" : ["lights_on", "lights_on_new"]
             },
             {
                 "name" : "midday break start",

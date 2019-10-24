@@ -1,3 +1,5 @@
+#include "io/outputs/remote_function/remote_function.h"
+
 #include <string>
 
 #include "boost/asio/connect.hpp"
@@ -5,8 +7,6 @@
 #include "boost/beast/core.hpp"
 #include "boost/beast/http.hpp"
 #include "boost/beast/version.hpp"
-
-#include "io/outputs/remote_function/remote_function.h"
 #include "logger.h"
 
 std::unique_ptr<output_interface> remote_function::create_for_interface(const nlohmann::json &description_parameter) {
@@ -91,12 +91,19 @@ bool remote_function::update_values() {
     std::string port = "80";
     std::string function = "";
 
-    if (port_start != std::string::npos) {
+    if (port_start != std::string::npos && port_end != std::string::npos) {
         host = m_url.substr(0, port_start);
         port = m_url.substr(port_start + 1, port_end - (port_start + 1));
         function = m_url.substr(port_end);
     } else {
         auto function_pos = m_url.find_last_of("/");
+
+        if (function_pos == std::string::npos) {
+            // TODO: check if the url is valid in the parsing process
+            logger_instance->critical("Invalid url for remote function");
+            return false;
+        }
+
         host = m_url.substr(0, function_pos);
         function = m_url.substr(function_pos);
     }

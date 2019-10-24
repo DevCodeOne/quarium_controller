@@ -89,6 +89,7 @@ if (BUILD_TESTS)
         src/io/outputs/remote_function/remote_function.cpp
         src/io/outputs/gpio/gpio_chip.cpp
         src/io/outputs/gpio/gpio_pin.cpp
+        src/io/outputs/output_scheduler.cpp
         src/run_configuration.cpp
         src/chrono_time.cpp)
 

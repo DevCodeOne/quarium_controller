@@ -1,7 +1,9 @@
 #include "schedule/schedule_action.h"
 
+#include <future>
 #include <map>
 
+#include "io/outputs/output_scheduler.h"
 #include "logger.h"
 
 bool schedule_action::add_action(json &schedule_action_description) {
@@ -129,50 +131,79 @@ std::vector<schedule_action_id> schedule_action::execute_actions(const std::vect
 
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
+    // Mark all actions as failed and remove if the action was successfull
     std::vector<schedule_action_id> failed_actions;
+    failed_actions.reserve(ids.size());
+    std::copy(ids.cbegin(), ids.cend(), std::back_inserter(failed_actions));
+
     if (ids.size() == 0) {
         return failed_actions;
     }
 
     auto logger_instance = logger::instance();
 
-    // TODO: improve mapping
-    std::map<output_id, schedule_action_execution_order> actions_to_execute;
-    bool result = true;
+    batch_output_control control_job;
+    control_job.optimize_outputs(true);
 
-    for (auto current_id = ids.rbegin(); current_id != ids.rend(); ++current_id) {
-        if (!is_valid_id(*current_id)) {
-            logger_instance->warn("{} is not a valid id for an action", *current_id);
-            // return false;
+    for (const auto &current_id : ids) {
+        if (!is_valid_id(current_id)) {
+            logger_instance->warn("{} is not a valid id for an action", current_id);
+            return failed_actions;
         }
 
-        auto action = std::find_if(_actions.begin(), _actions.end(),
-                                   [&current_id](const auto &action) { return action->id() == *current_id; });
+        const auto action = std::find_if(_actions.cbegin(), _actions.cend(),
+                                         [&current_id](const auto &action) { return action->id() == current_id; });
 
         if ((*action) == nullptr) {
             continue;
         }
 
-        // Check for actions which set the same outputs to set them only once instead of multiple times
-        for (auto &[current_output, current_value_to_set] : (*action)->m_outputs) {
-            auto result = actions_to_execute.emplace(
-                current_output,
-                schedule_action_execution_order{.m_action_id = current_id, .m_value = current_value_to_set});
+        control_job.add_output_controls((*action)->m_outputs);
+    }
 
-            if (!result.second) {
-                logger_instance->info("Skip setting {}", current_output);
-            }
+    auto output_control_future = output_scheduler::execute_batch_output_control(control_job);
+
+    // TODO: add real timeout, don't wait for the result an undefined amount of time
+    while (!output_control_future.valid()) {
+        output_control_future.wait_for(std::chrono::seconds(10));
+    }
+
+    auto output_control_results = output_control_future.get();
+
+    for (const auto &[output_control, control_result] : output_control_results.control_results) {
+        if (control_result == output_control_result::skipped) {
+            logger_instance->info("Skipped setting output {}", output_control.first);
+        } else if (control_result == output_control_result::failure) {
+            logger_instance->info("Failed setting output {}", output_control.first);
         }
     }
 
-    for (auto &[current_pin_id, current_execution_order] : actions_to_execute) {
-        // TODO: launch thread to prevent lockups and wait for the results
-        bool execution_result = outputs::control_output(current_pin_id, current_execution_order.m_value);
+    // TODO: remove ids from failed_actions, when no output could be found, which failed
+    std::remove_if(failed_actions.begin(), failed_actions.end(), [&output_control_results](const auto &current_id) {
+        auto current_action =
+            std::find_if(_actions.cbegin(), _actions.cend(),
+                         [&current_id](const auto &current_action) { return current_action->id() == current_id; });
 
-        if (!execution_result) {
-            failed_actions.emplace_back(*current_execution_order.m_action_id);
+        // Is not part of the valid actions
+        if (current_action == _actions.cend()) {
+            return false;
         }
-    }
+
+        const auto &action_outputs = (*current_action)->m_outputs;
+
+        // Check if every output of the action was successfully controlled or skipped
+        std::all_of(action_outputs.cbegin(), action_outputs.cend(),
+                    [&output_control_results](const auto &current_controlled_output) {
+                        return std::all_of(output_control_results.control_results.cbegin(),
+                                           output_control_results.control_results.cend(),
+                                           [&current_controlled_output](const auto &current_result) {
+                                               return current_controlled_output.first != current_result.first.first ||
+                                                      current_result.second != output_control_result::failure;
+                                           });
+                    });
+
+        return false;
+    });
 
     return failed_actions;
 }
