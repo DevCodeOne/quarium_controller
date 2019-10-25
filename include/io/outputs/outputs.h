@@ -25,9 +25,12 @@ class outputs {
     static std::vector<output_id> get_ids();
 
    private:
-    static bool add_output(json &gpio_description);
+    using outputs_map_type = std::map<output_id, std::unique_ptr<output_interface>>;
 
-    static inline std::map<output_id, std::unique_ptr<output_interface>> _outputs;
+    static bool add_output(json &gpio_description);
+    static outputs_map_type::iterator find_output(const output_id &id);
+
+    static inline outputs_map_type _outputs;
     static inline std::recursive_mutex _list_mutex;
 
     friend class schedule;

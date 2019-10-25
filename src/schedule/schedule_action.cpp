@@ -1,7 +1,6 @@
 #include "schedule/schedule_action.h"
 
 #include <future>
-#include <map>
 
 #include "io/outputs/output_scheduler.h"
 #include "logger.h"

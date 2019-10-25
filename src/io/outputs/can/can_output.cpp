@@ -1,4 +1,5 @@
 #include "io/outputs/can/can_output.h"
+
 #include "logger.h"
 
 std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::json &description) {
@@ -87,6 +88,7 @@ can_error_code can_output::update_value() {
 
     auto result = m_can_instance->send(m_object_identifier, data);
 
+    // TODO: request data, so that one can confirm that the data has actually been written
     if (result != can_error_code::ok) {
         logger_instance->warn("Couldn't send data with the canbus");
     }

@@ -1,4 +1,5 @@
 #include "io/outputs/outputs.h"
+
 #include "logger.h"
 
 bool outputs::add_output(nlohmann::json &gpio_description) {
@@ -51,17 +52,21 @@ bool outputs::add_output(nlohmann::json &gpio_description) {
     return true;
 }
 
+auto outputs::find_output(const output_id &id) -> outputs_map_type::iterator {
+    std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
+    return std::find_if(_outputs.begin(), _outputs.end(),
+                        [&id](const auto &current_output) { return current_output.first == id; });
+}
+
 bool outputs::is_valid_id(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
-    return std::find_if(_outputs.cbegin(), _outputs.cend(),
-                        [&id](const auto &current_output) { return current_output.first == id; }) != _outputs.cend();
+    return find_output(id) != _outputs.cend();
 }
 
 bool outputs::control_output(const output_id &id, const output_value &value) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto output = std::find_if(_outputs.begin(), _outputs.end(),
-                               [&id](const auto &current_output) { return current_output.first == id; });
+    auto output = find_output(id);
 
     if (output == _outputs.cend() || (*output).second == nullptr) {
         return false;
@@ -73,8 +78,7 @@ bool outputs::control_output(const output_id &id, const output_value &value) {
 std::optional<output_value> outputs::is_overriden(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto output = std::find_if(_outputs.begin(), _outputs.end(),
-                               [&id](const auto &current_output) { return current_output.first == id; });
+    auto output = find_output(id);
 
     if (output == _outputs.cend() || (*output).second == nullptr) {
         return {};
@@ -86,8 +90,7 @@ std::optional<output_value> outputs::is_overriden(const output_id &id) {
 bool outputs::override_with(const output_id &id, const output_value &value) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto output = std::find_if(_outputs.begin(), _outputs.end(),
-                               [&id](const auto &current_output) { return current_output.first == id; });
+    auto output = find_output(id);
 
     if (output == _outputs.cend() || (*output).second == nullptr) {
         return false;
@@ -99,8 +102,7 @@ bool outputs::override_with(const output_id &id, const output_value &value) {
 bool outputs::restore_control(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto output = std::find_if(_outputs.begin(), _outputs.end(),
-                               [&id](const auto &current_output) { return current_output.first == id; });
+    auto output = find_output(id);
 
     if (output == _outputs.cend() || (*output).second == nullptr) {
         return false;
@@ -112,8 +114,7 @@ bool outputs::restore_control(const output_id &id) {
 std::optional<output_value> outputs::current_state(const output_id &id) {
     std::lock_guard<std::recursive_mutex> list_guard{_list_mutex};
 
-    auto output = std::find_if(_outputs.cbegin(), _outputs.cend(),
-                               [&id](const auto &current_output) { return current_output.first == id; });
+    auto output = find_output(id);
 
     if (output == _outputs.cend() || (*output).second == nullptr) {
         return {};
