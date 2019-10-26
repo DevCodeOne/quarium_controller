@@ -6,9 +6,8 @@
 #include <string>
 #include <variant>
 
-#include "nlohmann/json.hpp"
-
 #include "io/outputs/output_interface.h"
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 

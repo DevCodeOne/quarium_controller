@@ -98,21 +98,28 @@ if (BUILD_TESTS)
 
     add_executable(ring_buffer_test tests/ring_buffer_test.cpp)
 
+    add_executable(value_transitioner_test tests/value_transitioner_test.cpp)
+
     set_property(TARGET schedule_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET chrono_time_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET ring_buffer_test PROPERTY CXX_STANDARD 17)
+    set_property(TARGET value_transitioner_test PROPERTY CXX_STANDARD 17)
 
     target_link_libraries(schedule_test  PUBLIC ${CONAN_LIBS})
     target_link_libraries(schedule_test PUBLIC stdc++fs)
     target_include_directories(schedule_test PRIVATE include)
-    add_test(CatchTests schedule_test)
+    add_test(schedule_t schedule_test)
 
     target_link_libraries(chrono_time_test  PUBLIC ${CONAN_LIBS})
     target_link_libraries(chrono_time_test PUBLIC stdc++fs)
     target_include_directories(chrono_time_test PRIVATE include)
-    add_test(CatchTests chrono_time_test)
+    add_test(chrono_time_t chrono_time_test)
 
     target_include_directories(ring_buffer_test PRIVATE include)
-    add_test(CatchTests ring_buffer_test)
+    add_test(ring_buffer_t ring_buffer_test)
+
+    target_include_directories(value_transitioner_test PRIVATE include)
+    target_link_libraries(value_transitioner_test  PUBLIC ${CONAN_LIBS})
+    add_test(value_transitioner_t value_transitioner_test)
 
 ENDIF()
