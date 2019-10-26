@@ -2,8 +2,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <iostream>
-#include <shared_mutex>
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 
 template<typename ValueType>
@@ -12,7 +12,8 @@ class value_transitioner final {
     using value_type_t = ValueType;
 
     template<typename Callable>
-    value_transitioner(Callable transition_step, value_type_t current_value);
+    value_transitioner(Callable transition_step, value_type_t current_value,
+                       std::chrono::milliseconds period = std::chrono::milliseconds(100));
     value_transitioner(value_transitioner &other);
     value_transitioner(const value_transitioner &&other);
     ~value_transitioner();
@@ -29,6 +30,7 @@ class value_transitioner final {
     mutable std::mutex m_intance_mutex;
     std::thread m_transition_thread;
     std::condition_variable m_wake_up;
+    std::chrono::milliseconds m_period;
     std::atomic_bool m_exit_thread;
 
     value_type_t m_target_value;
@@ -37,8 +39,9 @@ class value_transitioner final {
 
 template<typename ValueType>
 template<typename Callable>
-value_transitioner<ValueType>::value_transitioner(Callable transition_step, value_type_t current_value)
-    : m_current_value(current_value), m_target_value(current_value), m_exit_thread(false) {
+value_transitioner<ValueType>::value_transitioner(Callable transition_step, value_type_t current_value,
+                                                  std::chrono::milliseconds period)
+    : m_current_value(current_value), m_target_value(current_value), m_exit_thread(false), m_period(period) {
     m_transition_thread = std::thread([this, transition_step]() { do_transitions(transition_step); });
 }
 
@@ -73,10 +76,12 @@ void value_transitioner<ValueType>::do_transitions(Callable transition_step) {
 
         delta_time = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()) - then;
 
+        auto time_transition_step_call = steady_clock::now();
+
         // Maybe check return value, to check if the transition is already done
         transition_step(delta_time, m_current_value, m_target_value);
 
         then = duration_cast<milliseconds>(steady_clock::now().time_since_epoch());
-        m_wake_up.wait_for(instance_guard, std::chrono::milliseconds(100));
+        m_wake_up.wait_until(instance_guard, time_transition_step_call + m_period);
     }
 }
