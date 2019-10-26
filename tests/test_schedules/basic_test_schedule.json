@@ -1,46 +1,49 @@
 {
-    "gpios" : [
+    "outputs" : [
         {
             "id" : "light",
-            "pin" : 21,
-            "default" : "off"
+            "type" : "gpio",
+            "description" : {
+                "pin" : 21,
+                "default" : "off"
+            }
         }
     ],
     "actions" : [
         {
             "id" : "light_on",
-            "gpios" : ["light"],
-            "gpio_actions" : ["on"]
+            "outputs" : ["light"],
+            "output_actions" : ["on"]
         },
         {
             "id" : "light_off",
-            "gpios" : ["light"],
-            "gpio_actions" : ["on"]
+            "outputs" : ["light"],
+            "output_actions" : ["on"]
         }
 
     ],
     "schedule" : {
         "events" : [
             {
-                "id" : "light_on",
+                "name" : "light_on",
                 "day" : 0,
                 "trigger_at" : "10:00",
                 "actions" : ["light_on"]
             },
             {
-                "id" : "light_off#2",
+                "name" : "light_off#2",
                 "day" : 1,
                 "trigger_at" : "10:00",
                 "actions" : ["light_on"]
             },
             {
-                "id" : "light_off#3",
+                "name" : "light_off#3",
                 "day" : 0,
                 "trigger_at" : "10:10",
                 "actions" : ["light_on"]
             },
             {
-                "id" : "light_on#2",
+                "name" : "light_on#2",
                 "day" : 0,
                 "trigger_at" : "12:00",
                 "actions" : ["light_on"]
