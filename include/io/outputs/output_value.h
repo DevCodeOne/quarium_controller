@@ -51,7 +51,7 @@ class output_value {
         std::optional<output_value_types> type = std::optional<output_value_types>{});
 
     template<typename T>
-    std::optional<T> serialize();
+    std::optional<T> serialize() const;
 
     template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int> = 0>
     output_value(T value, std::optional<T> min = {}, std::optional<T> max = {});
@@ -81,7 +81,7 @@ class output_value {
 };
 
 template<>
-inline std::optional<std::string> output_value::serialize() {
+inline std::optional<std::string> output_value::serialize() const {
     auto serialize_value = [](auto current_value) -> std::string {
         std::ostringstream os("");
         os << current_value;
