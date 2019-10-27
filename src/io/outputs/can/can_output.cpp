@@ -1,5 +1,6 @@
 #include "io/outputs/can/can_output.h"
 
+#include "io/outputs/output_transition.h"
 #include "logger.h"
 
 std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::json &description) {
@@ -35,26 +36,42 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
     }
 
     return std::unique_ptr<can_output>(
-        new can_output(can_device_instance, can_object_identifier(object_identifier), default_value));
+        new can_output(can_device_instance, can_object_identifier(object_identifier), default_value,
+                       &output_transitions::instant<10, std::chrono::milliseconds, 100>));
 }
 
+template<typename TransitionStep>
 can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier identifier,
-                       const output_value &initial_value)
-    : m_object_identifier(identifier), m_can_instance(can_instance), m_value(initial_value) {}
+                       const output_value &initial_value, TransitionStep transition)
+    : m_object_identifier(identifier),
+      m_can_instance(can_instance),
+      m_value(initial_value),
+      m_transitioner(initial_value) {
+    m_transitioner.start_transition_thread([this, transition](auto time_diff, auto &input, const auto &output) {
+        transition(time_diff, input, output);
+        sync_values();
+    });
+}
 
 bool can_output::control_output(const output_value &value) {
     m_value = value;
-    return update_value() == can_error_code::ok;
+    m_transitioner.target_value(value);
+
+    return sync_values() == can_error_code::ok;
 }
 
 bool can_output::override_with(const output_value &value) {
     m_overriden_value = value;
-    return update_value() == can_error_code::ok;
+    m_transitioner.target_value(value);
+
+    return sync_values() == can_error_code::ok;
 }
 
 bool can_output::restore_control() {
     m_overriden_value.reset();
-    return update_value() == can_error_code::ok;
+    m_transitioner.target_value(m_value);
+
+    return sync_values() == can_error_code::ok;
 }
 
 std::optional<output_value> can_output::is_overriden() const { return m_overriden_value; }
@@ -64,7 +81,12 @@ output_value can_output::current_state() const {
         return *m_overriden_value;
     }
 
-    return m_value;
+    return m_transitioner.current_value();
+}
+
+can_error_code can_output::sync_values() {
+    std::cout << "Calling sync_values" << std::endl;
+    return update_value();
 }
 
 can_error_code can_output::update_value() {

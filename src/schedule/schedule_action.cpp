@@ -41,7 +41,7 @@ bool schedule_action::add_action(json &schedule_action_description) {
         return false;
     }
 
-    std::vector<output_id> created_outputs;
+    std::vector<std::pair<output_id, output_value>> created_outputs;
     bool created_all_outputs_successfully = std::all_of(
         output_entry.begin(), output_entry.end(), [&created_outputs, &logger_instance](auto &current_output_entry) {
             if (!current_output_entry.is_string()) {
@@ -54,7 +54,7 @@ bool schedule_action::add_action(json &schedule_action_description) {
                 return false;
             }
 
-            created_outputs.emplace_back(output_id(id));
+            created_outputs.emplace_back(output_id(id), output_value(0));
             return true;
         });
 
@@ -68,45 +68,42 @@ bool schedule_action::add_action(json &schedule_action_description) {
         return false;
     }
 
-    std::vector<output_value> created_output_actions;
-    bool created_all_output_actions_successfully = std::all_of(
-        output_actions_entry.begin(), output_actions_entry.end(),
-        [&created_outputs, &created_output_actions, &logger_instance](auto &current_output_entry) {
-            std::optional<output_value> value;
-            if (created_outputs.size() < created_output_actions.size()) {
-                return false;
-            }
+    if (output_actions_entry.size() != output_entry.size()) {
+        logger_instance->critical(
+            "The entry output_actions doesn't have the same number of elements as outputs in action {}", id,
+            output_entry.size(), output_actions_entry.size());
+        return false;
+    }
 
-            auto current_value = outputs::current_state(created_outputs[created_output_actions.size()]);
-            if (current_value.has_value()) {
-                value = output_value::deserialize(current_output_entry, current_value->current_type());
-            } else {
-                logger_instance->warn(
-                    "Don't have valid type information from the default value, trying to figure out the type");
-                value = output_value::deserialize(current_output_entry);
-            }
+    bool created_all_output_actions_successfully = true;
 
-            if (!value.has_value()) {
-                return false;
-            }
+    for (size_t i = 0; i < output_actions_entry.size(); ++i) {
+        std::optional<output_value> value;
 
-            created_output_actions.emplace_back(*value);
-            return true;
-        });
+        auto current_value = outputs::current_state(created_outputs[i].first);
+        if (current_value.has_value()) {
+            value = output_value::deserialize(output_actions_entry[i], current_value->current_type());
+        } else {
+            logger_instance->warn(
+                "Don't have valid type information from the default value, trying to figure out the type");
+            value = output_value::deserialize(output_actions_entry[i]);
+        }
+
+        if (!value.has_value()) {
+            created_all_output_actions_successfully = false;
+            break;
+        }
+
+        created_outputs[i].second = *value;
+    }
 
     if (!created_all_output_actions_successfully) {
         logger_instance->critical("The entry output_actions in action {} isn't valid", id);
     }
 
-    if (created_outputs.size() != created_output_actions.size()) {
-        logger_instance->critical("There are not the same number of entries in the output specific arrays in action {}",
-                                  id);
-        return false;
-    }
-
     created_action.id(id);
-    for (unsigned int i = 0; i < created_outputs.size(); ++i) {
-        created_action.attach_output(std::make_pair(created_outputs[i], created_output_actions[i]));
+    for (const auto &current_output_value_pair : created_outputs) {
+        created_action.attach_output(current_output_value_pair);
     }
 
     _actions.emplace_back(std::make_unique<schedule_action>(std::move(created_action)));

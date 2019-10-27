@@ -65,44 +65,12 @@
             }
         },
         {
-            "id" : "lamp_module",
-            "type" : "remote_function",
+            "id" : "cantest",
+            "type" : "can",
             "description" : {
-                "url" : "aquarium-lights:9980/lamp",
-                "value" : {
-                    "name" : "brightness",
-                    "description" : {
-                        "type" : "int",
-                        "range" : [0, 255]
-                    }
-                }
-            }
-        },
-        {
-            "id" : "lamp_module#2",
-            "type" : "remote_function",
-            "description" : {
-                "url" : "aquarium-lights-two:9980/lamp",
-                "value" : {
-                    "name" : "brightness",
-                    "description" : {
-                        "type" : "int",
-                        "range" : [0, 255]
-                    }
-                }
-            }
-        },
-        {
-            "id" : "lamp_module#3",
-            "type" : "remote_function",
-            "description" : {
-                "url": "aquarium-lights-three.fritz.box/cm",
-                "value" : {
-                    "name" : "cmnd",
-                    "description" : {
-                        "type" : "tasmota_power_command"
-                    }
-                }
+                "can_device" : "can0",
+                "object_identifier" : 2,
+                "default" : 0
             }
         },
         {
@@ -132,23 +100,18 @@
     "actions": [
         {
             "id" : "lights_on",
-            "outputs" : ["light#1", "light#2", "co2"],
-            "output_actions" : ["on", "on", "on"]
+            "outputs" : ["light#1", "light#2", "co2", "cantest"],
+            "output_actions" : ["on", "on", "on", 255]
         },
         {
             "id" : "lights_off",
-            "outputs" : ["light#1", "light#2", "co2"],
-            "output_actions" : ["off", "off", "off"]
+            "outputs" : ["light#1", "light#2", "co2", "cantest"],
+            "output_actions" : ["off", "off", "off", 0]
         },
         {
             "id" : "lights_on_new",
-            "outputs" : ["lamp_module#3", "invalid_module"],
-            "output_actions" : ["on", "on"]
-        },
-        {
-            "id" : "lights_off_new",
-            "outputs" : ["lamp_module#3"],
-            "output_actions" : ["off"]
+            "outputs" : ["invalid_module"],
+            "output_actions" : ["on"]
         },
         {
             "id" : "maintenance aquarium#1",
@@ -186,14 +149,7 @@
                 "day" : 0,
                 "trigger_at" : "22:00",
                 "actions" : ["lights_off"]
-            },
-            {
-                "name" : "test",
-                "day" : 0,
-                "trigger_at" : "22:16",
-                "actions" : ["lights_off_new"]
             }
-
         ],
         "repeating" : true,
         "period_in_days" : 1,
