@@ -130,24 +130,12 @@
                 "name" : "day start",
                 "day" : 0,
                 "trigger_at" : "10:00",
-                "actions" : ["lights_on", "lights_on_new"]
-            },
-            {
-                "name" : "midday break start",
-                "day" : 0,
-                "trigger_at" : "14:00",
-                "actions" : ["lights_off"]
-            },
-            {
-                "name" : "midday break end",
-                "day" : 0,
-                "trigger_at" : "18:00",
                 "actions" : ["lights_on"]
             },
             {
                 "name" : "day end",
                 "day" : 0,
-                "trigger_at" : "22:00",
+                "trigger_at" : "18:40",
                 "actions" : ["lights_off"]
             }
         ],

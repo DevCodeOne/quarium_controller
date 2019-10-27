@@ -33,7 +33,7 @@ std::shared_ptr<can> can::instance(const std::filesystem::path &can_path) {
         return nullptr;
     }
 
-    socket_handle_ptr_type socket_handle{new int{socket(PF_CAN, SOCK_RAW, CAN_RAW)}, socket_deleter};
+    socket_handle_ptr_type socket_handle(new int{socket(PF_CAN, SOCK_RAW, CAN_RAW)}, socket_deleter);
     sockaddr_can addr{.can_family = AF_CAN, .can_ifindex = ifr.ifr_ifindex};
 
     if (*socket_handle == 0) {

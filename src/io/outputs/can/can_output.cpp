@@ -37,7 +37,7 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
 
     return std::unique_ptr<can_output>(
         new can_output(can_device_instance, can_object_identifier(object_identifier), default_value,
-                       &output_transitions::instant<10, std::chrono::milliseconds, 100>));
+                       &output_transitions::linear_transition<10, std::chrono::seconds, 10>));
 }
 
 template<typename TransitionStep>
@@ -47,10 +47,13 @@ can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier 
       m_can_instance(can_instance),
       m_value(initial_value),
       m_transitioner(initial_value) {
-    m_transitioner.start_transition_thread([this, transition](auto time_diff, auto &input, const auto &output) {
-        transition(time_diff, input, output);
-        sync_values();
-    });
+    m_transitioner.start_transition_thread(
+        [this, transition](auto time_diff, auto &input, const auto &output) {
+            bool result = transition(time_diff, input, output);
+            result &= sync_values() == can_error_code::ok;
+            return result;
+        },
+        std::chrono::milliseconds(1000));
 }
 
 bool can_output::control_output(const output_value &value) {
@@ -76,18 +79,9 @@ bool can_output::restore_control() {
 
 std::optional<output_value> can_output::is_overriden() const { return m_overriden_value; }
 
-output_value can_output::current_state() const {
-    if (m_overriden_value.has_value()) {
-        return *m_overriden_value;
-    }
+output_value can_output::current_state() const { return m_transitioner.current_value(); }
 
-    return m_transitioner.current_value();
-}
-
-can_error_code can_output::sync_values() {
-    std::cout << "Calling sync_values" << std::endl;
-    return update_value();
-}
+can_error_code can_output::sync_values() { return update_value(); }
 
 can_error_code can_output::update_value() {
     auto logger_instance = logger::instance();

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "logger.h"
+
 batch_output_control &batch_output_control::add_output_control(std::pair<output_id, output_value> output_control) {
     m_output_controls.emplace_back(std::move(output_control));
     return *this;
@@ -37,6 +39,7 @@ std::future<batch_output_control_result> output_scheduler::execute_batch_output_
 }
 
 batch_output_control_result output_scheduler::do_output_job(batch_output_control job) {
+    auto logger_instance = logger::instance();
     bool job_result = true;
 
     std::vector<std::pair<output_id, output_value>> output_controls = job.output_controls();
@@ -68,6 +71,7 @@ batch_output_control_result output_scheduler::do_output_job(batch_output_control
         bool current_result = outputs::control_output(output_id, output_value);
 
         if (!current_result) {
+            logger::instance()->warn("Failed to set output {}", output_id);
             control_results.emplace_back(std::make_pair(output_id, output_value), output_control_result::failure);
         }
     }

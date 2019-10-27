@@ -69,9 +69,11 @@ value_transitioner<ValueType>::~value_transitioner() {
 
 template<typename ValueType>
 auto value_transitioner<ValueType>::target_value(value_type_t target_value) -> value_transitioner<value_type_t> & {
-    std::lock_guard<std::mutex> instance_guard{m_instance_mutex};
-
-    m_target_value = target_value;
+    {
+        std::lock_guard<std::mutex> instance_guard{m_instance_mutex};
+        m_target_value = target_value;
+    }
+    m_wake_up.notify_all();
     return *this;
 }
 
@@ -98,12 +100,18 @@ void value_transitioner<ValueType>::do_transitions(Callable transition_step) {
         auto time_transition_step_call = steady_clock::now();
 
         // Maybe check return value, to check if the transition is already done
+        bool finished_transition = false;
         {
             std::lock_guard<std::recursive_mutex> value_guard{m_value_mutex};
-            transition_step(delta_time, m_current_value, m_target_value);
+            finished_transition = transition_step(delta_time, m_current_value, m_target_value);
         }
 
         then = duration_cast<milliseconds>(steady_clock::now().time_since_epoch());
-        m_wake_up.wait_until(instance_guard, time_transition_step_call + m_period);
+
+        if (!finished_transition) {
+            m_wake_up.wait_until(instance_guard, time_transition_step_call + m_period);
+        } else {
+            m_wake_up.wait(instance_guard);
+        }
     }
 }
