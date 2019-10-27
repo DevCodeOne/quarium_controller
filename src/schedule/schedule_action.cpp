@@ -175,31 +175,35 @@ std::vector<schedule_action_id> schedule_action::execute_actions(const std::vect
     }
 
     // TODO: remove ids from failed_actions, when no output could be found, which failed
-    std::remove_if(failed_actions.begin(), failed_actions.end(), [&output_control_results](const auto &current_id) {
-        auto current_action =
-            std::find_if(_actions.cbegin(), _actions.cend(),
-                         [&current_id](const auto &current_action) { return current_action->id() == current_id; });
+    auto new_failure_end =
+        std::remove_if(failed_actions.begin(), failed_actions.end(), [&output_control_results](const auto &current_id) {
+            auto current_action =
+                std::find_if(_actions.cbegin(), _actions.cend(),
+                             [&current_id](const auto &current_action) { return current_action->id() == current_id; });
 
-        // Is not part of the valid actions
-        if (current_action == _actions.cend()) {
-            return false;
-        }
+            // Is not part of the valid actions, shouldn't happen
+            if (current_action == _actions.cend()) {
+                return false;
+            }
 
-        const auto &action_outputs = (*current_action)->m_outputs;
+            const auto &action_outputs = (*current_action)->m_outputs;
 
-        // Check if every output of the action was successfully controlled or skipped
-        std::all_of(action_outputs.cbegin(), action_outputs.cend(),
-                    [&output_control_results](const auto &current_controlled_output) {
-                        return std::all_of(output_control_results.control_results.cbegin(),
-                                           output_control_results.control_results.cend(),
-                                           [&current_controlled_output](const auto &current_result) {
-                                               return current_controlled_output.first != current_result.first.first ||
-                                                      current_result.second != output_control_result::failure;
-                                           });
-                    });
+            // Check if every output of the action was successfully controlled or skipped
+            return std::all_of(action_outputs.cbegin(), action_outputs.cend(),
+                               [&output_control_results](const auto &current_controlled_output) {
+                                   return std::all_of(
+                                       output_control_results.control_results.cbegin(),
+                                       output_control_results.control_results.cend(),
+                                       [&current_controlled_output](const auto &current_result) {
+                                           return current_controlled_output.first != current_result.first.first ||
+                                                  current_result.second != output_control_result::failure;
+                                       });
+                               });
+        });
 
-        return false;
-    });
+    if (new_failure_end != failed_actions.cend()) {
+        failed_actions.erase(new_failure_end, failed_actions.end());
+    }
 
     return failed_actions;
 }
