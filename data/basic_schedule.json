@@ -70,7 +70,12 @@
             "description" : {
                 "can_device" : "can0",
                 "object_identifier" : 2,
-                "default" : 0
+                "default" : 0,
+                "transition" : {
+                    "type" : "linear",
+                    "velocity" : 10,
+                    "period" : "500ms"
+                }
             }
         },
         {
@@ -135,7 +140,7 @@
             {
                 "name" : "day end",
                 "day" : 0,
-                "trigger_at" : "18:40",
+                "trigger_at" : "22:00",
                 "actions" : ["lights_off"]
             }
         ],

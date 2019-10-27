@@ -1,7 +1,8 @@
+#include "io/outputs/output_value.h"
+
 #include <algorithm>
 #include <map>
 
-#include "io/outputs/output_value.h"
 #include "logger.h"
 
 std::ostream &operator<<(std::ostream &os, const switch_output &output) {
@@ -36,6 +37,20 @@ std::ostream &operator<<(std::ostream &os, const tasmota_power_command &power_co
 
 // TODO implement
 std::ostream &operator<<(std::ostream &os, const value_collection &collection) { return os; }
+
+bool operator==(const output_value &lhs, const output_value &rhs) {
+    if (lhs.current_type() != rhs.current_type()) {
+        return false;
+    }
+
+    return std::visit(
+        [&rhs](const auto &current_value) {
+            return current_value == *rhs.get<std::decay_t<decltype(current_value)>>();
+        },
+        lhs.m_value);
+}
+
+bool operator!=(const output_value &lhs, const output_value &rhs) { return !(lhs == rhs); }
 
 std::optional<output_value> output_value::deserialize(const nlohmann::json &description_parameter,
                                                       std::optional<output_value_types> type) {

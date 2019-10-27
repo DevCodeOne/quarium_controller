@@ -78,6 +78,8 @@ class output_value {
     variant_type m_value;
     std::optional<variant_type> m_min;
     std::optional<variant_type> m_max;
+
+    friend bool operator==(const output_value &lhs, const output_value &rhs);
 };
 
 template<>
@@ -133,3 +135,6 @@ template<typename T>
 bool output_value::holds_type() const {
     return std::holds_alternative<T>(m_value);
 }
+
+bool operator==(const output_value &lhs, const output_value &rhs);
+bool operator!=(const output_value &lhs, const output_value &rhs);

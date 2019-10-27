@@ -11,6 +11,9 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
     nlohmann::json can_device_entry = description["can_device"];
     nlohmann::json object_identifier_entry = description["object_identifier"];
     nlohmann::json default_entry = description["default"];
+    nlohmann::json transition_entry = description["transition"];
+
+    auto *transition_func = &output_transitions::instant;
 
     if (can_device_entry.is_null() || !can_device_entry.is_string()) {
         return nullptr;
@@ -25,6 +28,12 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
         return nullptr;
     }
 
+    // if (!transition_entry.is_null() && !transition_entry.is_object()) {
+    //     if (!transition_entry["type"].is_null() && transition_entry.is_string()) {
+    //     }
+    //     transition_func = &output_transitions::linear_transition<10, std::chrono::seconds, 10>;
+    // }
+
     auto can_device = can_device_entry.get<std::string>();
     auto object_identifier = object_identifier_entry.get<unsigned int>();
     auto default_value = default_entry.is_null() ? default_entry.get<unsigned int>() : 0u;
@@ -36,8 +45,7 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
     }
 
     return std::unique_ptr<can_output>(
-        new can_output(can_device_instance, can_object_identifier(object_identifier), default_value,
-                       &output_transitions::linear_transition<10, std::chrono::seconds, 10>));
+        new can_output(can_device_instance, can_object_identifier(object_identifier), default_value, transition_func));
 }
 
 template<typename TransitionStep>
