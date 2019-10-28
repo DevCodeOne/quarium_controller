@@ -31,6 +31,8 @@ namespace output_transitions {
        private:
         PeriodType m_period = 0;
         uint32_t m_velocity = 0;
+
+        mutable PeriodType time_diff_since_last_inc{0};
     };
 
     template<typename PeriodType>
@@ -47,31 +49,38 @@ namespace output_transitions {
 
         // TODO: incorperate time_diff into this, but then we would have to be able to do partial step (even one, where
         // step < 1 (double))
-        uint32_t step = m_velocity;
+        time_diff_since_last_inc += delta;
 
-        auto do_step = [](auto current_value, auto target_value, auto step) {
-            if (std::abs((int32_t)current_value - (int32_t)target_value) < step) {
-                return target_value;
+        uint32_t step = m_velocity * (time_diff_since_last_inc / m_period);
+
+        time_diff_since_last_inc = time_diff_since_last_inc % m_period;
+
+        if (step > 0) {
+            auto do_step = [](auto current_value, auto target_value, auto step) {
+                if (std::abs((int32_t)current_value - (int32_t)target_value) < step) {
+                    return target_value;
+                }
+
+                if (current_value < target_value) {
+                    return decltype(current_value)(current_value + step);
+                }
+
+                return decltype(current_value)(current_value - step);
+            };
+            switch (current_value.current_type()) {
+                case output_value_types::number:
+                    current_value = do_step(*current_value.get<int>(), *target_value.get<int>(), step);
+                    break;
+                case output_value_types::number_unsigned:
+                    current_value =
+                        do_step(*current_value.get<unsigned int>(), *target_value.get<unsigned int>(), step);
+                    break;
+                // There is no sensible way to do this
+                default:
+                    logger::instance()->warn("Not an expected type for a linear_transition");
+                    current_value = target_value;
+                    break;
             }
-
-            if (current_value < target_value) {
-                return decltype(current_value)(current_value + step);
-            }
-
-            return decltype(current_value)(current_value - step);
-        };
-        switch (current_value.current_type()) {
-            case output_value_types::number:
-                current_value = do_step(*current_value.get<int>(), *target_value.get<int>(), step);
-                break;
-            case output_value_types::number_unsigned:
-                current_value = do_step(*current_value.get<unsigned int>(), *target_value.get<unsigned int>(), step);
-                break;
-            // There is no sensible way to do this
-            default:
-                logger::instance()->warn("Not an expected type for a linear_transition");
-                current_value = target_value;
-                break;
         }
 
         return current_value == target_value;

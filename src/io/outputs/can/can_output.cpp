@@ -36,7 +36,8 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
         return nullptr;
     }
 
-    // TODO: if there is an error parsing this, return a nullptr, also add the period parameter
+    // TODO: if there is an error parsing this, return a nullptr, also add the period parameter, also create seperate
+    // type
     if (!transition_entry.is_null() && transition_entry.is_object()) {
         uint32_t velocity = 1;
         // std::chrono::milliseconds period = std::chrono::seconds(1);
@@ -73,7 +74,7 @@ can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier 
             result &= sync_values() == can_error_code::ok;
             return result;
         },
-        std::chrono::milliseconds(500));
+        std::chrono::milliseconds(100));
 }
 
 bool can_output::control_output(const output_value &value) {
