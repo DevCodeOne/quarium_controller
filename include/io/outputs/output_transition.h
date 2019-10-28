@@ -4,20 +4,21 @@
 
 #include "logger.h"
 #include "output_value.h"
+#include "value_transitioner.h"
 
 namespace output_transitions {
     template<typename PeriodType = std::chrono::milliseconds>
     class instant {
        public:
-        bool operator()(std::chrono::milliseconds delta, output_value &current_value,
-                        const output_value &target_value) const;
+        transition_state operator()(std::chrono::milliseconds delta, output_value &current_value,
+                                    const output_value &target_value) const;
     };
 
     template<typename PeriodType>
-    bool instant<PeriodType>::operator()(std::chrono::milliseconds delta, output_value &current_value,
-                                         const output_value &target_value) const {
+    transition_state instant<PeriodType>::operator()(std::chrono::milliseconds delta, output_value &current_value,
+                                                     const output_value &target_value) const {
         current_value = target_value;
-        return true;
+        return transition_state::value_did_change;
     }
 
     template<typename PeriodType = std::chrono::milliseconds>
@@ -25,8 +26,8 @@ namespace output_transitions {
        public:
         linear_transition(uint32_t velocity, PeriodType period);
 
-        bool operator()(std::chrono::milliseconds delta, output_value &current_value,
-                        const output_value &target_value) const;
+        transition_state operator()(std::chrono::milliseconds delta, output_value &current_value,
+                                    const output_value &target_value) const;
 
        private:
         PeriodType m_period = 0;
@@ -40,15 +41,19 @@ namespace output_transitions {
         : m_period(period), m_velocity(velocity) {}
 
     template<typename PeriodType>
-    bool linear_transition<PeriodType>::operator()(std::chrono::milliseconds delta, output_value &current_value,
-                                                   const output_value &target_value) const {
+    transition_state linear_transition<PeriodType>::operator()(std::chrono::milliseconds delta,
+                                                               output_value &current_value,
+                                                               const output_value &target_value) const {
         if (current_value.current_type() != target_value.current_type()) {
             current_value = target_value;
-            return true;
+            return transition_state::value_did_change;
         }
 
-        // TODO: incorperate time_diff into this, but then we would have to be able to do partial step (even one, where
-        // step < 1 (double))
+        if (current_value == target_value) {
+            time_diff_since_last_inc = delta;
+            return transition_state::finished_transition;
+        }
+
         time_diff_since_last_inc += delta;
 
         uint32_t step = m_velocity * (time_diff_since_last_inc / m_period);
@@ -81,8 +86,10 @@ namespace output_transitions {
                     current_value = target_value;
                     break;
             }
+
+            return transition_state::value_did_change;
         }
 
-        return current_value == target_value;
+        return transition_state::value_did_not_change;
     }
 }  // namespace output_transitions

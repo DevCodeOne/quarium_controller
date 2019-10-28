@@ -69,9 +69,13 @@ can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier 
       m_value(initial_value),
       m_transitioner(initial_value) {
     m_transitioner.start_transition_thread(
-        [this, transition](auto time_diff, auto &input, const auto &output) {
-            bool result = transition(time_diff, input, output);
-            result &= sync_values() == can_error_code::ok;
+        [this, transition](auto time_diff, auto &input, const auto &output) -> transition_state {
+            auto result = transition(time_diff, input, output);
+
+            if (result == transition_state::value_did_change) {
+                sync_values();
+            }
+
             return result;
         },
         std::chrono::milliseconds(100));

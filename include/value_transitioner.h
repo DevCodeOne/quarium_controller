@@ -6,6 +6,8 @@
 #include <mutex>
 #include <thread>
 
+enum struct transition_state { value_did_change, value_did_not_change, finished_transition };
+
 // TODO: make at least moveable
 template<typename ValueType>
 class value_transitioner final {
@@ -98,21 +100,21 @@ void value_transitioner<ValueType>::do_transitions(Callable transition_step) {
 
         delta_time = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()) - then;
 
+        transition_state current_state;
         auto time_transition_step_call = steady_clock::now();
 
         // Maybe check return value, to check if the transition is already done
-        bool finished_transition = false;
         {
             std::lock_guard<std::recursive_mutex> value_guard{m_value_mutex};
-            finished_transition = transition_step(delta_time, m_current_value, m_target_value);
+            current_state = transition_step(delta_time, m_current_value, m_target_value);
         }
 
-        then = duration_cast<milliseconds>(steady_clock::now().time_since_epoch());
-
-        if (!finished_transition) {
+        if (current_state != transition_state::finished_transition) {
+            then = duration_cast<milliseconds>(steady_clock::now().time_since_epoch());
             m_wake_up.wait_until(instance_guard, time_transition_step_call + m_period);
         } else {
             m_wake_up.wait(instance_guard);
+            then = duration_cast<milliseconds>(steady_clock::now().time_since_epoch());
         }
     }
 }

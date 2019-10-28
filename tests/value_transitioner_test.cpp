@@ -30,7 +30,7 @@ TEST_CASE("value_transitioner basic test") {
 
         update_local_values();
 
-        return result;
+        return transition_state::value_did_change;
     };
 
     transitioner.start_transition_thread(transition_step);
