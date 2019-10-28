@@ -6,23 +6,48 @@
 #include "output_value.h"
 
 namespace output_transitions {
-    static inline bool instant(std::chrono::milliseconds delta, output_value &current_value,
-                               const output_value &target_value) {
+    template<typename PeriodType = std::chrono::milliseconds>
+    class instant {
+       public:
+        bool operator()(std::chrono::milliseconds delta, output_value &current_value,
+                        const output_value &target_value) const;
+    };
+
+    template<typename PeriodType>
+    bool instant<PeriodType>::operator()(std::chrono::milliseconds delta, output_value &current_value,
+                                         const output_value &target_value) const {
         current_value = target_value;
         return true;
     }
 
-    template<uint32_t velocity, typename PeriodType = std::chrono::milliseconds, uint32_t Period = 100>
-    bool linear_transition(std::chrono::milliseconds delta, output_value &current_value,
-                           const output_value &target_value) {
+    template<typename PeriodType = std::chrono::milliseconds>
+    class linear_transition {
+       public:
+        linear_transition(uint32_t velocity, PeriodType period);
+
+        bool operator()(std::chrono::milliseconds delta, output_value &current_value,
+                        const output_value &target_value) const;
+
+       private:
+        PeriodType m_period = 0;
+        uint32_t m_velocity = 0;
+    };
+
+    template<typename PeriodType>
+    linear_transition<PeriodType>::linear_transition(uint32_t velocity, PeriodType period)
+        : m_period(period), m_velocity(velocity) {}
+
+    template<typename PeriodType>
+    bool linear_transition<PeriodType>::operator()(std::chrono::milliseconds delta, output_value &current_value,
+                                                   const output_value &target_value) const {
         if (current_value.current_type() != target_value.current_type()) {
             current_value = target_value;
             return true;
         }
 
-        uint32_t step = velocity;
-
-        bool finished_transition = false;
+        // TODO: incorperate time_diff into this, but then we would have to be able to do partial step (even one, where
+        // step < 1 (double))
+        uint32_t step = m_velocity;
 
         auto do_step = [](auto current_value, auto target_value, auto step) {
             if (std::abs((int32_t)current_value - (int32_t)target_value) < step) {
@@ -51,5 +76,4 @@ namespace output_transitions {
 
         return current_value == target_value;
     }
-
 }  // namespace output_transitions

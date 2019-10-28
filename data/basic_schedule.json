@@ -73,7 +73,7 @@
                 "default" : 0,
                 "transition" : {
                     "type" : "linear",
-                    "velocity" : 10,
+                    "velocity" : 5,
                     "period" : "500ms"
                 }
             }

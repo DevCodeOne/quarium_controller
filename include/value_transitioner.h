@@ -52,6 +52,7 @@ template<typename Callable>
 auto value_transitioner<ValueType>::start_transition_thread(Callable callable, std::chrono::milliseconds period)
     -> value_transitioner & {
     std::lock_guard<std::mutex> instance_guard{m_instance_mutex};
+    m_period = period;
 
     m_transition_thread = std::thread([this, callable]() { do_transitions(callable); });
     return *this;

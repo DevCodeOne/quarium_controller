@@ -13,8 +13,6 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
     nlohmann::json default_entry = description["default"];
     nlohmann::json transition_entry = description["transition"];
 
-    auto *transition_func = &output_transitions::instant;
-
     if (can_device_entry.is_null() || !can_device_entry.is_string()) {
         return nullptr;
     }
@@ -28,12 +26,6 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
         return nullptr;
     }
 
-    // if (!transition_entry.is_null() && !transition_entry.is_object()) {
-    //     if (!transition_entry["type"].is_null() && transition_entry.is_string()) {
-    //     }
-    //     transition_func = &output_transitions::linear_transition<10, std::chrono::seconds, 10>;
-    // }
-
     auto can_device = can_device_entry.get<std::string>();
     auto object_identifier = object_identifier_entry.get<unsigned int>();
     auto default_value = default_entry.is_null() ? default_entry.get<unsigned int>() : 0u;
@@ -44,8 +36,28 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
         return nullptr;
     }
 
-    return std::unique_ptr<can_output>(
-        new can_output(can_device_instance, can_object_identifier(object_identifier), default_value, transition_func));
+    // TODO: if there is an error parsing this, return a nullptr, also add the period parameter
+    if (!transition_entry.is_null() && transition_entry.is_object()) {
+        uint32_t velocity = 1;
+        // std::chrono::milliseconds period = std::chrono::seconds(1);
+        if (!transition_entry["type"].is_null() && transition_entry["type"].is_string() &&
+            transition_entry["type"].get<std::string>() == "linear") {
+        }
+
+        if (!transition_entry["velocity"].is_null() && transition_entry["velocity"].is_number_unsigned()) {
+            velocity = transition_entry["velocity"].get<unsigned int>();
+        }
+
+        // if (!transition_entry["period"].is_null() && transition_entry["period"].is_string()) {
+        // }
+
+        return std::unique_ptr<can_output>(
+            new can_output(can_device_instance, can_object_identifier(object_identifier), default_value,
+                           output_transitions::linear_transition<>(velocity, std::chrono::milliseconds(500))));
+    }
+
+    return std::unique_ptr<can_output>(new can_output(can_device_instance, can_object_identifier(object_identifier),
+                                                      default_value, output_transitions::instant<>{}));
 }
 
 template<typename TransitionStep>
@@ -61,7 +73,7 @@ can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier 
             result &= sync_values() == can_error_code::ok;
             return result;
         },
-        std::chrono::milliseconds(1000));
+        std::chrono::milliseconds(500));
 }
 
 bool can_output::control_output(const output_value &value) {
