@@ -2,6 +2,7 @@
 
 #include "io/outputs/output_transition.h"
 #include "logger.h"
+#include "utils.h"
 
 std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::json &description) {
     if (!description.is_object()) {
@@ -40,6 +41,7 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
     // type
     if (!transition_entry.is_null() && transition_entry.is_object()) {
         uint32_t velocity = 1;
+        std::chrono::milliseconds period_length(500);
         // std::chrono::milliseconds period = std::chrono::seconds(1);
         if (!transition_entry["type"].is_null() && transition_entry["type"].is_string() &&
             transition_entry["type"].get<std::string>() == "linear") {
@@ -49,12 +51,20 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
             velocity = transition_entry["velocity"].get<unsigned int>();
         }
 
-        // if (!transition_entry["period"].is_null() && transition_entry["period"].is_string()) {
-        // }
+        if (!transition_entry["period"].is_null() && transition_entry["period"].is_string()) {
+            auto custom_period_length =
+                parse_duration<std::chrono::milliseconds>(transition_entry["period"].get<std::string>());
+
+            if (custom_period_length) {
+                period_length = *custom_period_length;
+            }
+
+            logger::instance()->info("Period length of {}ms", period_length.count());
+        }
 
         return std::unique_ptr<can_output>(
             new can_output(can_device_instance, can_object_identifier(object_identifier), default_value,
-                           output_transitions::linear_transition<>(velocity, std::chrono::milliseconds(500))));
+                           output_transitions::linear_transition<>(velocity, period_length)));
     }
 
     return std::unique_ptr<can_output>(new can_output(can_device_instance, can_object_identifier(object_identifier),

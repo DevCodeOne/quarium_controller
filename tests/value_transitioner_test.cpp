@@ -15,17 +15,16 @@ TEST_CASE("value_transitioner basic test") {
         std::cout << value << std::endl;
         ++index;
     };
-    auto transition_step = [&update_local_values](auto time_diff, const auto &current_value, const auto &target_value) {
+    auto transition_step = [&update_local_values](auto time_diff, auto &current_value, const auto &target_value) {
         std::cout << "Running" << std::endl;
-        auto result = current_value;
 
         int distance = target_value - current_value;
 
         if (std::abs(distance) > 10) {
             int one_step = (int)(distance / std::abs(distance) * 10);
-            result += one_step;
+            current_value += one_step;
         } else {
-            result = target_value;
+            current_value = target_value;
         }
 
         update_local_values();
@@ -38,7 +37,6 @@ TEST_CASE("value_transitioner basic test") {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     int target = 100;
-
     transitioner.target_value(target);
 
     // TODO: improve this test has race condition, though not a very critical one
