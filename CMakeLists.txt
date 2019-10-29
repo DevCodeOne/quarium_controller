@@ -100,10 +100,13 @@ if (BUILD_TESTS)
 
     add_executable(value_transitioner_test tests/value_transitioner_test.cpp)
 
+    add_executable(utils_test tests/utils_test.cpp)
+
     set_property(TARGET schedule_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET chrono_time_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET ring_buffer_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET value_transitioner_test PROPERTY CXX_STANDARD 17)
+    set_property(TARGET utils_test PROPERTY CXX_STANDARD 17)
 
     target_link_libraries(schedule_test  PUBLIC ${CONAN_LIBS})
     target_link_libraries(schedule_test PUBLIC stdc++fs)
@@ -121,5 +124,9 @@ if (BUILD_TESTS)
     target_include_directories(value_transitioner_test PRIVATE include)
     target_link_libraries(value_transitioner_test  PUBLIC ${CONAN_LIBS})
     add_test(value_transitioner_t value_transitioner_test)
+
+    target_include_directories(utils_test PRIVATE include)
+    target_link_libraries(utils_test  PUBLIC ${CONAN_LIBS})
+    add_test(utils_test_t utils_test)
 
 ENDIF()
