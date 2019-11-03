@@ -8,9 +8,9 @@
 #endif
 
 #include "config.h"
+#include "io/outputs/can/can_output.h"
 #include "io/outputs/gpio/gpio_chip.h"
 #include "io/outputs/remote_function/remote_function.h"
-#include "io/outputs/can/can_output.h"
 #include "logger.h"
 #include "network/network_interface.h"
 #include "network/web_application.h"
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
     if (!result || show_help) {
         if (!result) {
-            logger::instance()->critical("Error in command line : {}", result.errorMessage());
+            std::cout << "Error in command" << result.errorMessage() << std::endl;
         }
 
         cli.writeToStream(std::cout);
@@ -63,11 +63,12 @@ int main(int argc, char *argv[]) {
 
     run_configuration::instance()->print_to_console(print_to_console);
     logger::configure_logger(logger::log_level::debug, logger::log_type::file);
+    auto logger_instance = logger::instance();
 
     auto conf = config::instance();
 
     if (conf == nullptr) {
-        logger::instance()->critical("No configuration file is specified ...");
+        logger_instance->critical("No configuration file is specified ...");
         return EXIT_FAILURE;
     }
 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
     auto schedule_file_paths = conf->find("schedule_list");
 
     if (schedule_file_paths.size() == 0) {
-        logger::instance()->critical("No schedule is specified ...");
+        logger_instance->critical("No schedule is specified ...");
         return EXIT_FAILURE;
     }
 
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
         schedule_handler::instance()->start_event_handler();
         schedule_handler::instance()->add_schedule(schedule.value());
     } else {
-        logger::instance()->critical("Schedule is not valid");
+        logger_instance->critical("Schedule is not valid");
         return EXIT_FAILURE;
     }
 
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]) {
     if (inst) {
         inst->open_view();
     } else {
-        logger::instance()->warn("Couldn't open gui");
+        logger_instance->warn("Couldn't open gui");
     }
 #endif
 
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
                              rest_resource<web_application>::handle_request);
 
     if (!(network_iface && network_iface->start())) {
-        logger::instance()->critical("Couldn't start network interface");
+        logger_instance->critical("Couldn't start network interface");
 
         return EXIT_FAILURE;
     }
@@ -124,11 +125,11 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            logger::instance()->warn("Error in pause() {}", strerror(errno));
+            logger_instance->warn("Error in pause() {}", strerror(errno));
         }
     }
 
-    logger::instance()->info("Shutting down server, schedule handler and gui");
+    logger_instance->info("Shutting down server, schedule handler and gui");
     schedule_handler::instance()->stop_event_handler();
 
 #ifdef WITH_GUI

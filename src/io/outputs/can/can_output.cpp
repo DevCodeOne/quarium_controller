@@ -88,6 +88,7 @@ can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier 
 
             return result;
         },
+        /* TODO: set this value based on the period value defined in the TransitionStep instance */
         std::chrono::milliseconds(100));
 }
 
