@@ -7,8 +7,8 @@
 
 #include "nlohmann/json.hpp"
 
-#include "pattern_templates/singleton.h"
 #include "io/outputs/output_value.h"
+#include "pattern_templates/singleton.h"
 
 using json = nlohmann::json;
 
