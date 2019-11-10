@@ -1,4 +1,4 @@
-#include "io/outputs/can/can.h"
+#include "io/interfaces/can/can.h"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>

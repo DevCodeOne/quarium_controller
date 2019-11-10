@@ -8,8 +8,8 @@
 #include <optional>
 #include <string>
 
-#include "io/outputs/gpio/gpio_pin.h"
-#include "io/outputs/gpio/gpiod_wrapper.h"
+#include "io/interfaces/gpio/gpio_pin.h"
+#include "io/interfaces/gpio/gpiod_wrapper.h"
 #include "network/network_interface.h"
 #include "network/rest_resource.h"
 

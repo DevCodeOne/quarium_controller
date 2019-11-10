@@ -1,11 +1,12 @@
-#include <mutex>
+#include "io/interfaces/gpio/gpio_chip.h"
+
+#include <charconv>
 #include <filesystem>
 #include <memory>
-#include <charconv>
+#include <mutex>
 #include <regex>
 
 #include "config.h"
-#include "io/outputs/gpio/gpio_chip.h"
 #include "logger.h"
 
 std::shared_ptr<gpio_chip> gpio_chip::instance(const std::filesystem::path &gpio_chip_path) {

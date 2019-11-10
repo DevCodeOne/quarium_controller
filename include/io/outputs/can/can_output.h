@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "io/outputs/can/can.h"
+#include "io/interfaces/can/can.h"
 #include "io/outputs/output_interface.h"
 #include "io/outputs/output_value.h"
 #include "value_transitioner.h"

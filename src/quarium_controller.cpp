@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "io/outputs/can/can_output.h"
-#include "io/outputs/gpio/gpio_chip.h"
+#include "io/interfaces/gpio/gpio_chip.h"
 #include "io/outputs/remote_function/remote_function.h"
 #include "logger.h"
 #include "network/network_interface.h"

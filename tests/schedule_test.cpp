@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "catch2/catch.hpp"
-#include "io/outputs/gpio/gpio_pin.h"
+#include "io/interfaces/gpio/gpio_pin.h"
 #include "nlohmann/json.hpp"
 #include "schedule/schedule_handler.h"
 

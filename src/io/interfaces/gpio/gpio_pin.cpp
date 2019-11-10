@@ -1,7 +1,7 @@
-#include "io/outputs/gpio/gpio_pin.h"
+#include "io/interfaces/gpio/gpio_pin.h"
 
 #include "config.h"
-#include "io/outputs/gpio/gpio_chip.h"
+#include "io/interfaces/gpio/gpio_chip.h"
 #include "logger.h"
 
 gpio_pin_id::gpio_pin_id(unsigned int id, std::shared_ptr<gpio_chip> chip) : m_gpiochip_instance(chip), m_id(id) {}
