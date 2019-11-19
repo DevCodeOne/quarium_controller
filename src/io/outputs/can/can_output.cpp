@@ -82,7 +82,7 @@ can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier 
         [this, transition](auto time_diff, auto &input, const auto &output) -> transition_state {
             auto result = transition(time_diff, input, output);
 
-            if (result == transition_state::value_did_change) {
+            if (result == transition_state::value_did_change || result == transition_state::finished_transition) {
                 sync_values();
             }
 

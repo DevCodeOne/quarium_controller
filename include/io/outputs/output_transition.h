@@ -18,7 +18,7 @@ namespace output_transitions {
     transition_state instant<PeriodType>::operator()(std::chrono::milliseconds delta, output_value &current_value,
                                                      const output_value &target_value) const {
         current_value = target_value;
-        return transition_state::value_did_change;
+        return transition_state::finished_transition;
     }
 
     template<typename PeriodType = std::chrono::milliseconds>
