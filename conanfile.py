@@ -9,7 +9,7 @@ class QuariumController(ConanFile):
             "jsonformoderncpp/3.1.2@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
             "boost_beast/1.69.0@bincrafters/stable", \
-            "cpp-httplib/0.3.1@user/testing", \
+            "cpp-httplib/0.3.1@devcodeone/stable", \
             "libgpiod/1.2.1@ecashptyltd/stable"
     options = { "build_tests" : [True, False],
             "use_sdl" : [True, False],
