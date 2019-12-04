@@ -9,7 +9,7 @@ class QuariumController(ConanFile):
             "jsonformoderncpp/3.1.2@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
             "boost_beast/1.69.0@bincrafters/stable", \
-            "libcurl/7.64.1@bincrafters/stable", \
+            "cpp-httplib/0.3.1@user/testing", \
             "libgpiod/1.2.1@ecashptyltd/stable"
     options = { "build_tests" : [True, False],
             "use_sdl" : [True, False],
@@ -20,7 +20,6 @@ class QuariumController(ConanFile):
             "use_sdl" : True, \
             "use_gpiod_stub" : True, \
             "with_gui" : True, \
-            "libcurl:with_openssl" : False \
             }
     exports_sources = "tests*", "include*", "src*", "CMakeLists.txt"
     generators = "cmake", "ycm"

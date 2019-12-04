@@ -1,12 +1,9 @@
 #include "io/outputs/remote_function/remote_function.h"
 
+#include <charconv>
 #include <string>
 
-#include "boost/asio/connect.hpp"
-#include "boost/asio/ip/tcp.hpp"
-#include "boost/beast/core.hpp"
-#include "boost/beast/http.hpp"
-#include "boost/beast/version.hpp"
+#include "httplib/httplib.h"
 #include "logger.h"
 
 std::unique_ptr<output_interface> remote_function::create_for_interface(const nlohmann::json &description_parameter) {
@@ -118,28 +115,28 @@ bool remote_function::update_values() {
         logger_instance->info("The value of this type couldn't be serialized");
     }
 
-    m_curl_instance.reset(curl_easy_init());
+    uint16_t port_value = 0;
+    auto remote_function_val = remote_function.str();
 
-    if (!m_curl_instance) {
-        logger_instance->critical("Couldn't initialize curl");
+    if (std::from_chars(port.data(), port.data() + port.size(), port_value).ec != std::errc()) {
+        logger_instance->critical("Couldn't partse port {}", port);
         return false;
     }
 
-    using namespace std::literals;
+    httplib::Client request(host.c_str(), port_value, 5);
+    logger_instance->info("Url to connect to {}:{}{}", host.c_str(), port_value, remote_function_val);
 
-    auto complete_url = host + ":"s + port + remote_function.str();
-    logger_instance->info("Url to connect to {}", complete_url);
+    auto request_result = request.Get(remote_function_val.c_str());
 
-    curl_easy_setopt(m_curl_instance.get(), CURLOPT_URL, complete_url.c_str());
-    curl_easy_setopt(m_curl_instance.get(), CURLOPT_NOSIGNAL, true);
-    curl_easy_setopt(m_curl_instance.get(), CURLOPT_TIMEOUT, 5);
-    auto res = curl_easy_perform(m_curl_instance.get());
-
-    if (res != CURLE_OK) {
+    if (!request_result) {
         logger_instance->critical("Couldn't connect to the host");
+        return false;
     }
 
-    m_curl_instance.reset();
+    if (request_result->status != 200) {
+        logger_instance->warn("Request returned not ok status {}", request_result->status);
+        return false;
+    }
 
-    return res == CURLE_OK;
+    return true;
 }
