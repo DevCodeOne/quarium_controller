@@ -18,7 +18,7 @@ class gpio_chip final : public rest_resource<gpio_chip>, std::enable_shared_from
     static inline constexpr char default_gpio_dev_path[] = "/dev/gpiochip0";
 
     static std::shared_ptr<gpio_chip> instance(const std::filesystem::path &gpio_chip_path = default_gpio_dev_path);
-    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
+    //static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
 
     gpio_chip(const gpio_chip &other) = delete;
     gpio_chip(gpio_chip &&other);

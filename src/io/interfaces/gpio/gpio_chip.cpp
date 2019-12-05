@@ -23,62 +23,63 @@ std::shared_ptr<gpio_chip> gpio_chip::instance(const std::filesystem::path &gpio
     return _gpiochip_access_map[gpio_chip_path];
 }
 
-http::response<http::dynamic_body> gpio_chip::handle_request(const http::request<http::dynamic_body> &request) {
-    http::response<http::dynamic_body> response;
-
-    // TODO create utility for this standard behaviour
-    std::string resource_path_string(request.target().to_string());
-    std::regex list_gpio_chips_regex(R"(/api/v0/gpio_chip/?)", std::regex_constants::extended);
-    std::regex gpio_chip_id_regex(R"([1-9][0-9]*|[0-9])", std::regex_constants::ECMAScript);
-
-    if (std::regex_match(resource_path_string, list_gpio_chips_regex) && request.method() == http::verb::get) {
-        std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
-
-        nlohmann::json gpio_chips;
-
-        auto add_serialized_gpio_chip = [&gpio_chips](const auto &current_gpio_chip) {
-            nlohmann::json pair;
-            pair["id"] = current_gpio_chip.second->id().as_number();
-            pair["path"] = current_gpio_chip.second->path_to_file().c_str();
-            gpio_chips.push_back(std::move(pair));
-        };
-
-        std::for_each(_gpiochip_access_map.cbegin(), _gpiochip_access_map.cend(), add_serialized_gpio_chip);
-
-        boost::beast::ostream(response.body()) << gpio_chips.dump();
-        return std::move(response);
-    }
-
-    std::smatch match;
-    std::regex_search(resource_path_string, match, list_gpio_chips_regex);
-    std::string id = match.suffix();
-
-    if (std::regex_match(id, gpio_chip_id_regex)) {
-        std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
-
-        uint32_t id_as_number;
-        auto conversion_result = std::from_chars<uint32_t>(id.data(), id.data() + id.size(), id_as_number);
-
-        if (conversion_result.ec == std::errc::result_out_of_range) {
-            boost::beast::ostream(response.body()) << "ID is not a number";
-            return std::move(response);
-        }
-
-        nlohmann::json specific_gpio_chip;
-
-        auto result = std::find_if(
-            _gpiochip_access_map.cbegin(), _gpiochip_access_map.cend(),
-            [id_as_number](const auto &current_chip) { return current_chip.second->id().as_number() == id_as_number; });
-
-        if (result != _gpiochip_access_map.cend()) {
-            boost::beast::ostream(response.body()) << result->second->serialize().dump();
-            return std::move(response);
-        }
-    }
-
-    boost::beast::ostream(response.body()) << "Couldn't find resource " << resource_path_string;
-    return std::move(response);
-}
+// http::response<http::dynamic_body> gpio_chip::handle_request(const http::request<http::dynamic_body> &request) {
+//     http::response<http::dynamic_body> response;
+//
+//     // TODO create utility for this standard behaviour
+//     std::string resource_path_string(request.target().to_string());
+//     std::regex list_gpio_chips_regex(R"(/api/v0/gpio_chip/?)", std::regex_constants::extended);
+//     std::regex gpio_chip_id_regex(R"([1-9][0-9]*|[0-9])", std::regex_constants::ECMAScript);
+//
+//     if (std::regex_match(resource_path_string, list_gpio_chips_regex) && request.method() == http::verb::get) {
+//         std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
+//
+//         nlohmann::json gpio_chips;
+//
+//         auto add_serialized_gpio_chip = [&gpio_chips](const auto &current_gpio_chip) {
+//             nlohmann::json pair;
+//             pair["id"] = current_gpio_chip.second->id().as_number();
+//             pair["path"] = current_gpio_chip.second->path_to_file().c_str();
+//             gpio_chips.push_back(std::move(pair));
+//         };
+//
+//         std::for_each(_gpiochip_access_map.cbegin(), _gpiochip_access_map.cend(), add_serialized_gpio_chip);
+//
+//         boost::beast::ostream(response.body()) << gpio_chips.dump();
+//         return std::move(response);
+//     }
+//
+//     std::smatch match;
+//     std::regex_search(resource_path_string, match, list_gpio_chips_regex);
+//     std::string id = match.suffix();
+//
+//     if (std::regex_match(id, gpio_chip_id_regex)) {
+//         std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
+//
+//         uint32_t id_as_number;
+//         auto conversion_result = std::from_chars<uint32_t>(id.data(), id.data() + id.size(), id_as_number);
+//
+//         if (conversion_result.ec == std::errc::result_out_of_range) {
+//             boost::beast::ostream(response.body()) << "ID is not a number";
+//             return std::move(response);
+//         }
+//
+//         nlohmann::json specific_gpio_chip;
+//
+//         auto result = std::find_if(
+//             _gpiochip_access_map.cbegin(), _gpiochip_access_map.cend(),
+//             [id_as_number](const auto &current_chip) { return current_chip.second->id().as_number() == id_as_number;
+//             });
+//
+//         if (result != _gpiochip_access_map.cend()) {
+//             boost::beast::ostream(response.body()) << result->second->serialize().dump();
+//             return std::move(response);
+//         }
+//     }
+//
+//     boost::beast::ostream(response.body()) << "Couldn't find resource " << resource_path_string;
+//     return std::move(response);
+// }
 
 std::optional<gpio_chip> gpio_chip::open(const std::filesystem::path &gpio_chip_path) {
     auto opened_chip = gpiod::gpiod_chip(gpio_chip_path.c_str());

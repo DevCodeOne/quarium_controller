@@ -1,7 +1,8 @@
+#include "logger.h"
+
 #include <fstream>
 #include <sstream>
 
-#include "logger.h"
 #include "run_configuration.h"
 
 void logger::configure_logger(const log_level &level, const log_type &type) {
@@ -40,19 +41,20 @@ std::shared_ptr<spdlog::logger> logger::instance() {
     return _instance;
 }
 
-http::response<http::dynamic_body> logger::handle_request(const http::request<http::dynamic_body> &request) {
-    http::response<http::dynamic_body> response;
-
+void logger::handle_request(const httplib::Request &request, httplib::Response &response) {
+    using namespace std::literals;
     std::ifstream log_file(run_configuration::instance()->log_file());
     std::string current_line;
+    std::ostringstream buffer;
 
-    if (log_file) {
+    if (log_file && !run_configuration::instance()->print_to_console()) {
         while (std::getline(log_file, current_line)) {
-            boost::beast::ostream(response.body()) << current_line << '\n';
+            buffer << current_line << '\n';
         }
-    } else {
-        boost::beast::ostream(response.body()) << "The log file couldn't be opened" << '\n';
-    }
 
-    return std::move(response);
+        current_line = buffer.str();
+        response.set_content(current_line.c_str(), "text/plain");
+    } else {
+        response.set_content("The log file couldn't be opened \n"s, "text/plain");
+    }
 }

@@ -19,7 +19,7 @@ class schedule_handler {
     void start_event_handler();
     void stop_event_handler();
 
-    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
+    // static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
 
    private:
     schedule_handler() = default;

@@ -221,71 +221,73 @@ bool schedule_handler::is_conflicting_with_other_schedules(const schedule &sched
     return false;
 }
 
-http::response<http::dynamic_body> schedule_handler::handle_request(const http::request<http::dynamic_body> &request) {
-    http::response<http::dynamic_body> response;
-
-    std::string resource_path_string(request.target().to_string());
-    std::regex list_schedules_regex(R"(/api/v0/schedules/?)", std::regex_constants::extended);
-    std::regex schedule_id_regex(R"([1-9][0-9]*|[0-9])", std::regex_constants::extended);
-
-    if (std::regex_match(resource_path_string, list_schedules_regex) && request.method() == http::verb::get) {
-        auto lock = singleton<schedule_handler>::retrieve_instance_lock();
-        auto instance = schedule_handler::instance();
-
-        nlohmann::json schedules;
-
-        auto add_serialized_schedule = [&schedules](const auto &current_schedule) {
-            json pair;
-            pair["id"] = current_schedule.id().as_number();
-            pair["title"] = current_schedule.title();
-            schedules.push_back(std::move(pair));
-        };
-
-        std::for_each(instance->m_active_schedules.cbegin(), instance->m_active_schedules.cend(),
-                      add_serialized_schedule);
-        std::for_each(instance->m_inactive_schedules.cbegin(), instance->m_inactive_schedules.cend(),
-                      add_serialized_schedule);
-
-        boost::beast::ostream(response.body()) << schedules.dump();
-        return std::move(response);
-    }
-
-    std::smatch match;
-    std::regex_search(resource_path_string, match, list_schedules_regex);
-    std::string id = match.suffix();
-
-    if (std::regex_match(id, schedule_id_regex)) {
-        uint32_t id_as_number;
-        auto conversion_result = std::from_chars<uint32_t>(id.data(), id.data() + id.size(), id_as_number);
-
-        if (conversion_result.ec == std::errc::result_out_of_range) {
-            boost::beast::ostream(response.body()) << "ID is not a number";
-            return std::move(response);
-        }
-
-        auto lock = singleton<schedule_handler>::retrieve_instance_lock();
-        auto instance = schedule_handler::instance();
-
-        nlohmann::json specific_schedule;
-
-        auto result = std::find_if(
-            instance->m_active_schedules.cbegin(), instance->m_active_schedules.cend(),
-            [id_as_number](const auto &current_schedule) { return current_schedule.id().as_number() == id_as_number; });
-
-        if (result == instance->m_active_schedules.cend()) {
-            result = std::find_if(instance->m_inactive_schedules.cbegin(), instance->m_inactive_schedules.cend(),
-                                  [id_as_number](const auto &current_schedule) {
-                                      return current_schedule.id().as_number() == id_as_number;
-                                  });
-        }
-
-        if (result != instance->m_inactive_schedules.cend()) {
-            boost::beast::ostream(response.body()) << result->serialize().dump();
-
-            return std::move(response);
-        }
-    }
-
-    boost::beast::ostream(response.body()) << "Couldn't find resource " << resource_path_string;
-    return std::move(response);
-}
+// http::response<http::dynamic_body> schedule_handler::handle_request(const http::request<http::dynamic_body> &request)
+// {
+//     http::response<http::dynamic_body> response;
+//
+//     std::string resource_path_string(request.target().to_string());
+//     std::regex list_schedules_regex(R"(/api/v0/schedules/?)", std::regex_constants::extended);
+//     std::regex schedule_id_regex(R"([1-9][0-9]*|[0-9])", std::regex_constants::extended);
+//
+//     if (std::regex_match(resource_path_string, list_schedules_regex) && request.method() == http::verb::get) {
+//         auto lock = singleton<schedule_handler>::retrieve_instance_lock();
+//         auto instance = schedule_handler::instance();
+//
+//         nlohmann::json schedules;
+//
+//         auto add_serialized_schedule = [&schedules](const auto &current_schedule) {
+//             json pair;
+//             pair["id"] = current_schedule.id().as_number();
+//             pair["title"] = current_schedule.title();
+//             schedules.push_back(std::move(pair));
+//         };
+//
+//         std::for_each(instance->m_active_schedules.cbegin(), instance->m_active_schedules.cend(),
+//                       add_serialized_schedule);
+//         std::for_each(instance->m_inactive_schedules.cbegin(), instance->m_inactive_schedules.cend(),
+//                       add_serialized_schedule);
+//
+//         boost::beast::ostream(response.body()) << schedules.dump();
+//         return std::move(response);
+//     }
+//
+//     std::smatch match;
+//     std::regex_search(resource_path_string, match, list_schedules_regex);
+//     std::string id = match.suffix();
+//
+//     if (std::regex_match(id, schedule_id_regex)) {
+//         uint32_t id_as_number;
+//         auto conversion_result = std::from_chars<uint32_t>(id.data(), id.data() + id.size(), id_as_number);
+//
+//         if (conversion_result.ec == std::errc::result_out_of_range) {
+//             boost::beast::ostream(response.body()) << "ID is not a number";
+//             return std::move(response);
+//         }
+//
+//         auto lock = singleton<schedule_handler>::retrieve_instance_lock();
+//         auto instance = schedule_handler::instance();
+//
+//         nlohmann::json specific_schedule;
+//
+//         auto result = std::find_if(
+//             instance->m_active_schedules.cbegin(), instance->m_active_schedules.cend(),
+//             [id_as_number](const auto &current_schedule) { return current_schedule.id().as_number() == id_as_number;
+//             });
+//
+//         if (result == instance->m_active_schedules.cend()) {
+//             result = std::find_if(instance->m_inactive_schedules.cbegin(), instance->m_inactive_schedules.cend(),
+//                                   [id_as_number](const auto &current_schedule) {
+//                                       return current_schedule.id().as_number() == id_as_number;
+//                                   });
+//         }
+//
+//         if (result != instance->m_inactive_schedules.cend()) {
+//             boost::beast::ostream(response.body()) << result->serialize().dump();
+//
+//             return std::move(response);
+//         }
+//     }
+//
+//     boost::beast::ostream(response.body()) << "Couldn't find resource " << resource_path_string;
+//     return std::move(response);
+// }

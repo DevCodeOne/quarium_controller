@@ -8,12 +8,11 @@
 #endif
 
 #include "config.h"
-#include "io/outputs/can/can_output.h"
 #include "io/interfaces/gpio/gpio_chip.h"
+#include "io/outputs/can/can_output.h"
 #include "io/outputs/remote_function/remote_function.h"
 #include "logger.h"
 #include "network/network_interface.h"
-#include "network/web_application.h"
 #include "run_configuration.h"
 #include "schedule/schedule_handler.h"
 #include "signal_handler.h"
@@ -104,20 +103,18 @@ int main(int argc, char *argv[]) {
 #endif
 
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));
-    network_iface->add_route(std::regex("/api/v0/log", std::regex_constants::extended),
-                             rest_resource<logger>::handle_request);
-    network_iface->add_route(std::regex("/api/v0/schedules.*", std::regex_constants::extended),
-                             rest_resource<schedule_handler>::handle_request);
-    network_iface->add_route(std::regex("/api/v0/gpio_chip.*", std::regex_constants::extended),
-                             rest_resource<gpio_chip>::handle_request);
-    network_iface->add_route(std::regex("/webapp.*", std::regex_constants::extended),
-                             rest_resource<web_application>::handle_request);
+    network_iface->add_route("/api/v0/log", rest_resource<logger>::handle_request);
 
-    if (!(network_iface && network_iface->start())) {
+    if (!network_iface || !network_iface->start()) {
         logger_instance->critical("Couldn't start network interface");
 
         return EXIT_FAILURE;
     }
+
+    // network_iface->add_route(std::regex("/api/v0/schedules.*", std::regex_constants::extended),
+    //                          rest_resource<schedule_handler>::handle_request);
+    // network_iface->add_route(std::regex("/api/v0/gpio_chip.*", std::regex_constants::extended),
+    //                          rest_resource<gpio_chip>::handle_request);
 
     while (!_should_exit) {
         if (pause() < 0) {

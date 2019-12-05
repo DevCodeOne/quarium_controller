@@ -3,10 +3,8 @@
 #include <memory>
 #include <mutex>
 
+#include "httplib/httplib.h"
 #include "spdlog/spdlog.h"
-#include "boost/beast.hpp"
-
-namespace http = boost::beast::http;
 
 class logger {
    public:
@@ -23,7 +21,7 @@ class logger {
     static void configure_logger(const log_level &level, const log_type &type = log_type::console);
     static std::shared_ptr<spdlog::logger> instance();
 
-    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
+    static void handle_request(const httplib::Request &request, httplib::Response &response);
 
    private:
     static inline std::shared_ptr<spdlog::logger> _instance = nullptr;

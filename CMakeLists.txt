@@ -18,7 +18,6 @@ set (SOURCE_FILES
     src/signal_handler.cpp
     src/run_configuration.cpp
     src/network/network_interface.cpp
-    src/network/web_application.cpp
     src/schedule/schedule.cpp
     src/schedule/schedule_action.cpp
     src/schedule/schedule_event.cpp

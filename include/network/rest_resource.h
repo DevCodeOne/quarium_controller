@@ -4,9 +4,8 @@
 #include <optional>
 #include <utility>
 
-#include "nlohmann/json.hpp"
-
 #include "network/network_interface.h"
+#include "nlohmann/json.hpp"
 
 // TODO Test mechanism
 template<typename T>
@@ -60,7 +59,7 @@ class rest_resource {
     nlohmann::json serialize() const;
     const rest_resource_id<T> &id() const;
     static std::optional<T> deserialize(nlohmann::json &description);
-    static http::response<http::dynamic_body> handle_request(const http::request<http::dynamic_body> &request);
+    static void handle_request(const httplib::Request &request, httplib::Response &response);
 
    private:
     rest_resource_id<T> m_id{};
@@ -82,6 +81,6 @@ std::optional<T> rest_resource<T>::deserialize(nlohmann::json &description) {
 }
 
 template<typename T>
-http::response<http::dynamic_body> rest_resource<T>::handle_request(const http::request<http::dynamic_body> &request) {
-    return std::move(T::handle_request(request));
+void rest_resource<T>::handle_request(const httplib::Request &request, httplib::Response &response) {
+    return T::handle_request(request, response);
 }
