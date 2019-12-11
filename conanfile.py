@@ -9,7 +9,8 @@ class QuariumController(ConanFile):
             "jsonformoderncpp/3.1.2@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
             "cpp-httplib/0.3.1@devcodeone/stable", \
-            "libgpiod/1.2.1@ecashptyltd/stable"
+            "libgpiod/1.2.1@ecashptyltd/stable", \
+            "mqtt_cpp/8.x@devcodeone/stable"
     options = { "build_tests" : [True, False],
             "use_sdl" : [True, False],
             "with_gui" : [True, False],
