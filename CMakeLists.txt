@@ -31,7 +31,10 @@ set (SOURCE_FILES
     src/io/interfaces/gpio/gpio_chip.cpp
     src/io/interfaces/gpio/gpio_pin.cpp
     src/io/interfaces/can/can.cpp
+    src/io/interfaces/mqtt/mqtt.cpp
     src/chrono_time.cpp)
+
+add_definitions(-DMQTT_NS=mqtt_cpp)
 
 IF (GPIOD_STUB)
     add_definitions(-DUSE_GPIOD_STUBS)
