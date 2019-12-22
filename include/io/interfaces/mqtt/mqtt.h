@@ -60,7 +60,10 @@ class mqtt {
 
     static inline std::map<mqtt_address, std::shared_ptr<mqtt>, detail::mqtt_address_cmp> _instances;
     static inline std::recursive_mutex _instance_mutex;
-    static inline static_desctructor<mqtt, void (*)()> _destructor{+[]() { stop_all_instances(); }};
+    static inline static_desctructor<mqtt, void (*)()> _destructor{+[]() {
+        logger::instance()->info("Called static destructor for mqtt");
+        stop_all_instances();
+    }};
     mqtt_sock_type m_mqtt_socket;
     mqtt_address m_addr;
 };

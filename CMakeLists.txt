@@ -105,19 +105,25 @@ if (BUILD_TESTS)
 
     add_executable(utils_test tests/utils_test.cpp)
 
+    add_executable(output_value_test tests/output_value_test.cpp
+        src/run_configuration.cpp
+        src/logger.cpp
+        src/io/outputs/output_value.cpp)
+
     set_property(TARGET schedule_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET chrono_time_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET ring_buffer_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET value_transitioner_test PROPERTY CXX_STANDARD 17)
     set_property(TARGET utils_test PROPERTY CXX_STANDARD 17)
+    set_property(TARGET output_value_test PROPERTY CXX_STANDARD 17)
 
-    target_link_libraries(schedule_test  PUBLIC ${CONAN_LIBS})
-    target_link_libraries(schedule_test PUBLIC stdc++fs)
+    target_link_libraries(schedule_test  PRIVATE ${CONAN_LIBS})
+    target_link_libraries(schedule_test PRIVATE stdc++fs)
     target_include_directories(schedule_test PRIVATE include)
     add_test(schedule_t schedule_test)
 
-    target_link_libraries(chrono_time_test  PUBLIC ${CONAN_LIBS})
-    target_link_libraries(chrono_time_test PUBLIC stdc++fs)
+    target_link_libraries(chrono_time_test  PRIVATE ${CONAN_LIBS})
+    target_link_libraries(chrono_time_test PRIVATE stdc++fs)
     target_include_directories(chrono_time_test PRIVATE include)
     add_test(chrono_time_t chrono_time_test)
 
@@ -125,11 +131,15 @@ if (BUILD_TESTS)
     add_test(ring_buffer_t ring_buffer_test)
 
     target_include_directories(value_transitioner_test PRIVATE include)
-    target_link_libraries(value_transitioner_test  PUBLIC ${CONAN_LIBS})
+    target_link_libraries(value_transitioner_test  PRIVATE ${CONAN_LIBS})
     add_test(value_transitioner_t value_transitioner_test)
 
     target_include_directories(utils_test PRIVATE include)
-    target_link_libraries(utils_test  PUBLIC ${CONAN_LIBS})
+    target_link_libraries(utils_test  PRIVATE ${CONAN_LIBS})
     add_test(utils_test_t utils_test)
+
+    target_include_directories(output_value_test PRIVATE include)
+    target_link_libraries(output_value_test PRIVATE ${CONAN_LIBS})
+    add_test(output_value_test_t output_value_test)
 
 ENDIF()

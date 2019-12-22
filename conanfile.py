@@ -6,7 +6,7 @@ class QuariumController(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires =  "spdlog/0.17.0@bincrafters/stable", \
             "catch2/2.3.0@bincrafters/stable", \
-            "jsonformoderncpp/3.1.2@vthiery/stable", \
+            "jsonformoderncpp/3.7.3@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
             "cpp-httplib/0.3.1@devcodeone/stable", \
             "libgpiod/1.2.1@ecashptyltd/stable", \

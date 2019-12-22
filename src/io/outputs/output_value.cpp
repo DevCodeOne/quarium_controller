@@ -1,6 +1,8 @@
 #include "io/outputs/output_value.h"
 
 #include <algorithm>
+#include <cctype>
+#include <charconv>
 #include <map>
 
 #include "logger.h"
@@ -174,17 +176,51 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
     } else {
         // Is a singular value
         // TODO: parse this with the individual types as helpers
-        if (description.is_string()) {
-            auto value = description.get<std::string>();
+        if (type.has_value()) {
+            auto remove_non_digits_and_parse = [](auto string, auto &value_to_parse) -> bool {
+                string.erase(std::remove_if(string.begin(), string.end(),
+                                            [](auto current_char) { return !std::isdigit(current_char); }),
+                             string.end());
 
-            if (type.has_value() && *type == output_value_types::switch_output) {
+                auto conv_result = std::from_chars(string.c_str(), string.c_str() + string.size(), value_to_parse);
+                return conv_result.ec == std::errc();
+            };
+            if (type == output_value_types::number_unsigned) {
+                if (description.is_number_unsigned()) {
+                    return output_value{description.get<unsigned int>()};
+                } else if (description.is_string()) {
+                    unsigned int value = 0;
+                    if (!remove_non_digits_and_parse(description.get<std::string>(), value)) {
+                        return {};
+                    }
+
+                    return output_value{value};
+                }
+            } else if (type == output_value_types::number) {
+                if (description.is_number()) {
+                    return output_value{description.get<int>()};
+                } else if (description.is_string()) {
+                    int value = 0;
+                    if (!remove_non_digits_and_parse(description.get<std::string>(), value)) {
+                        return {};
+                    }
+
+                    return output_value{value};
+                }
+
+            } else if (type == output_value_types::string) {
+                // TODO: check if that is correct
+                return output_value{description.dump()};
+            } else if (type == output_value_types::switch_output && description.is_string()) {
+                auto value = description.get<std::string>();
                 const std::map<std::string, switch_output> switch_output_values = {
                     {"on", switch_output::on}, {"off", switch_output::off}, {"toggle", switch_output::toggle}};
 
                 if (auto result = switch_output_values.find(value); result != switch_output_values.cend()) {
                     return output_value{result->second};
                 }
-            } else if (type.has_value() && *type == output_value_types::tasmota_power_command) {
+            } else if (type == output_value_types::tasmota_power_command && description.is_string()) {
+                auto value = description.get<std::string>();
                 const std::map<std::string, tasmota_power_command> tasmota_power_command_output_values = {
                     {"on", tasmota_power_command::on},
                     {"off", tasmota_power_command::off},
@@ -194,19 +230,14 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                     result != tasmota_power_command_output_values.cend()) {
                     return output_value{result->second};
                 }
-            } else if (type.has_value() && *type == output_value_types::string) {
-                return output_value{description.dump()};
             }
-        } else if (description.is_number_unsigned() &&
-                   ((!type.has_value()) || (type.has_value() && *type == output_value_types::number_unsigned))) {
-            return output_value(description.get<unsigned int>());
-        } else if (description.is_number() &&
-                   ((!type.has_value()) || (type.has_value() && *type == output_value_types::number))) {
-            return output_value(description.get<int>());
         }
+    }
 
+    if (description.is_string()) {
+        auto value = description.get<std::string>();
         // Fall back to plain string
-        return output_value(description.dump());
+        return output_value{description.dump()};
     }
 
     return {};

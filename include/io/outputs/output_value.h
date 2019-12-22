@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <variant>
+#include <sstream>
 
 #include "nlohmann/json.hpp"
 
@@ -108,8 +109,13 @@ output_value::output_value(T value) : m_value(value) {}
 
 template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int>>
 output_value::output_value(T value, std::optional<T> min, std::optional<T> max) : m_value(value) {
-    m_min = *min;
-    m_max = *max;
+    if (min) {
+        m_min.emplace(variant_type{*min});
+    }
+
+    if (max) {
+        m_max.emplace(variant_type{*max});
+    }
 }
 
 template<typename T>
