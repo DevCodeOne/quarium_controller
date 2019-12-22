@@ -13,6 +13,7 @@
 #include "logger.h"
 #include "signal_handler.h"
 
+// TODO: add mutexes here
 std::shared_ptr<schedule_handler> schedule_handler::instance() { return singleton<schedule_handler>::instance(); }
 
 void schedule_handler::start_event_handler() {
@@ -29,7 +30,7 @@ void schedule_handler::stop_event_handler() {
         return;
     }
 
-    m_should_exit = true;
+    m_should_exit.store(true);
     m_event_thread.join();
     m_is_started = false;
 }
@@ -81,7 +82,7 @@ void schedule_handler::event_handler() {
 
     auto handler_instance = instance();
 
-    while (!handler_instance->m_should_exit) {
+    while (!handler_instance->m_should_exit.load()) {
         {
             auto lock = singleton<schedule_handler>::retrieve_instance_lock();
 

@@ -35,9 +35,6 @@ std::ostream &operator<<(std::ostream &os, const tasmota_power_command &power_co
     return os;
 }
 
-// TODO implement
-std::ostream &operator<<(std::ostream &os, const value_collection &collection) { return os; }
-
 bool operator==(const output_value &lhs, const output_value &rhs) {
     if (lhs.current_type() != rhs.current_type()) {
         return false;
@@ -54,9 +51,10 @@ bool operator!=(const output_value &lhs, const output_value &rhs) { return !(lhs
 
 std::optional<output_value> output_value::deserialize(const nlohmann::json &description_parameter,
                                                       std::optional<output_value_types> type) {
+    auto logger_instance = logger::instance();
     nlohmann::json description = description_parameter;
     if (description.is_null()) {
-        logger::instance()->info("The description of one output_value was invalid");
+        logger_instance->info("The description of one output_value was invalid");
         return {};
     }
 
@@ -68,7 +66,7 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         auto range_entry = description["range"];
 
         if (type_entry.is_null() || !type_entry.is_string()) {
-            logger::instance()->info("The description of one output_value was invalid : the type entry was invalid");
+            logger_instance->info("The description of one output_value was invalid : the type entry was invalid");
             return {};
         }
 
@@ -84,12 +82,12 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
             type = output_value_types::number_unsigned;
         } else if (type_as_string == "switch_output") {
             type = output_value_types::switch_output;
-        } else if (type_as_string == "value_collection") {
-            type = output_value_types::value_collection;
         } else if (type_as_string == "tasmota_power_command") {
             type = output_value_types::tasmota_power_command;
+        } else if (type_as_string == "string") {
+            type = output_value_types::string;
         } else {
-            logger::instance()->critical("Invalid value type in value description");
+            logger_instance->critical("Invalid value type in value description");
             return {};
         }
 
@@ -107,7 +105,7 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                     default_value = result->second;
                 }
             } else {
-                logger::instance()->info(
+                logger_instance->info(
                     "The description of one output_value was invalid : the default entry in the description is "
                     "invalid");
                 return {};
@@ -123,6 +121,8 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                 default_value = switch_output::off;
             } else if (type == output_value_types::tasmota_power_command) {
                 default_value = tasmota_power_command::off;
+            } else if (type == output_value_types::string) {
+                default_value = "";
             } else {
                 return {};
             }
@@ -134,14 +134,14 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
 
         if (range_entry.is_null()) {
             if (type == output_value_types::number || type == output_value_types::number_unsigned) {
-                logger::instance()->warn(
+                logger_instance->warn(
                     "The description of the value doesn't specify a valid range this is probably not what you want");
             }
             return output_value(*default_value);
         }
 
         if (!range_entry.is_array() || range_entry.size() != 2) {
-            logger::instance()->info(
+            logger_instance->info(
                 "The description of one output_value was invalid : the range entry in the description is "
                 "invalid");
             return {};
@@ -151,7 +151,7 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         auto second_entry = range_entry[1];
 
         if (first_entry.is_number() != second_entry.is_number()) {
-            return false;
+            return {};
         }
 
         std::optional<output_value::variant_type> lower_range_entry;
@@ -194,6 +194,8 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                     result != tasmota_power_command_output_values.cend()) {
                     return output_value{result->second};
                 }
+            } else if (type.has_value() && *type == output_value_types::string) {
+                return output_value{description.dump()};
             }
         } else if (description.is_number_unsigned() &&
                    ((!type.has_value()) || (type.has_value() && *type == output_value_types::number_unsigned))) {
@@ -202,6 +204,9 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
                    ((!type.has_value()) || (type.has_value() && *type == output_value_types::number))) {
             return output_value(description.get<int>());
         }
+
+        // Fall back to plain string
+        return output_value(description.dump());
     }
 
     return {};
@@ -216,10 +221,9 @@ output_value_types output_value::current_type() const {
         return output_value_types::number;
     } else if (holds_type<unsigned int>()) {
         return output_value_types::number_unsigned;
-    } else if (holds_type<value_collection>()) {
-        return output_value_types::value_collection;
+    } else if (holds_type<std::string>()) {
+        return output_value_types::string;
     }
-
     // Should never actually happen
     return output_value_types::number;
 }

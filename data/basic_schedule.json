@@ -90,6 +90,16 @@
                     }
                 }
             }
+        },
+        {
+            "id" : "mqtt_test",
+            "type" : "mqtt",
+            "description" : {
+                "url" : "127.0.0.1",
+                "port" : 1883,
+                "topic" : "zigbee2mqtt/first_test/set",
+                "default" : "{ \"state\" : \"off\" }"
+            }
         }
     ],
     "inputs" : [
@@ -110,8 +120,8 @@
         },
         {
             "id" : "lights_off",
-            "outputs" : ["light#1", "light#2", "co2", "cantest"],
-            "output_actions" : ["off", "off", "off", 0]
+            "outputs" : ["light#1", "light#2", "co2", "cantest", "mqtt_test"],
+            "output_actions" : ["off", "off", "off", 0, "{ \"state\" : \"off\" }"]
         },
         {
             "id" : "maintenance aquarium#1",

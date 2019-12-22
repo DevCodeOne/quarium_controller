@@ -39,7 +39,6 @@ class value_transitioner final {
     std::condition_variable m_wake_up;
     std::chrono::milliseconds m_period = std::chrono::milliseconds(100);
     std::atomic_bool m_exit_thread;
-    std::atomic_bool m_is_running;
 
     value_type_t m_target_value;
     value_type_t m_current_value;

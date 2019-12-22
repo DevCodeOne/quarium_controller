@@ -28,6 +28,7 @@ set (SOURCE_FILES
     src/io/outputs/output_scheduler.cpp
     src/io/outputs/remote_function/remote_function.cpp
     src/io/outputs/can/can_output.cpp
+    src/io/outputs/mqtt/mqtt_output.cpp
     src/io/interfaces/gpio/gpio_chip.cpp
     src/io/interfaces/gpio/gpio_pin.cpp
     src/io/interfaces/can/can.cpp

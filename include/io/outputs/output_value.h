@@ -13,38 +13,18 @@ std::ostream &operator<<(std::ostream &os, const switch_output &output);
 enum struct tasmota_power_command { off = 0, on = 1, toggle = 2 };
 std::ostream &operator<<(std::ostream &os, const tasmota_power_command &power_command);
 
-enum struct output_value_types { number, number_unsigned, switch_output, value_collection, tasmota_power_command };
-
-// Map of values
-class value_collection {
-   public:
-    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned int>;
-
-    value_collection() = default;
-    ~value_collection() = default;
-
-    template<typename T>
-    std::optional<T> get(const std::string &id) const;
-    template<typename T>
-    std::optional<T> min(const std::string &id) const;
-    template<typename T>
-    std::optional<T> max(const std::string &id) const;
-
-    template<typename T>
-    bool holds_type(const std::string &id) const;
-
-    std::size_t type_index(const std::string &id) const;
-
-   private:
-    std::map<std::string, variant_type> m_values;
+enum struct output_value_types {
+    number,
+    number_unsigned,
+    switch_output,
+    value_collection,
+    tasmota_power_command,
+    string
 };
 
-std::ostream &operator<<(std::ostream &os, const value_collection &collection);
-
-// TODO Maybe change output_value to be a special value_collection with only one item in it
 class output_value {
    public:
-    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned int, value_collection>;
+    using variant_type = std::variant<switch_output, tasmota_power_command, int, unsigned int, std::string>;
 
     static std::optional<output_value> deserialize(
         const nlohmann::json &description,
@@ -54,7 +34,9 @@ class output_value {
     std::optional<T> serialize() const;
 
     template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int> = 0>
-    output_value(T value, std::optional<T> min = {}, std::optional<T> max = {});
+    output_value(T value);
+    template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int> = 0>
+    output_value(T value, std::optional<T> min, std::optional<T> max);
     output_value(const output_value &other) = default;
     output_value(output_value &&other) = default;
     ~output_value() = default;
@@ -76,6 +58,7 @@ class output_value {
 
    private:
     variant_type m_value;
+    // TODO: use variant_type plus std::monostate instead of an optional value for min and max value
     std::optional<variant_type> m_min;
     std::optional<variant_type> m_max;
 
@@ -121,14 +104,12 @@ std::optional<T> output_value::max() const {
 }
 
 template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int>>
-output_value::output_value(T value, std::optional<T> min, std::optional<T> max) : m_value(value) {
-    if (min.has_value()) {
-        m_min = *min;
-    }
+output_value::output_value(T value) : m_value(value) {}
 
-    if (max.has_value()) {
-        m_max = *max;
-    }
+template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int>>
+output_value::output_value(T value, std::optional<T> min, std::optional<T> max) : m_value(value) {
+    m_min = *min;
+    m_max = *max;
 }
 
 template<typename T>
