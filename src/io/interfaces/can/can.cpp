@@ -34,24 +34,29 @@ std::shared_ptr<can> can::instance(const std::filesystem::path &can_path) {
     }
 
     // TODO: Find out why this is an error in valgrind
-    int *socket_handle_raw = new int(socket(PF_CAN, SOCK_RAW, CAN_RAW));
-    socket_handle_ptr_type socket_handle(socket_handle_raw, socket_deleter);
     sockaddr_can addr{.can_family = AF_CAN, .can_ifindex = ifr.ifr_ifindex};
+    int socket_handle = socket(PF_CAN, SOCK_RAW, CAN_RAW);
 
-    if (*socket_handle == 0) {
+    if (socket_handle == 0) {
         logger_instance->critical("Couldn't open a socket for the can device {}", can_path.c_str());
         return nullptr;
     }
 
-    if (bind(*socket_handle, (sockaddr *)&addr, sizeof(addr)) < 0) {
+    if (bind(socket_handle, (sockaddr *)&addr, sizeof(addr)) < 0) {
         logger_instance->critical("Couldn't bind the socket for the can device {}", can_path.c_str());
         return nullptr;
     }
 
-    return (_instance = std::shared_ptr<can>(new can(std::move(socket_handle))));
+    return (_instance = std::shared_ptr<can>(new can(socket_handle)));
 }
 
-can::can(socket_handle_ptr_type &&socket_handle) : m_socket_handle(std::move(socket_handle)) {}
+can::can(int socket_handle) : m_socket_handle(socket_handle) {}
+
+can::~can() {
+    if (m_socket_handle != -1) {
+        close(m_socket_handle);
+    }
+}
 
 can_error_code can::send(const can_object_identifier &identifier, uint64_t data) {
     canfd_frame frame;
@@ -61,5 +66,5 @@ can_error_code can::send(const can_object_identifier &identifier, uint64_t data)
     frame.len = sizeof(data) / CHAR_BIT;
     std::memcpy(frame.data, (char *)&data, sizeof(data));
 
-    return write(*m_socket_handle, &frame, CAN_MTU) == CAN_MTU ? can_error_code::ok : can_error_code::send_error;
+    return write(m_socket_handle, &frame, CAN_MTU) == CAN_MTU ? can_error_code::ok : can_error_code::send_error;
 }

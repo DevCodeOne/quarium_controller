@@ -38,3 +38,25 @@ class can_output final : public output_interface {
     can_object_identifier m_object_identifier;
     std::shared_ptr<can> m_can_instance;
 };
+
+template<typename TransitionStep>
+can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier identifier,
+                       const output_value &initial_value, TransitionStep transition)
+    : m_object_identifier(identifier),
+      m_can_instance(can_instance),
+      m_value(initial_value),
+      m_transitioner(initial_value) {
+    m_transitioner.start_transition_thread(
+        [this, transition](auto time_diff, auto &input, const auto &output) -> transition_state {
+            auto result = transition(time_diff, input, output);
+
+            if (result == transition_state::value_did_change || result == transition_state::finished_transition) {
+                sync_values();
+            }
+
+            return result;
+        },
+        /* TODO: set this value based on the period value defined in the TransitionStep instance */
+        std::chrono::milliseconds(100));
+}
+

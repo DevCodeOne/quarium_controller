@@ -21,7 +21,7 @@ class can final {
 
     can(can &&other) = default;
     can(const can &other) = delete;
-    ~can() = default;
+    ~can();
 
     can &operator=(const can &other) = delete;
     can &operator=(can &&other) = default;
@@ -36,14 +36,7 @@ class can final {
     static inline std::shared_ptr<can> _instance = nullptr;
     static inline std::mutex _instance_mutex{};
 
-    static inline auto socket_deleter = [](int *socket_handle) {
-        if (socket_handle && *socket_handle) {
-            close(*socket_handle);
-        }
-    };
-    using socket_handle_ptr_type = std::unique_ptr<int, decltype(+socket_deleter)>;
+    can(int socket_handle);
 
-    can(socket_handle_ptr_type &&socket_handle);
-
-    socket_handle_ptr_type m_socket_handle;
+    int m_socket_handle = -1;
 };

@@ -59,7 +59,8 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
                 period_length = *custom_period_length;
             }
 
-            logger::instance()->info("Period length of {}ms", period_length.count());
+            logger::instance()->info("Added a value with transition with a period length of {}ms",
+                                     period_length.count());
         }
 
         return std::unique_ptr<can_output>(
@@ -69,27 +70,6 @@ std::unique_ptr<can_output> can_output::create_for_interface(const nlohmann::jso
 
     return std::unique_ptr<can_output>(new can_output(can_device_instance, can_object_identifier(object_identifier),
                                                       default_value, output_transitions::instant<>{}));
-}
-
-template<typename TransitionStep>
-can_output::can_output(std::shared_ptr<can> can_instance, can_object_identifier identifier,
-                       const output_value &initial_value, TransitionStep transition)
-    : m_object_identifier(identifier),
-      m_can_instance(can_instance),
-      m_value(initial_value),
-      m_transitioner(initial_value) {
-    m_transitioner.start_transition_thread(
-        [this, transition](auto time_diff, auto &input, const auto &output) -> transition_state {
-            auto result = transition(time_diff, input, output);
-
-            if (result == transition_state::value_did_change || result == transition_state::finished_transition) {
-                sync_values();
-            }
-
-            return result;
-        },
-        /* TODO: set this value based on the period value defined in the TransitionStep instance */
-        std::chrono::milliseconds(100));
 }
 
 bool can_output::control_output(const output_value &value) {
