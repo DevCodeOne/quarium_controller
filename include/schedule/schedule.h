@@ -6,10 +6,9 @@
 #include <string>
 #include <vector>
 
-#include "nlohmann/json.hpp"
-
 #include "chrono_time.h"
 #include "network/rest_resource.h"
+#include "nlohmann/json.hpp"
 #include "schedule/schedule_event.h"
 
 using json = nlohmann::json;
@@ -19,7 +18,7 @@ class schedule final : public rest_resource<schedule> {
     enum struct mode { repeating, single_iteration };
 
     static std::optional<schedule> create_from_file(const std::filesystem::path &schedule_file_path);
-    static std::optional<schedule> deserialize(json &schedule_description);
+    static std::optional<schedule> deserialize(const json &schedule_description);
 
     schedule &start_at(const days &new_start);
     schedule &end_at(const days &new_end);

@@ -1,4 +1,5 @@
 #include "schedule/schedule.h"
+
 #include "config.h"
 #include "logger.h"
 
@@ -57,16 +58,18 @@ std::optional<schedule> schedule::create_from_file(const std::filesystem::path &
     return deserialize(schedule);
 }
 
-std::optional<schedule> schedule::deserialize(json &schedule_description) {
-    json event_description_array_entry = schedule_description["events"];
-    json title_entry = schedule_description["title"];
-    json start_date_entry = schedule_description["start_at"];
-    json end_date_entry = schedule_description["end_at"];
-    json repeating_entry = schedule_description["repeating"];
-    json period_entry = schedule_description["period_in_days"];
+std::optional<schedule> schedule::deserialize(const nlohmann::json &schedule_description) {
+    auto logger_instance = logger::instance();
+
+    auto event_description_array_entry = schedule_description.find("events");
+    auto title_entry = schedule_description.find("title");
+    auto start_date_entry = schedule_description.find("start_at");
+    auto end_date_entry = schedule_description.find("end_at");
+    auto repeating_entry = schedule_description.find("repeating");
+    auto period_entry = schedule_description.find("period_in_days");
 
     if (config::instance() == nullptr) {
-        logger::instance()->critical("No config found");
+        logger_instance->critical("No config found");
         return {};
     }
 
@@ -74,32 +77,33 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
 
     schedule created_schedule;
 
-    if (title_entry.is_null()) {
+    if (title_entry == schedule_description.cend()) {
         using namespace std::literals;
 
-        logger::instance()->warn("Schedule has no title");
+        logger_instance->warn("Schedule has no title");
+        logger_instance->warn("Schedule has no title");
         created_schedule.title("Schedule"s + std::to_string(_instance_count));
-    } else if (title_entry.is_string()) {
-        created_schedule.title(title_entry.get<std::string>());
+    } else if (title_entry->is_string()) {
+        created_schedule.title(title_entry->get<std::string>());
     } else {
-        logger::instance()->critical("Title of the schedule is not a string");
+        logger_instance->critical("Title of the schedule is not a string");
         return {};
     }
 
-    if (event_description_array_entry.is_null()) {
-        logger::instance()->critical("Schedule has no events array");
+    if (event_description_array_entry == schedule_description.cend()) {
+        logger_instance->critical("Schedule has no events array");
         return {};
     }
 
-    if (!event_description_array_entry.is_array()) {
-        logger::instance()->critical("Schedule has events entry but it is not an array");
+    if (!event_description_array_entry->is_array()) {
+        logger_instance->critical("Schedule has events entry but it is not an array");
         return {};
     }
 
     std::vector<schedule_event> created_events;
 
     bool successfully_created_all_events =
-        std::all_of(event_description_array_entry.begin(), event_description_array_entry.end(),
+        std::all_of(event_description_array_entry->begin(), event_description_array_entry->end(),
                     [&created_events](auto &current_event_description) {
                         auto created_schedule_event = schedule_event::deserialize(current_event_description);
 
@@ -112,28 +116,29 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
                     });
 
     if (!successfully_created_all_events) {
-        logger::instance()->critical("Description of one or more events contains errors");
+        logger_instance->critical("Description of one or more events contains errors");
         return {};
     }
 
     days period{0};
     schedule::mode schedule_mode = schedule::mode::repeating;
 
-    if (start_date_entry.is_null() && end_date_entry.is_null() && period_entry.is_null()) {
-        logger::instance()->warn(
+    if (start_date_entry == schedule_description.cend() && end_date_entry == schedule_description.cend() &&
+        period_entry == schedule_description.cend()) {
+        logger_instance->warn(
             "No date information for schedule is defined, all settings will be set to their default values");
     } else {
         // TODO remove code duplication
-        if (!start_date_entry.is_null()) {
-            if (!start_date_entry.is_string()) {
-                logger::instance()->critical("start_at is not a string");
+        if (start_date_entry != schedule_description.cend()) {
+            if (!start_date_entry->is_string()) {
+                logger_instance->critical("start_at is not a string");
                 return {};
             }
             auto start_at =
-                convert_date_to_duration_since_epoch<days>(start_date_entry.get<std::string>(), date_format);
+                convert_date_to_duration_since_epoch<days>(start_date_entry->get<std::string>(), date_format);
 
             if (!start_at) {
-                logger::instance()->critical(
+                logger_instance->critical(
                     "start_at date doesn't conform to the specified date format, leading zeros for numbers smaller "
                     "than 10 are required");
                 return {};
@@ -141,19 +146,19 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
 
             created_schedule.start_at(*start_at);
         } else {
-            logger::instance()->warn("No start date given for schedule");
+            logger_instance->warn("No start date given for schedule");
         }
 
-        if (!end_date_entry.is_null()) {
-            if (!end_date_entry.is_string()) {
-                logger::instance()->critical("end_at is not a string");
+        if (end_date_entry != schedule_description.cend()) {
+            if (!end_date_entry->is_string()) {
+                logger_instance->critical("end_at is not a string");
                 return {};
             }
 
-            auto end_at = convert_date_to_duration_since_epoch<days>(end_date_entry.get<std::string>(), date_format);
+            auto end_at = convert_date_to_duration_since_epoch<days>(end_date_entry->get<std::string>(), date_format);
 
             if (!end_at) {
-                logger::instance()->critical(
+                logger_instance->critical(
                     "end_at date doesn't conform to the specified date format, leading zeros for numbers smaller "
                     "than 10 are required");
                 return {};
@@ -163,24 +168,24 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
         }
     }
 
-    if (!repeating_entry.is_null()) {
-        if (!repeating_entry.is_boolean()) {
-            logger::instance()->critical("repeating is not a boolean");
+    if (repeating_entry != schedule_description.cend()) {
+        if (!repeating_entry->is_boolean()) {
+            logger_instance->critical("repeating is not a boolean");
             return {};
         }
 
-        schedule_mode = repeating_entry.get<bool>() ? schedule::mode::repeating : schedule::mode::single_iteration;
+        schedule_mode = repeating_entry->get<bool>() ? schedule::mode::repeating : schedule::mode::single_iteration;
     } else {
-        logger::instance()->warn("No value given for repeating, it will be set on the default value");
+        logger_instance->warn("No value given for repeating, it will be set on the default value");
     }
 
-    if (!period_entry.is_null()) {
-        if (!period_entry.is_number_unsigned()) {
-            logger::instance()->critical("period_in_days is not an unsigned number");
+    if (period_entry != schedule_description.cend()) {
+        if (!period_entry->is_number_unsigned()) {
+            logger_instance->critical("period_in_days is not an unsigned number");
             return {};
         }
 
-        period = days{period_entry.get<unsigned int>()};
+        period = days{period_entry->get<unsigned int>()};
     }
 
     created_schedule.period(period).schedule_mode(schedule_mode);
@@ -190,7 +195,7 @@ std::optional<schedule> schedule::deserialize(json &schedule_description) {
                     [&created_schedule](auto &current_event) { return created_schedule.add_event(current_event); });
 
     if (!successfully_added_all_events) {
-        logger::instance()->critical("Couldn't add all events to schedule");
+        logger_instance->critical("Couldn't add all events to schedule");
         return {};
     }
 

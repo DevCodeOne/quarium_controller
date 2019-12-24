@@ -60,7 +60,8 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         return {};
     }
 
-    if (description.is_object()) {
+    auto value_entry = description_parameter.find("value");
+    if (description.is_object() && value_entry == description_parameter.cend()) {
         // Parse as an object
         // TODO implement
         auto type_entry = description["type"];
@@ -173,6 +174,12 @@ std::optional<output_value> output_value::deserialize(const nlohmann::json &desc
         }
 
         return output_value(*default_value, lower_range_entry, higher_range_entry);
+    } else if (description.is_object() && value_entry != description_parameter.cend()) {
+        // Interpret the value object as an string, which can be send e.g over mqtt
+        // TODO: check if other types would be useful
+        if ((type.has_value() && type == output_value_types::string) || !type.has_value()) {
+            return output_value(value_entry->dump());
+        }
     } else {
         // Is a singular value
         // TODO: parse this with the individual types as helpers

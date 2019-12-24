@@ -6,6 +6,7 @@
 #include "httplib/httplib.h"
 #include "logger.h"
 
+// TODO: replace [] operator with find, otherwise if the key doesn't exist the program will fail
 std::unique_ptr<output_interface> remote_function::create_for_interface(const nlohmann::json &description_parameter) {
     nlohmann::json description = description_parameter;
     auto logger_instance = logger::instance();

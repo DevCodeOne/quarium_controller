@@ -95,10 +95,12 @@
             "id" : "mqtt_test",
             "type" : "mqtt",
             "description" : {
-                "url" : "127.0.0.1",
+                "url" : "NewAquariumController",
                 "port" : 1883,
-                "topic" : "zigbee2mqtt/first_test/set",
-                "default" : "{ \"state\" : \"off\" }"
+                "topic" : "zigbee2mqtt/first_socket/set",
+                "default" : { "value" : { "state" : "off" } },
+                "user" : "iot",
+                "password" : "yourpw"
             }
         }
     ],
@@ -115,13 +117,13 @@
     "actions": [
         {
             "id" : "lights_on",
-            "outputs" : ["light#1", "light#2", "co2", "cantest", "badheizer"],
-            "output_actions" : ["on", "on", "on", 255, "off"]
+            "outputs" : ["light#1", "light#2", "co2", "cantest", "mqtt_test"],
+            "output_actions" : ["on", "on", "on", 255, { "value" : { "state" : "on" } }]
         },
         {
             "id" : "lights_off",
             "outputs" : ["light#1", "light#2", "co2", "cantest", "mqtt_test"],
-            "output_actions" : ["off", "off", "off", 0, "{ \"state\" : \"off\" }"]
+            "output_actions" : ["off", "off", "off", 0, { "value" : { "state" : "off" } }]
         },
         {
             "id" : "maintenance aquarium#1",

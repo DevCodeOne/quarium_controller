@@ -5,10 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "nlohmann/json.hpp"
-
 #include "chrono_time.h"
 #include "network/rest_resource.h"
+#include "nlohmann/json.hpp"
 #include "schedule/schedule_action.h"
 
 using json = nlohmann::json;
@@ -16,7 +15,7 @@ using json = nlohmann::json;
 // TODO: add some kind of id system
 class schedule_event final : public rest_resource<schedule_event> {
    public:
-    static std::optional<schedule_event> deserialize(json &schedule_event_description);
+    static std::optional<schedule_event> deserialize(const json &schedule_event_description);
 
     schedule_event &name(const std::string &new_name);
     schedule_event &trigger_time(const std::chrono::minutes new_trigger_time);

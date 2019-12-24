@@ -12,36 +12,56 @@ std::unique_ptr<mqtt_output> mqtt_output::create_for_interface(const nlohmann::j
         return nullptr;
     }
 
-    nlohmann::json mqtt_url_entry = description["url"];
-    nlohmann::json mqtt_port_entry = description["port"];
-    nlohmann::json mqtt_topic_entry = description["topic"];
-    nlohmann::json mqtt_default_value = description["default"];
+    auto mqtt_url_entry = description.find("url");
+    auto mqtt_port_entry = description.find("port");
+    auto mqtt_topic_entry = description.find("topic");
+    auto mqtt_default_value = description.find("default");
+    auto mqtt_username_entry = description.find("user");
+    auto mqtt_password_entry = description.find("password");
 
-    if (mqtt_url_entry.is_null() || !mqtt_url_entry.is_string()) {
+    if (mqtt_url_entry == description.cend() || !mqtt_url_entry->is_string()) {
         logger_instance->critical("The url entry of the event is not valid, description : {}", description.dump());
         return nullptr;
     }
 
-    if (mqtt_port_entry.is_null() || !mqtt_port_entry.is_number_unsigned()) {
+    if (mqtt_port_entry == description.cend() || !mqtt_port_entry->is_number_unsigned()) {
         logger_instance->critical("The port entry of the event is not valid, description : {}", description.dump());
         return nullptr;
     }
 
-    if (mqtt_topic_entry.is_null() || !mqtt_topic_entry.is_string()) {
+    if (mqtt_topic_entry == description.cend() || !mqtt_topic_entry->is_string()) {
         logger_instance->critical("The topic entry of the event is not valid, description : {}", description.dump());
         return nullptr;
     }
 
-    auto url = mqtt_url_entry.get<std::string>();
-    auto port = mqtt_port_entry.get<uint16_t>();
-    auto topic = mqtt_topic_entry.get<std::string>();
-    auto default_value =
-        (!mqtt_default_value.is_null() && mqtt_default_value.is_string()) ? mqtt_default_value.get<std::string>() : ""s;
+    if (mqtt_username_entry == description.cend() ^ mqtt_password_entry == description.cend()) {
+        logger_instance->critical("The mqtt credentials are only partially specialized");
+        return nullptr;
+    }
+
+    auto url = mqtt_url_entry->get<std::string>();
+    auto port = mqtt_port_entry->get<uint16_t>();
+    auto topic = mqtt_topic_entry->get<std::string>();
+    auto default_value = (mqtt_default_value != description.cend() && mqtt_default_value->is_string())
+                             ? mqtt_default_value->get<std::string>()
+                             : ""s;
+    bool use_credentials = false;
+    std::string user = "";
+    std::string password = "";
+
+    if ((mqtt_username_entry != description.cend() && mqtt_username_entry->is_string()) &&
+        (mqtt_password_entry != description.cend() && mqtt_password_entry->is_string())) {
+        use_credentials = true;
+        user = mqtt_username_entry->get<std::string>();
+        password = mqtt_password_entry->get<std::string>();
+    }
 
     mqtt_address addr{"", .m_port = mqtt_port{port}};
     std::strncpy(addr.m_server_name, url.c_str(), mqtt_address::max_server_name_len);
 
-    auto mqtt_instance = mqtt::instance(addr);
+    auto mqtt_instance = mqtt::instance(addr, use_credentials ? std::optional<mqtt_credentials>(mqtt_credentials{
+                                                                    .m_password = password, .m_username = user})
+                                                              : std::optional<mqtt_credentials>());
 
     if (!mqtt_instance) {
         logger_instance->critical("No valid mqtt interface could be aquired");

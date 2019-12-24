@@ -171,6 +171,7 @@ nlohmann::json gpio_pin::serialize() const {
     return std::move(serialized);
 }
 
+// TODO: replace [] operator with find, otherwise if the key doesn't exist the program will fail
 std::unique_ptr<output_interface> gpio_pin::create_for_interface(const nlohmann::json &description) {
     if (!description.is_object()) {
         return nullptr;

@@ -1,5 +1,7 @@
 #include "io/interfaces/mqtt/mqtt.h"
 
+#include <optional>
+
 #include "logger.h"
 #include "mqtt_client_cpp.hpp"
 
@@ -7,7 +9,7 @@ bool detail::mqtt_address_cmp::operator()(const mqtt_address &lhs, const mqtt_ad
     return std::strcmp(lhs.m_server_name, rhs.m_server_name) < 0 || lhs.m_port < rhs.m_port;
 }
 
-std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr) {
+std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::optional<mqtt_credentials> &credentials) {
     std::lock_guard<std::recursive_mutex> _instance_guard{_instance_mutex};
 
     if (_global_context.stopped()) {
@@ -23,6 +25,12 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr) {
         mqtt_cpp::make_sync_client(mqtt::_global_context, addr.m_server_name, (uint16_t)addr.m_port);
     mqtt_socket->set_client_id("testing123");
     mqtt_socket->set_clean_session(true);
+
+    if (credentials) {
+        mqtt_socket->set_user_name(credentials->m_username);
+        mqtt_socket->set_password(credentials->m_password);
+    }
+
     mqtt_socket->set_error_handler(
         [](mqtt_cpp::error_code ec) { logger::instance()->warn("Mqtt error : {}", ec.message()); });
     try {
@@ -32,7 +40,7 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr) {
                                      (uint16_t)addr.m_port);
         return nullptr;
     }
-    auto created_instance = _instances.emplace(std::make_pair(addr, new mqtt(addr, mqtt_socket)));
+    auto created_instance = _instances.emplace(std::make_pair(addr, new mqtt(addr, mqtt_socket, credentials)));
 
     if (!created_instance.second) {
         return nullptr;
@@ -42,7 +50,8 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr) {
     return created_instance.first->second;
 }
 
-mqtt::mqtt(mqtt_address addr, mqtt_sock_type mqtt_socket) : m_addr(std::move(addr)), m_mqtt_socket(mqtt_socket) {}
+mqtt::mqtt(mqtt_address addr, mqtt_sock_type mqtt_socket, std::optional<mqtt_credentials> credentials)
+    : m_addr(std::move(addr)), m_mqtt_socket(mqtt_socket), m_cred(credentials) {}
 
 // TODO: maybe do this differently
 bool mqtt::start_interface() {

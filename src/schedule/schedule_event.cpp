@@ -1,51 +1,55 @@
 #include "schedule/schedule_event.h"
+
 #include "logger.h"
 
-std::optional<schedule_event> schedule_event::deserialize(json &schedule_event_description) {
-    json name_entry = schedule_event_description["name"];
-    json day_entry = schedule_event_description["day"];
-    json trigger_at_entry = schedule_event_description["trigger_at"];
-    json actions_entry = schedule_event_description["actions"];
+std::optional<schedule_event> schedule_event::deserialize(const json &description) {
+    auto logger_instance = logger::instance();
+
+    auto name_entry = description.find("name");
+    auto day_entry = description.find("day");
+    auto trigger_at_entry = description.find("trigger_at");
+    auto actions_entry = description.find("actions");
 
     schedule_event created_event;
 
-    if (name_entry.is_null() || day_entry.is_null() || trigger_at_entry.is_null() || actions_entry.is_null()) {
-        logger::instance()->critical("A needed entry in a event was missing : {} {} {} {}",
-                                     name_entry.is_null() ? "id" : "", day_entry.is_null() ? "day" : "",
-                                     trigger_at_entry.is_null() ? "trigger_at" : "",
-                                     actions_entry.is_null() ? "actions_entry" : "");
-        if (!name_entry.is_null() && name_entry.is_string()) {
-            logger::instance()->critical("The issue was in the event with the id {}", name_entry.get<std::string>());
+    if (name_entry == description.cend() || day_entry == description.cend() || trigger_at_entry == description.cend() ||
+        actions_entry == description.cend()) {
+        logger_instance->critical(
+            "A needed entry in a event was missing : {} {} {} {}", name_entry == description.cend() ? "id" : "",
+            day_entry == description.cend() ? "day" : "", trigger_at_entry == description.cend() ? "trigger_at" : "",
+            actions_entry == description.cend() ? "actions_entry" : "");
+        if (name_entry != description.cend() && name_entry->is_string()) {
+            logger_instance->critical("The issue was in the event with the id {}", name_entry->get<std::string>());
         }
         return {};
     }
 
-    if (!name_entry.is_string()) {
-        logger::instance()->critical("The id of an event is not a string");
+    if (!name_entry->is_string()) {
+        logger_instance->critical("The id of an event is not a string");
         return {};
     }
 
-    created_event.name(name_entry.get<std::string>());
+    created_event.name(name_entry->get<std::string>());
 
-    if (!day_entry.is_number_unsigned()) {
-        logger::instance()->critical("The day offset of the entry is not an unsigned number");
+    if (!day_entry->is_number_unsigned()) {
+        logger_instance->critical("The day offset of the entry is not an unsigned number");
         return {};
     }
 
-    created_event.day(days{day_entry.get<unsigned int>()});
+    created_event.day(days{day_entry->get<unsigned int>()});
 
-    if (!trigger_at_entry.is_string()) {
-        logger::instance()->critical("The trigger_at entry is not a string");
+    if (!trigger_at_entry->is_string()) {
+        logger_instance->critical("The trigger_at entry is not a string");
         return {};
     }
 
-    std::istringstream trigger_at_stream{trigger_at_entry.get<std::string>()};
+    std::istringstream trigger_at_stream{trigger_at_entry->get<std::string>()};
     std::tm trigger_at{};
 
     trigger_at_stream >> std::get_time(&trigger_at, "%H:%M");
 
     if (trigger_at_stream.fail()) {
-        logger::instance()->critical("The trigger_at entry is not a valid time (HH:MM, e.g. 13:37)");
+        logger_instance->critical("The trigger_at entry is not a valid time (HH:MM, e.g. 13:37)");
         return {};
     }
 
@@ -53,21 +57,21 @@ std::optional<schedule_event> schedule_event::deserialize(json &schedule_event_d
         std::chrono::minutes(trigger_at.tm_min) +
         std::chrono::duration_cast<std::chrono::minutes>(std::chrono::hours(trigger_at.tm_hour)));
 
-    if (!actions_entry.is_array()) {
-        logger::instance()->critical("The actions entry is not an array");
+    if (!actions_entry->is_array()) {
+        logger_instance->critical("The actions entry is not an array");
         return {};
     }
 
-    for (auto &current_action_id : actions_entry) {
+    for (auto &current_action_id : (*actions_entry)) {
         if (!current_action_id.is_string()) {
-            logger::instance()->critical("The entry in the actions array is not a string");
+            logger_instance->critical("The entry in the actions array is not a string");
             return {};
         }
 
         schedule_action_id id = current_action_id.get<std::string>();
 
         if (!schedule_action::is_valid_id(id)) {
-            logger::instance()->critical("The provided action id is not valid");
+            logger_instance->critical("The provided action id is not valid");
             return {};
         }
 

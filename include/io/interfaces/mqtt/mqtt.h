@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "logger.h"
@@ -14,10 +15,15 @@
 enum struct mqtt_port : uint16_t {};
 
 struct mqtt_address {
-    static inline constexpr size_t max_server_name_len = 64;
+    static inline constexpr size_t max_server_name_len = 128;
 
     char m_server_name[max_server_name_len];
     mqtt_port m_port;
+};
+
+struct mqtt_credentials {
+    std::string m_password;
+    std::string m_username;
 };
 
 namespace detail {
@@ -30,7 +36,8 @@ class mqtt {
    public:
     static inline constexpr mqtt_address _default_adress{"localhost", mqtt_port{1234}};
 
-    static std::shared_ptr<mqtt> instance(const mqtt_address &addr = _default_adress);
+    static std::shared_ptr<mqtt> instance(const mqtt_address &addr = _default_adress,
+                                          const std::optional<mqtt_credentials> &credentials = std::nullopt);
     static bool start_interface();
     static bool stop_all_instances();
 
@@ -55,7 +62,7 @@ class mqtt {
         decltype(mqtt_cpp::make_sync_client(_global_context, std::declval<std::string>(), std::declval<uint16_t>()));
     using packet_id = mqtt_sock_type::element_type::packet_id_t;
 
-    mqtt(mqtt_address addr, mqtt_sock_type mqtt_socket);
+    mqtt(mqtt_address addr, mqtt_sock_type mqtt_socket, std::optional<mqtt_credentials> credentials = std::nullopt);
     static void io_handler();
 
     static inline std::map<mqtt_address, std::shared_ptr<mqtt>, detail::mqtt_address_cmp> _instances;
@@ -66,6 +73,7 @@ class mqtt {
     }};
     mqtt_sock_type m_mqtt_socket;
     mqtt_address m_addr;
+    std::optional<mqtt_credentials> m_cred;
 };
 
 template<typename T>
