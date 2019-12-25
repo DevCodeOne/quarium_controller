@@ -23,7 +23,7 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::option
 
     mqtt_sock_type mqtt_socket =
         mqtt_cpp::make_sync_client(mqtt::_global_context, addr.m_server_name, (uint16_t)addr.m_port);
-    mqtt_socket->set_client_id("testing123");
+    mqtt_socket->set_client_id("QuariumController");
     mqtt_socket->set_clean_session(true);
 
     if (credentials) {
@@ -31,8 +31,20 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::option
         mqtt_socket->set_password(credentials->m_password);
     }
 
+    auto connected_sucessfully = std::make_shared<std::atomic_bool>(false);
+
     mqtt_socket->set_error_handler(
-        [](mqtt_cpp::error_code ec) { logger::instance()->warn("Mqtt error : {}", ec.message()); });
+        [](mqtt_cpp::error_code ec) { logger::instance()->warn("New Mqtt error : {}", ec.message()); });
+
+    auto handler = [connected_sucessfully](bool, mqtt_cpp::connect_return_code connack_return_code) -> bool {
+        logger::instance()->info("Mqtt connack handler called, return code : {}",
+                                 mqtt_cpp::connect_return_code_to_str(connack_return_code));
+        *connected_sucessfully = connack_return_code == mqtt_cpp::connect_return_code::accepted;
+        return true;
+    };
+
+    mqtt_socket->set_connack_handler(handler);
+
     try {
         mqtt_socket->connect();
     } catch (...) {
@@ -40,6 +52,15 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::option
                                      (uint16_t)addr.m_port);
         return nullptr;
     }
+
+    // TODO: improve this, e.g run as long as the handler wasn't called, not just for 5 seconds even if it was already
+    // called. Try running  the context for 5 seconds -> wait 5 seconds for the flag to be set
+    _global_context.run_for(std::chrono::seconds(5));
+
+    if (!connected_sucessfully->load()) {
+        return nullptr;
+    }
+
     auto created_instance = _instances.emplace(std::make_pair(addr, new mqtt(addr, mqtt_socket, credentials)));
 
     if (!created_instance.second) {

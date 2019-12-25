@@ -1,6 +1,7 @@
 #include <atomic>
 #include <string>
 
+#include "Wt/WServer.h"
 #include "clara.hpp"
 
 #ifdef WITH_GUI
@@ -8,6 +9,7 @@
 #endif
 
 #include "config.h"
+#include "gui/web/main_container.h"
 #include "io/interfaces/gpio/gpio_chip.h"
 #include "io/interfaces/mqtt/mqtt.h"
 #include "io/outputs/can/can_output.h"
@@ -108,16 +110,19 @@ int main(int argc, char *argv[]) {
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));
     network_iface->add_route("/api/v0/log", rest_resource<logger>::handle_request);
 
+    Wt::WServer server(argv[0]);
+    server.setServerConfiguration(argc, argv, "../data/wthttpd.conf");
+    server.addEntryPoint(Wt::EntryPointType::Application,
+                         [](const auto &env) { return std::make_unique<main_container>(env); });
+    if (!server.start()) {
+        logger_instance->warn("Couldn't start the wt server");
+    }
+
     if (!network_iface || !network_iface->start()) {
         logger_instance->critical("Couldn't start network interface");
 
         return EXIT_FAILURE;
     }
-
-    // network_iface->add_route(std::regex("/api/v0/schedules.*", std::regex_constants::extended),
-    //                          rest_resource<schedule_handler>::handle_request);
-    // network_iface->add_route(std::regex("/api/v0/gpio_chip.*", std::regex_constants::extended),
-    //                          rest_resource<gpio_chip>::handle_request);
 
     while (!_should_exit) {
         if (pause() < 0) {
@@ -131,6 +136,7 @@ int main(int argc, char *argv[]) {
 
     logger_instance->info("Shutting down server, schedule handler and gui");
     schedule_handler::instance()->stop_event_handler();
+    server.stop();
 
 #ifdef WITH_GUI
     if (inst) {

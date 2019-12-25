@@ -100,7 +100,7 @@
                 "topic" : "zigbee2mqtt/first_socket/set",
                 "default" : { "value" : { "state" : "off" } },
                 "user" : "iot",
-                "password" : "yourpw"
+                "password" : "einpwfueriot"
             }
         }
     ],

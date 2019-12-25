@@ -4,13 +4,15 @@ class QuariumController(ConanFile):
     name = "quarium_controller"
     version = "none"
     settings = "os", "compiler", "build_type", "arch"
-    requires =  "spdlog/0.17.0@bincrafters/stable", \
+    requires =  "OpenSSL/1.1.1c@conan/stable", \
+            "spdlog/0.17.0@bincrafters/stable", \
             "catch2/2.3.0@bincrafters/stable", \
             "jsonformoderncpp/3.7.3@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
             "cpp-httplib/0.3.1@devcodeone/stable", \
             "libgpiod/1.2.1@ecashptyltd/stable", \
-            "mqtt_cpp/8.x@devcodeone/stable"
+            "mqtt_cpp/8.x@devcodeone/stable", \
+            "wt/4.0.4@bincrafters/stable"
     options = { "build_tests" : [True, False],
             "use_sdl" : [True, False],
             "with_gui" : [True, False],
@@ -20,6 +22,23 @@ class QuariumController(ConanFile):
             "use_sdl" : True, \
             "use_gpiod_stub" : True, \
             "with_gui" : True, \
+            "wt:shared" : False, \
+            "wt:with_ssl" : True, \
+            "wt:with_haru" : False, \
+            "wt:with_pango" : False, \
+            "wt:with_sqlite" : False, \
+            "wt:with_postgres" : False, \
+            "wt:with_firebird" : False, \
+            "wt:with_mysql" : False, \
+            "wt:with_mssql" : False, \
+            "wt:with_qt4" : False, \
+            "wt:with_test" : False, \
+            "wt:with_dbo" : False, \
+            "wt:with_opengl" : False, \
+            "wt:with_unwind" : False, \
+            "wt:multi_threaded" : True, \
+            "wt:connector_http" : True, \
+            "wt:connector_fcgi": False
             }
     exports_sources = "tests*", "include*", "src*", "CMakeLists.txt"
     generators = "cmake", "ycm"
