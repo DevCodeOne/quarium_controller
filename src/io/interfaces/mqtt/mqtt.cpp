@@ -31,7 +31,7 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::option
         mqtt_socket->set_password(credentials->m_password);
     }
 
-    auto connected_sucessfully = std::make_shared<std::atomic_bool>(false);
+    auto connected_sucessfully = std::make_shared<std::promise<bool>>();
 
     mqtt_socket->set_error_handler(
         [](mqtt_cpp::error_code ec) { logger::instance()->warn("New Mqtt error : {}", ec.message()); });
@@ -39,7 +39,7 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::option
     auto handler = [connected_sucessfully](bool, mqtt_cpp::connect_return_code connack_return_code) -> bool {
         logger::instance()->info("Mqtt connack handler called, return code : {}",
                                  mqtt_cpp::connect_return_code_to_str(connack_return_code));
-        *connected_sucessfully = connack_return_code == mqtt_cpp::connect_return_code::accepted;
+        connected_sucessfully->set_value(connack_return_code == mqtt_cpp::connect_return_code::accepted);
         return true;
     };
 
@@ -53,13 +53,21 @@ std::shared_ptr<mqtt> mqtt::instance(const mqtt_address &addr, const std::option
         return nullptr;
     }
 
-    // TODO: improve this, e.g run as long as the handler wasn't called, not just for 5 seconds even if it was already
-    // called. Try running  the context for 5 seconds -> wait 5 seconds for the flag to be set
-    _global_context.run_for(std::chrono::seconds(5));
+    if (_global_context.stopped()) {
+        _global_context.restart();
+    }
 
-    if (!connected_sucessfully->load()) {
+    std::future<void> ignored_return = std::async(std::launch::async, []() -> void { _global_context.run(); });
+
+    auto connected_future = connected_sucessfully->get_future();
+    // TODO: make configureable how long we wait for the connection to be established
+    if (connected_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready || !connected_future.get()) {
+        logger::instance()->error("Couldn't connect to the mqtt server");
+        _global_context.stop();
         return nullptr;
     }
+
+    _global_context.stop();
 
     auto created_instance = _instances.emplace(std::make_pair(addr, new mqtt(addr, mqtt_socket, credentials)));
 
@@ -118,6 +126,10 @@ void mqtt::io_handler() {
             _global_context.run();
         } catch (...) {
             logger::instance()->warn("An exception happened in the mqtt io handler");
+        }
+
+        if (_global_context.stopped() && !_should_stop.load()) {
+            _global_context.restart();
         }
     }
 
