@@ -30,3 +30,31 @@ TEST_CASE("Basic deserializing tests") {
     REQUIRE(created_value->current_type() == output_value_types::number);
     REQUIRE(created_value2->current_type() == output_value_types::number_unsigned);
 }
+
+TEST_CASE("Basic mutator test") {
+    output_value value(0, std::make_optional<int>(0), std::make_optional<int>(20));
+
+    REQUIRE(value.get<int>().has_value());
+    REQUIRE(value.get<int>().value() == 0);
+
+    REQUIRE(value.min<int>().has_value());
+    REQUIRE(value.min<int>().value() == 0);
+
+    REQUIRE(value.max<int>().has_value());
+    REQUIRE(value.max<int>().value() == 20);
+
+    REQUIRE(value.set(10) == true);
+    REQUIRE(value.get<int>() == 10);
+
+    REQUIRE(value.set(21) == false);
+    REQUIRE(value.get<int>() == 10);
+
+    REQUIRE(value.set(0) == true);
+    REQUIRE(value.get<int>() == 0);
+
+    REQUIRE(value.set(-1) == false);
+    REQUIRE(value.get<int>() == 0);
+
+    REQUIRE(value.set(0.5f) == false);
+    REQUIRE(value.get<int>() == 0);
+}

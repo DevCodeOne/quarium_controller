@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <map>
 #include <optional>
-#include <variant>
 #include <sstream>
+#include <variant>
 
 #include "nlohmann/json.hpp"
 
@@ -22,6 +22,15 @@ enum struct output_value_types {
     tasmota_power_command,
     string
 };
+
+namespace Detail {
+    template<class... Ts>
+    struct overloaded : Ts... {
+        using Ts::operator()...;
+    };
+    template<class... Ts>
+    overloaded(Ts...)->overloaded<Ts...>;
+}  // namespace Detail
 
 class output_value {
    public:
@@ -56,6 +65,9 @@ class output_value {
     bool holds_type() const;
 
     output_value_types current_type() const;
+
+    template<typename T>
+    bool set(const T &value);
 
    private:
     variant_type m_value;
@@ -102,6 +114,38 @@ std::optional<T> output_value::max() const {
     }
 
     return {};
+}
+
+template<typename T>
+bool output_value::set(const T &value) {
+    if (!holds_type<T>()) {
+        return false;
+    }
+
+    if (m_min.has_value()) {
+        auto result = std::visit(
+            Detail::overloaded{[&value](auto &min_value) -> bool { return value >= static_cast<T>(min_value); },
+                               [&value](std::string &) -> bool { return false; }},
+            *m_min);
+
+        if (!result) {
+            return false;
+        }
+    }
+
+    if (m_max.has_value()) {
+        auto result = std::visit(
+            Detail::overloaded{[&value](auto &max_value) -> bool { return value <= static_cast<T>(max_value); },
+                               [&value](std::string &) -> bool { return false; }},
+            *m_max);
+
+        if (!result) {
+            return false;
+        }
+    }
+
+    m_value = value;
+    return true;
 }
 
 template<typename T, std::enable_if_t<!std::is_same_v<T, output_value>, int>>
