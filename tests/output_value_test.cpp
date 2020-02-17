@@ -54,7 +54,4 @@ TEST_CASE("Basic mutator test") {
 
     REQUIRE(value.set(-1) == false);
     REQUIRE(value.get<int>() == 0);
-
-    REQUIRE(value.set(0.5f) == false);
-    REQUIRE(value.get<int>() == 0);
 }

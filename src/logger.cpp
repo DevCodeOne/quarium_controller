@@ -3,12 +3,15 @@
 #include <fstream>
 #include <sstream>
 
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+
 #include "run_configuration.h"
 
 void logger::configure_logger(const log_level &level, const log_type &type) {
     std::lock_guard<std::recursive_mutex> instance_guard{_instance_mutex};
 
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_st>();
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
     std::shared_ptr<spdlog::sinks::rotating_file_sink_st> file_sink = nullptr;
     try {
         file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_st>(run_configuration::instance()->log_file(),
@@ -19,14 +22,13 @@ void logger::configure_logger(const log_level &level, const log_type &type) {
 
     if (!_instance && file_sink) {
         if (type == log_type::console || run_configuration::instance()->print_to_console()) {
-            _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, {console_sink, file_sink}));
+            _instance = std::make_shared<spdlog::logger>(_logger_name, spdlog::sinks_init_list({console_sink, file_sink}));
         } else if (type == log_type::file) {
-            _instance = std::shared_ptr<spdlog::logger>(new spdlog::logger(_logger_name, file_sink));
+            _instance = std::make_shared<spdlog::logger>(_logger_name, file_sink);
         }
     } else {
         logger::instance();
     }
-
     _instance->set_level((spdlog::level::level_enum)level);
     _instance->flush_on((spdlog::level::level_enum)level);
 }

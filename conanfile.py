@@ -5,7 +5,7 @@ class QuariumController(ConanFile):
     version = "none"
     settings = "os", "compiler", "build_type", "arch"
     requires =  "OpenSSL/1.1.1c@conan/stable", \
-            "spdlog/0.17.0@bincrafters/stable", \
+            "spdlog/1.5.0", \
             "catch2/2.3.0@bincrafters/stable", \
             "jsonformoderncpp/3.7.3@vthiery/stable", \
             "clara/1.1.4@bincrafters/stable", \
@@ -19,9 +19,9 @@ class QuariumController(ConanFile):
             "use_gpiod_stub" : [True, False],
             }
     default_options = { "build_tests" : True, \
-            "use_sdl" : True, \
+            "use_sdl" : False, \
             "use_gpiod_stub" : True, \
-            "with_gui" : True, \
+            "with_gui" : False, \
             "wt:shared" : False, \
             "wt:with_ssl" : True, \
             "wt:with_haru" : False, \

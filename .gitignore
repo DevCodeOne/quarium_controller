@@ -7,5 +7,6 @@
 !tests/
 !conanfile.py
 !CMakeLists.txt
+!Dockerfile
 !README.md
 !LICENSE

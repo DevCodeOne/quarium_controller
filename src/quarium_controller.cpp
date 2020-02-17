@@ -1,7 +1,7 @@
 #include <atomic>
+#include <cstdlib>
 #include <string>
 
-#include "Wt/WServer.h"
 #include "clara.hpp"
 
 #ifdef WITH_GUI
@@ -9,6 +9,7 @@
 #endif
 
 #include "config.h"
+#include "gui/web/custom_wtserver.h"
 #include "gui/web/main_container.h"
 #include "io/interfaces/gpio/gpio_chip.h"
 #include "io/interfaces/mqtt/mqtt.h"
@@ -35,21 +36,21 @@ int main(int argc, char *argv[]) {
     bool print_to_console = false;
 
     // clang-format off
-    auto cli =
-        clara::Opt([](const std::string &config_path) { run_configuration::instance()->config_path(config_path); }, "config_path")
-            ["-c"]["--config"]
-            ("location of the configuration file to use")
-        | clara::Opt(
-                [](const uint16_t &server_port) {
-                run_configuration::instance()->server_port(port(server_port));
-                }, "sever_port")
-            ["-p"]["--port"]
-            ("which port to start the http server on")
-        | clara::Opt([](const std::string &log_file) { run_configuration::instance()->log_file(log_file); }, "log_file")
-                ["-l"]["--log-file"]
-                ("location of the log file to write to")
-        | clara::Opt(print_to_console)["--print-to-console"]("specify if the output should also be printed to the standard output")
-        | clara::Help(show_help);
+        auto cli =
+            clara::Opt([](const std::string &config_path) { run_configuration::instance()->config_path(config_path); }, "config_path")
+                ["-c"]["--config"]
+                ("location of the configuration file to use")
+            | clara::Opt(
+                    [](const uint16_t &server_port) {
+                    run_configuration::instance()->server_port(port(server_port));
+                    }, "sever_port")
+                ["-p"]["--port"]
+                ("which port to start the http server on")
+            | clara::Opt([](const std::string &log_file) { run_configuration::instance()->log_file(log_file); }, "log_file")
+                    ["-l"]["--log-file"]
+                    ("location of the log file to write to")
+            | clara::Opt(print_to_console)["--print-to-console"]("specify if the output should also be printed to the standard output")
+            | clara::Help(show_help);
     // clang-format on
 
     auto result = cli.parse(clara::Args(argc, argv));
@@ -110,6 +111,10 @@ int main(int argc, char *argv[]) {
     auto network_iface = network_interface::create_on_port(port(run_configuration::instance()->server_port()));
     network_iface->add_route("/api/v0/log", rest_resource<logger>::handle_request);
 
+    // TODO: clean this up
+    char env[512]{"WT_CONFIG_XML=../data/wt_config.xml"};
+    putenv(env);
+    // TODO: create own WServer class wich uses a different logger
     Wt::WServer server(argv[0]);
     server.setServerConfiguration(argc, argv, "../data/wthttpd.conf");
     server.addEntryPoint(Wt::EntryPointType::Application,
